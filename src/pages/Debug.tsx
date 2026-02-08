@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabase/config';
+import { supabase } from '@/supabase/config';
 
 export default function DebugPage() {
     const [status, setStatus] = useState<any>({ loading: true });
