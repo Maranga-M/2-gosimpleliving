@@ -1,0 +1,19 @@
+# robots.txt for GoSimpleLiving
+User-agent: *
+Allow: /
+
+# Sitemap location
+# Note: The sitemap URL is dynamically generated and stored in the database
+# To submit to Google Search Console:
+# 1. Go to Admin Dashboard > Settings
+# 2. Click "Generate Sitemap" button
+# 3. Copy the generated sitemap URL
+# 4. Submit to Google Search Console at https://search.google.com/search-console
+
+# Common crawl directives
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /api/
+
+# Crawl-delay (optional, adjust as needed)
+Crawl-delay: 1

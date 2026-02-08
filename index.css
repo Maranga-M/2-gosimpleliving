@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* Custom Scrollbar for Chat */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Inter font is already included via Google Fonts in index.html */
+body {
+    font-family: 'Inter', sans-serif;
+}
