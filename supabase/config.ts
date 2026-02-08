@@ -20,7 +20,7 @@ const getEnvVar = (key: string): string | undefined => {
   try {
     // @ts-ignore
     if (typeof process !== 'undefined' && process.env) {
-        // @ts-ignore
+      // @ts-ignore
       return process.env[key];
     }
   } catch (e) {
@@ -47,10 +47,10 @@ const supabaseKey =
 
 // Determine which prefix is effectively being used (for logging)
 const getEffectivePrefix = () => {
-    if (getEnvVar('VITE_SUPABASE_URL')) return 'VITE_';
-    if (getEnvVar('NEXT_PUBLIC_SUPABASE_URL')) return 'NEXT_PUBLIC_';
-    if (getEnvVar('SUPABASE_URL')) return 'STANDARD';
-    return 'UNKNOWN';
+  if (getEnvVar('VITE_SUPABASE_URL')) return 'VITE_';
+  if (getEnvVar('NEXT_PUBLIC_SUPABASE_URL')) return 'NEXT_PUBLIC_';
+  if (getEnvVar('SUPABASE_URL')) return 'STANDARD';
+  return 'UNKNOWN';
 }
 
 const usingPrefix = getEffectivePrefix();
@@ -76,6 +76,12 @@ if (supabaseUrl && supabaseKey) {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10
+        },
+        heartbeatIntervalMs: 30000 // 30s heartbeat
       }
     });
     console.log(`✅ Supabase client initialized successfully`);

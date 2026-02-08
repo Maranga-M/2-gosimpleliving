@@ -41,6 +41,8 @@ class ConnectionManager {
     private state: ConnectionState;
     private config: ConnectionConfig;
     private backgroundRetryTimer: ReturnType<typeof setTimeout> | null = null;
+    private healthCheckInterval: ReturnType<typeof setTimeout> | null = null;
+    private healthCheckHandler: (() => Promise<boolean>) | null = null;
     private listeners: Set<(state: ConnectionState) => void> = new Set();
 
     constructor(config?: Partial<ConnectionConfig>) {
@@ -56,6 +58,66 @@ class ConnectionManager {
             retryCount: 0,
             isBackgroundReconnecting: false
         };
+
+        // Start health check if we think we are connected
+        if (this.state.status === 'connected') {
+            this.startHealthCheck();
+        }
+    }
+
+    /**
+     * Register a health check handler
+     */
+    setHealthCheckHandler(handler: () => Promise<boolean>) {
+        this.healthCheckHandler = handler;
+    }
+
+    /**
+     * Start active health checking (heartbeat)
+     */
+    startHealthCheck() {
+        if (this.healthCheckInterval) return;
+
+        // Run check every 45 seconds to keep connection alive and detect drops
+        this.healthCheckInterval = setInterval(async () => {
+            if (this.state.status === 'reconnecting' || this.state.isBackgroundReconnecting) return;
+
+            if (this.healthCheckHandler) {
+                try {
+                    const isHealthy = await this.healthCheckHandler();
+                    if (isHealthy) {
+                        // Updates timestamp but doesn't trigger full state change if already connected
+                        this.state.lastSuccessfulConnection = Date.now();
+                        this.cacheState();
+                    } else {
+                        console.warn('⚠️ Connection heartbeat failed - triggering reconnect');
+                        this.handleDisconnect();
+                    }
+                } catch (err) {
+                    console.error('❌ Error during connection heartbeat:', err);
+                    this.handleDisconnect();
+                }
+            }
+        }, 45000); // 45 seconds
+    }
+
+    /**
+     * Stop active health checking
+     */
+    stopHealthCheck() {
+        if (this.healthCheckInterval) {
+            clearInterval(this.healthCheckInterval);
+            this.healthCheckInterval = null;
+        }
+    }
+
+    /**
+     * Handle a detected disconnection
+     */
+    private handleDisconnect() {
+        if (this.state.status !== 'offline' && this.state.status !== 'reconnecting') {
+            this.markFailed(new Error('Connection lost (heartbeat failed)'));
+        }
     }
 
     /**
@@ -179,6 +241,7 @@ class ConnectionManager {
      */
     markConnected() {
         this.stopBackgroundReconnection();
+        this.startHealthCheck(); // Start monitoring
         this.updateState({
             status: 'connected',
             lastSuccessfulConnection: Date.now(),
@@ -193,6 +256,7 @@ class ConnectionManager {
      * Mark connection as failed
      */
     markFailed(error: any) {
+        this.stopHealthCheck(); // Stop monitoring while broken
         const errorType = this.categorizeError(error);
         const errorMessage = this.getErrorMessage(errorType, error?.message);
 
@@ -311,6 +375,7 @@ class ConnectionManager {
      */
     destroy() {
         this.stopBackgroundReconnection();
+        this.stopHealthCheck();
         this.listeners.clear();
     }
 }

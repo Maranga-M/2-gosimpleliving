@@ -93,3 +93,9 @@ export const dbService: DatabaseService = {
     testConnection: supabaseService.testConnection,
     testConnectionDetailed: supabaseService.testConnectionDetailed,
 };
+
+// Register health check handler
+import { connectionManager } from './connectionManager';
+connectionManager.setHealthCheckHandler(async () => {
+    return await supabaseService.testConnection();
+});
