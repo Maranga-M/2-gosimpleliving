@@ -1,5 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
 
 const supabaseUrl = 'https://yfjsfkspoglmvptuqkob.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmanNma3Nwb2dsbXZwdHVxa29iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0OTgzODQsImV4cCI6MjA4NjA3NDM4NH0.K416SGJutC1u4Ly4WWh0LHK6icbapXDGYX3wFInTbZQ';
@@ -7,42 +8,29 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function verifyTables() {
+    const results = [];
     console.log('🔍 Verifying database tables...');
 
-    // 1. Check site_content
-    const { data: content, error: contentError } = await supabase.from('site_content').select('id').limit(1);
-    if (contentError) console.error('❌ site_content table: MISSING or ERROR', contentError.message);
-    else console.log('✅ site_content table: OK');
+    const tables = ['site_content', 'products', 'posts', 'profiles', 'analytics'];
 
-    // 2. Check products
-    const { data: products, error: productsError } = await supabase.from('products').select('id').limit(1);
-    if (productsError) console.error('❌ products table: MISSING or ERROR', productsError.message);
-    else console.log('✅ products table: OK');
-
-    // 3. Check posts
-    const { data: posts, error: postsError } = await supabase.from('posts').select('id').limit(1);
-    if (postsError) console.error('❌ posts table: MISSING or ERROR', postsError.message);
-    else console.log('✅ posts table: OK');
-
-    // 4. Check profiles (needs auth usually, but RLS might allow read)
-    // We'll try to select, might fail if RLS is strict, but "relation does not exist" is different from "permission denied"
-    const { data: profiles, error: profilesError } = await supabase.from('profiles').select('id').limit(1);
-
-    if (profilesError) {
-        if (profilesError.message.includes('permission denied')) {
-            console.log('✅ profiles table: EXISTS (Permission Denied - expected for anon)');
-        } else {
-            console.error('❌ profiles table: MISSING or ERROR', profilesError.message);
+    for (const table of tables) {
+        try {
+            const { data, error } = await supabase.from(table).select('*').limit(1);
+            if (error) {
+                results.push({ table, status: 'ERROR', message: error.message, code: error.code });
+                console.error(`❌ ${table} table:`, error.message);
+            } else {
+                results.push({ table, status: 'OK', data: data?.[0] || 'EMPTY' });
+                console.log(`✅ ${table} table: OK`);
+            }
+        } catch (e) {
+            results.push({ table, status: 'EXCEPTION', message: e.message });
+            console.error(`💥 ${table} exception:`, e.message);
         }
-    } else {
-        console.log('✅ profiles table: OK');
     }
 
-    // 5. Check analytics
-    const { error: analyticsError } = await supabase.from('analytics').select('id').limit(1);
-    if (analyticsError) console.error('❌ analytics table: MISSING or ERROR', analyticsError.message);
-    else console.log('✅ analytics table: OK');
-
+    fs.writeFileSync('diagnostic_results.json', JSON.stringify(results, null, 2));
+    console.log('✅ Diagnostics complete. Results saved to diagnostic_results.json');
 }
 
 verifyTables();

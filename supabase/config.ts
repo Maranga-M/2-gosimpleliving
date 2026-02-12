@@ -69,6 +69,18 @@ console.log('🔧 Supabase Config Status:', configStatus);
 
 let supabase: SupabaseClient | null = null;
 
+// Custom fetch with timeout to prevent "hanging" requests on cold starts
+const fetchWithTimeout = (url: string, options: any = {}) => {
+  const timeout = 30000; // 30 seconds
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  return fetch(url, {
+    ...options,
+    signal: controller.signal
+  }).finally(() => clearTimeout(id));
+};
+
 if (supabaseUrl && supabaseKey) {
   try {
     supabase = createClient(supabaseUrl, supabaseKey, {
@@ -77,6 +89,13 @@ if (supabaseUrl && supabaseKey) {
         autoRefreshToken: true,
         detectSessionInUrl: true
       },
+      global: {
+        fetch: fetchWithTimeout,
+        headers: { 'x-application-name': 'go-simple-living' }
+      },
+      db: {
+        schema: 'public'
+      },
       realtime: {
         params: {
           eventsPerSecond: 10
@@ -84,7 +103,7 @@ if (supabaseUrl && supabaseKey) {
         heartbeatIntervalMs: 30000 // 30s heartbeat
       }
     });
-    console.log(`✅ Supabase client initialized successfully`);
+    console.log(`✅ Supabase client initialized successfully with timeout protection`);
   } catch (err) {
     console.error('❌ Failed to initialize Supabase client:', err);
   }

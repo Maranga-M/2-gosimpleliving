@@ -32,9 +32,9 @@ export interface ConnectionConfig {
 const DEFAULT_CONFIG: ConnectionConfig = {
     initialTimeout: 45000,        // 45 seconds (Supabase cold starts can be slow)
     retryTimeout: 20000,          // 20 seconds
-    maxRetries: 2,                // 2 total attempts
-    retryDelay: 2000,             // 2 seconds between retries
-    backgroundRetryInterval: 120000 // 120 seconds (2 minutes - less aggressive)
+    maxRetries: 3,                // 3 total attempts
+    retryDelay: 2000,             // Base delay (ms)
+    backgroundRetryInterval: 300000 // 5 minutes for background retry
 };
 
 class ConnectionManager {
@@ -78,15 +78,19 @@ class ConnectionManager {
     startHealthCheck() {
         if (this.healthCheckInterval) return;
 
-        // Run check every 45 seconds to keep connection alive and detect drops
+        // Check visibility to optimize health checks
+        const checkInterval = document.visibilityState === 'hidden' ? 180000 : 45000;
+
         this.healthCheckInterval = setInterval(async () => {
             if (this.state.status === 'reconnecting' || this.state.isBackgroundReconnecting) return;
+
+            // Don't check if page is hidden to save connections/resources
+            if (document.visibilityState === 'hidden') return;
 
             if (this.healthCheckHandler) {
                 try {
                     const isHealthy = await this.healthCheckHandler();
                     if (isHealthy) {
-                        // Updates timestamp but doesn't trigger full state change if already connected
                         this.state.lastSuccessfulConnection = Date.now();
                         this.cacheState();
                     } else {
@@ -98,7 +102,7 @@ class ConnectionManager {
                     this.handleDisconnect();
                 }
             }
-        }, 45000); // 45 seconds
+        }, checkInterval);
     }
 
     /**
@@ -204,6 +208,9 @@ class ConnectionManager {
         if (message.includes('timeout') || message.includes('timed out')) {
             return 'timeout';
         }
+        if (message.includes('paused') || message.includes('503') || message.includes('disabled')) {
+            return 'network'; // Project paused is a network-level issue for the client
+        }
         if (message.includes('auth') || message.includes('unauthorized') || message.includes('invalid') || message.includes('credentials')) {
             return 'auth';
         }
@@ -221,15 +228,19 @@ class ConnectionManager {
      * Get user-friendly error message based on error type
      */
     getErrorMessage(errorType: ConnectionErrorType, originalError?: string): string {
+        const rawMsg = originalError ? ` (Raw: ${originalError})` : '';
         switch (errorType) {
             case 'timeout':
-                return 'Connection timed out. Database may be sleeping (cold start) or network is slow.';
+                return 'Connection timed out. Database may be sleeping (cold start) or network is slow.' + rawMsg;
             case 'auth':
-                return 'Authentication failed. Please check your Supabase credentials in the .env file.';
+                return 'Authentication failed. Please check your Supabase credentials in the .env file.' + rawMsg;
             case 'schema':
-                return 'Database schema error. Please run migrations or check that all required tables exist.';
+                return 'Database schema error. Please run migrations or check that all required tables exist.' + rawMsg;
             case 'network':
-                return 'Network error. Please check your internet connection and firewall settings.';
+                if (originalError?.toLowerCase().includes('paused')) {
+                    return 'Database project is paused due to inactivity. Access the Supabase dashboard to restore it.';
+                }
+                return 'Network error. Please check your internet connection and firewall settings.' + rawMsg;
             case 'unknown':
             default:
                 return originalError || 'Failed to connect to database. Please check your configuration.';
@@ -328,10 +339,11 @@ class ConnectionManager {
     }
 
     /**
-     * Get retry delay
+     * Get retry delay with exponential backoff
      */
     getRetryDelay(): number {
-        return this.config.retryDelay;
+        // Exponential backoff: base * 2 ^ attempt
+        return this.config.retryDelay * Math.pow(2, this.state.retryCount);
     }
 
     /**

@@ -5,6 +5,59 @@ import { ConnectionErrorType } from '../services/connectionManager';
 
 const DB_NOT_CONFIGURED_ERROR = 'Database connection is not configured. Please set environment variables.';
 
+// --- PERSISTENT CACHING STRATEGY ---
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes for persistent cache
+const CACHE_KEYS = {
+    products: 'gsl_cache_products',
+    posts: 'gsl_cache_posts',
+    siteContent: 'gsl_cache_site_content'
+};
+
+const saveToCache = (key: string, data: any) => {
+    try {
+        const cacheEntry = {
+            data,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(key, JSON.stringify(cacheEntry));
+    } catch (e) {
+        console.warn(`Failed to save to cache: ${key}`, e);
+    }
+};
+
+const getFromCache = (key: string) => {
+    try {
+        const cached = localStorage.getItem(key);
+        if (!cached) return null;
+
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp > CACHE_TTL) {
+            localStorage.removeItem(key);
+            return null;
+        }
+        return data;
+    } catch (e) {
+        return null;
+    }
+};
+
+// --- RETRY HELPER ---
+const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> => {
+    let lastError: any;
+    for (let i = 0; i <= maxRetries; i++) {
+        try {
+            return await fn();
+        } catch (err: any) {
+            lastError = err;
+            const isTransient = err.message?.includes('fetch') || err.message?.includes('network') || err.status === 502 || err.status === 503 || err.status === 504;
+            if (!isTransient || i === maxRetries) throw err;
+            const delay = 1000 * Math.pow(2, i);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+    throw lastError;
+};
+
 export interface DetailedConnectionResult {
     success: boolean;
     errorType?: ConnectionErrorType;
@@ -294,16 +347,28 @@ export const requestPasswordReset = async (email: string, redirectTo?: string) =
 
 export const getProducts = async (): Promise<Product[] | null> => {
     if (!supabase) return null;
+
+    const cached = getFromCache(CACHE_KEYS.products);
+    if (cached) {
+        console.log("Supabase Service: Returning cached products");
+        return cached;
+    }
+
     try {
-        console.log("Supabase Service: getProducts START");
-        const { data, error } = await supabase.from('products').select('*');
-        console.log("Supabase Service: getProducts END", { error, count: data?.length });
-        if (error) {
-            console.warn(`Supabase getProducts error [${error.code}]:`, error.message);
-            return null;
-        }
-        return data || [];
-    } catch (e) {
+        console.log("Supabase Service: getProducts START (Network)");
+        const result = await withRetry(async () => {
+            const { data, error } = await supabase!.from('products').select('*');
+            if (error) throw error;
+            return data;
+        });
+
+        const data = result || [];
+        saveToCache(CACHE_KEYS.products, data);
+
+        console.log("Supabase Service: getProducts END", { count: data.length });
+        return data;
+    } catch (e: any) {
+        console.warn(`Supabase getProducts error:`, e.message);
         return null;
     }
 };
@@ -337,20 +402,32 @@ export const deleteProduct = async (id: string) => {
 
 export const getBlogPosts = async (): Promise<BlogPost[] | null> => {
     if (!supabase) return null;
+
+    const cached = getFromCache(CACHE_KEYS.posts);
+    if (cached) {
+        console.log("Supabase Service: Returning cached posts");
+        return cached;
+    }
+
     try {
-        const { data, error } = await supabase.from('posts').select('*');
-        if (error) {
-            console.warn(`Supabase getBlogPosts error [${error.code}]:`, error.message);
-            return null;
-        }
-        // Map DB snake_case to internal camelCase
-        return (data || []).map((p: any) => ({
+        const result = await withRetry(async () => {
+            const { data, error } = await supabase!.from('posts').select('*');
+            if (error) throw error;
+            return data;
+        });
+
+        const mappedPosts = (result || []).map((p: any) => ({
             ...p,
             heroImageUrl: p.hero_image_url,
             comparisonTables: p.comparison_tables || [],
             linkedProductIds: p.linkedProductIds || p.linked_product_ids || []
         }));
-    } catch (e) {
+
+        saveToCache(CACHE_KEYS.posts, mappedPosts);
+
+        return mappedPosts;
+    } catch (e: any) {
+        console.warn(`Supabase getBlogPosts error:`, e.message);
         return null;
     }
 };
@@ -402,11 +479,26 @@ export const deleteBlogPost = async (id: string) => {
 
 export const getSiteContent = async (): Promise<SiteContent | null> => {
     if (!supabase) return null;
+
+    const cached = getFromCache(CACHE_KEYS.siteContent);
+    if (cached) {
+        console.log("Supabase Service: Returning cached site content");
+        return cached;
+    }
+
     try {
-        const { data, error } = await supabase.from('site_content').select('*').eq('id', 'main').single();
-        if (error) return null;
-        return data?.content as SiteContent;
-    } catch (e) {
+        const result = await withRetry(async () => {
+            const { data, error } = await supabase!.from('site_content').select('*').eq('id', 'main').single();
+            if (error) throw error;
+            return data;
+        });
+
+        const content = result?.content as SiteContent;
+        saveToCache(CACHE_KEYS.siteContent, content);
+
+        return content;
+    } catch (e: any) {
+        console.warn(`Supabase getSiteContent error:`, e.message);
         return null;
     }
 };
