@@ -179,15 +179,11 @@ class ConnectionManager {
             if (!cached) return null;
 
             const data = JSON.parse(cached);
-            const timeSinceLastConnection = data.lastSuccessfulConnection
-                ? Date.now() - data.lastSuccessfulConnection
-                : Infinity;
 
-            // If last connection was within 5 minutes, assume we might still be connected
-            const assumeConnected = timeSinceLastConnection < 5 * 60 * 1000;
-
+            // INJECTED IMPROVEMENT: On page load/refresh, always start with 'loading' 
+            // This prevents the "Offline" flash on refresh.
             return {
-                status: assumeConnected ? 'loading' : 'offline',
+                status: 'loading', // Always start in loading to trigger initial check
                 lastSuccessfulConnection: data.lastSuccessfulConnection,
                 lastError: null,
                 errorType: null,
@@ -280,6 +276,7 @@ class ConnectionManager {
 
         // Start background reconnection for non-auth errors
         if (errorType !== 'auth' && errorType !== 'schema') {
+            // If it's a timeout or network error, don't wait 5 minutes - try sooner initially
             this.startBackgroundReconnection();
         }
     }

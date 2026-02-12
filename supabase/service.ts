@@ -42,7 +42,7 @@ const getFromCache = (key: string) => {
 };
 
 // --- RETRY HELPER ---
-const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> => {
+const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> => {
     let lastError: any;
     for (let i = 0; i <= maxRetries; i++) {
         try {
@@ -76,9 +76,15 @@ export const testConnection = async (): Promise<boolean> => {
     try {
         console.log("Supabase Service: testConnection START");
         // Lightweight query to check if connection is alive and site_content table is reachable
-        const { error } = await supabase.from('site_content').select('id').limit(1);
-        console.log("Supabase Service: testConnection END", { success: !error });
-        return !error;
+        // Using withRetry here to handle transient failures during the status check itself
+        const result = await withRetry(async () => {
+            const { error } = await supabase!.from('site_content').select('id').limit(1);
+            if (error) throw error;
+            return true;
+        }, 2); // 2 dedicated retries for health check
+
+        console.log("Supabase Service: testConnection END", { success: result });
+        return result;
     } catch (e) {
         console.error("Supabase Service: testConnection EXCEPTION", e);
         return false;
