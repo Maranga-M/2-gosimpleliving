@@ -1,0 +1,107 @@
+[
+  {
+    "table": "site_content",
+    "status": "OK",
+    "data": {
+      "id": "main",
+      "content": {
+        "season": "none",
+        "uiText": {
+          "blogNav": "Blog",
+          "shopNav": "Shop",
+          "wishlistTitle": "My Wishlist",
+          "noProductsTitle": "No products found",
+          "searchPlaceholder": "Search products...",
+          "clearFiltersButton": "Clear All Filters",
+          "noProductsSubtitle": "Try adjusting your filters or search query.",
+          "wishlistEmptyTitle": "Your wishlist is empty",
+          "wishlistEmptySubtitle": "Start browsing to find great deals."
+        },
+        "logoUrl": "",
+        "logoText": "GoSimpleLiving",
+        "heroTitle": "Smart Shopping Made Simple.",
+        "pageTitle": "GoSimpleLiving | AI-Curated Amazon Deals",
+        "categories": [],
+        "footerText": "© 2024 gosimpleliving.com. All rights reserved.",
+        "themeColor": "emerald",
+        "seoKeywords": "Amazon affiliate, AI shopping, reviews",
+        "heroImageUrl": "",
+        "heroSubtitle": "Discover top-rated products curated by experts.",
+        "aiChatEnabled": true,
+        "heroButtonText": "Shop Best Sellers",
+        "seoDescription": "Discover premium AI-curated Amazon affiliate products.",
+        "announcementBar": "🔥 Free Shipping on all orders over $50!"
+      },
+      "created_at": "2026-02-08T16:42:20.90283+00:00",
+      "updated_at": "2026-02-08T16:42:20.90283+00:00"
+    }
+  },
+  {
+    "table": "products",
+    "status": "OK",
+    "data": {
+      "id": "b44d54ba-a9ca-4cbf-99f8-afbd302345a5",
+      "title": "Sony WH-1000XM5 Wireless Headphones",
+      "category": "Electronics",
+      "price": 348,
+      "originalPrice": 399.99,
+      "rating": 4.8,
+      "reviews": 12500,
+      "image": "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "description": "Industry-leading noise cancellation optimized to you. Multi-Noise Sensor technology. Up to 30-hour battery life with quick charging.",
+      "features": [
+        "Active Noise Cancellation",
+        "30 Hour Battery",
+        "Touch Controls",
+        "Multipoint Connection"
+      ],
+      "affiliateLink": "https://amazon.com",
+      "affiliateLinkLabel": null,
+      "affiliateLinkTheme": null,
+      "isBestSeller": true,
+      "status": "published",
+      "regionalPricing": null,
+      "additionalAffiliateLinks": [],
+      "clicks": 0,
+      "created_at": "2026-02-08T16:42:20.90283+00:00"
+    }
+  },
+  {
+    "table": "posts",
+    "status": "OK",
+    "data": {
+      "id": "1a6540fc-1dcb-49d1-9980-2daa750c4eba",
+      "title": "The Ultimate Guide to Home Coffee Brewing",
+      "excerpt": "Discover the best methods to brew café-quality coffee at home.",
+      "content": "# The Ultimate Guide to Home Coffee Brewing\\n\\nBrewing better coffee at home is a journey...",
+      "author": "SimpleLiving Team",
+      "date": "2026-02-08T16:42:20.90283+00:00",
+      "image": "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "status": "published",
+      "linked_product_ids": [],
+      "hero_image_url": "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80",
+      "comparison_tables": null,
+      "focus_keyword": null,
+      "meta_title": null,
+      "meta_description": null,
+      "meta_keywords": null,
+      "created_at": "2026-02-08T16:42:20.90283+00:00"
+    }
+  },
+  {
+    "table": "profiles",
+    "status": "OK",
+    "data": {
+      "id": "21400e7e-d5ff-4bac-a67c-71d9b0aed62f",
+      "email": "bernardmaranga4@gmail.com",
+      "name": "Bernard",
+      "role": "admin",
+      "wishlist": []
+    }
+  },
+  {
+    "table": "analytics",
+    "status": "OK",
+    "data": "EMPTY"
+  }
+]

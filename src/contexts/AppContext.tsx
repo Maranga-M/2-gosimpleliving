@@ -7,7 +7,6 @@ import { useSiteContent } from '../hooks/useSiteContent';
 import { useUsers } from '../hooks/useUsers';
 import { dbService } from '../../services/database';
 import { connectionManager, ConnectionStatus } from '../../services/connectionManager';
-import { PRODUCTS, BLOG_POSTS, INITIAL_SITE_CONTENT } from '../../constants';
 import { AppNotification, Product, BlogPost, SiteContent } from '../../types';
 import { generatePersonalizedAlerts } from '../../services/geminiService';
 
@@ -104,11 +103,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const blog = useBlogPosts();
 
     // --- Data Loading ---
-    // Initialize with fallback data immediately (optimistic UI)
+    // Initialize with empty state (service layer now handles caching internally)
     useEffect(() => {
-        products.setProducts(PRODUCTS);
-        blog.setBlogPosts(BLOG_POSTS);
-        content.setLiveSiteContent(INITIAL_SITE_CONTENT);
+        products.setProducts([]);
+        blog.setBlogPosts([]);
+        // We don't set liveSiteContent to INITIAL_SITE_CONTENT anymore
     }, []); // Run once on mount
 
     // Background data hydration (non-blocking)
@@ -150,14 +149,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
                 connectionManager.markConnected();
 
-                if (dbProducts.length > 0) products.setProducts(dbProducts);
-                else products.setProducts([]);
-
-                if (dbPosts.length > 0) blog.setBlogPosts(dbPosts);
-                else blog.setBlogPosts([]);
-
+                if (dbProducts) products.setProducts(dbProducts);
+                if (dbPosts) blog.setBlogPosts(dbPosts);
                 if (dbContent) content.setLiveSiteContent(dbContent);
-                else content.setLiveSiteContent(INITIAL_SITE_CONTENT);
 
             } catch (e: any) {
                 clearTimeout(timeoutId);
