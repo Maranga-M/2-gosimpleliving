@@ -4,16 +4,22 @@ import { dbService } from '../../services/database';
 
 export const useAuth = () => {
     const [user, setUser] = useState<User | null>(null);
-
+    const [isLoading, setIsLoading] = useState(true);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
 
     // Listen for auth changes from Supabase
     useEffect(() => {
+        let isMounted = true;
         const unsubscribe = dbService.onAuthStateChanged((userProfile) => {
+            if (!isMounted) return;
             setUser(userProfile);
+            setIsLoading(false);
         });
-        return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
+        return () => {
+            isMounted = false;
+            if (typeof unsubscribe === 'function') unsubscribe();
+        };
     }, []);
 
     const signOut = async () => {
@@ -46,6 +52,7 @@ export const useAuth = () => {
     return {
         user,
         setUser, // Exposed for cases where we need to manually update user part (like duplicate logic)
+        isLoading,
         isLoginModalOpen,
         setIsLoginModalOpen,
         signOut,

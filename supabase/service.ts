@@ -197,7 +197,34 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
         callback(null);
         return () => { }; // Return a no-op unsubscribe function
     }
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+
+    // 1. Immediately check for existing session to prevent "guest flash" on refresh
+    const initSession = async () => {
+        try {
+            const { data: { session } } = await supabase!.auth.getSession();
+            if (session?.user) {
+                const profile = await getUserProfile(session.user.id, session.user);
+                if (profile) {
+                    callback(profile);
+                } else if (session.user.email) {
+                    // Fallback to basic user mapping if profile fetch fails
+                    callback(mapUser(session.user, { role: 'user', wishlist: [], name: 'User' }));
+                }
+            } else {
+                // If no session, wait for listener or explicitly set null if needed
+                // But usually better to wait for listener to be sure.
+            }
+        } catch (e) {
+            console.warn("Initial session check failed:", e);
+        }
+    };
+
+    initSession();
+
+    // 2. Set up listener for subsequent changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log(`Supabase Auth Event: ${event}`);
+
         if (session?.user) {
             try {
                 const profile = await getUserProfile(session.user.id, session.user);
@@ -379,6 +406,18 @@ export const getProducts = async (): Promise<Product[] | null> => {
     }
 };
 
+export const getProductById = async (id: string): Promise<Product | null> => {
+    if (!supabase) return null;
+    try {
+        const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+        if (error) throw error;
+        return data;
+    } catch (e: any) {
+        console.warn(`Supabase getProductById error:`, e.message);
+        return null;
+    }
+};
+
 export const createProduct = async (product: Product) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
     const { error } = await supabase.from('products').insert(product);
@@ -438,6 +477,40 @@ export const getBlogPosts = async (): Promise<BlogPost[] | null> => {
     }
 };
 
+export const getBlogPostById = async (id: string): Promise<BlogPost | null> => {
+    if (!supabase) return null;
+    try {
+        const { data, error } = await supabase.from('posts').select('*').eq('id', id).single();
+        if (error) throw error;
+        return {
+            ...data,
+            heroImageUrl: data.hero_image_url,
+            comparisonTables: data.comparison_tables || [],
+            linkedProductIds: data.linkedProductIds || data.linked_product_ids || []
+        };
+    } catch (e: any) {
+        console.warn(`Supabase getBlogPostById error:`, e.message);
+        return null;
+    }
+};
+
+export const getBlogPostBySlug = async (slug: string): Promise<BlogPost | null> => {
+    if (!supabase) return null;
+    try {
+        const { data, error } = await supabase.from('posts').select('*').eq('slug', slug).single();
+        if (error) throw error;
+        return {
+            ...data,
+            heroImageUrl: data.hero_image_url,
+            comparisonTables: data.comparison_tables || [],
+            linkedProductIds: data.linkedProductIds || data.linked_product_ids || []
+        };
+    } catch (e: any) {
+        console.warn(`Supabase getBlogPostBySlug error:`, e.message);
+        return null;
+    }
+};
+
 export const createBlogPost = async (post: BlogPost) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
 
@@ -447,7 +520,7 @@ export const createBlogPost = async (post: BlogPost) => {
         hero_image_url: post.heroImageUrl,
         comparison_tables: post.comparisonTables
     };
-    // Remove camelCase keys to avoid confusion (optional, but clean)
+    // Remove camelCase keys
     delete (dbPost as any).heroImageUrl;
     delete (dbPost as any).comparisonTables;
 
@@ -544,7 +617,6 @@ export const logAnalyticsEvent = async (event: AnalyticsEvent) => {
 export const uploadImage = async (base64: string, fileName: string): Promise<string | null> => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
 
-    // Remove try/catch to let MediaManager handle the specific error
     const response = await fetch(base64);
     const blob = await response.blob();
 
@@ -572,10 +644,10 @@ export const uploadFile = async (content: string, fileName: string, contentType:
     try {
         const { data, error } = await supabase
             .storage
-            .from('media-assets') // Reusing the same bucket for simplicity
+            .from('media-assets')
             .upload(fileName, content, {
                 cacheControl: '3600',
-                upsert: true, // Overwrite sitemap.xml
+                upsert: true,
                 contentType: contentType
             });
 
@@ -608,7 +680,6 @@ export const listImages = async (): Promise<{ name: string; url: string }[]> => 
 
         if (error) throw error;
 
-        // Get public URL for each
         const client = supabase;
         const images = data.map(file => {
             const { data: publicUrlData } = client
@@ -621,7 +692,6 @@ export const listImages = async (): Promise<{ name: string; url: string }[]> => 
             };
         });
 
-        // Filter out non-image files if necessary (optional)
         return images.filter(img => img.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
 
     } catch (error: any) {
@@ -639,3 +709,4 @@ export const deleteImage = async (fileName: string) => {
 
     if (error) throw error;
 };
+

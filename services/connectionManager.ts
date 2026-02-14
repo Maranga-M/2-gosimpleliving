@@ -180,10 +180,10 @@ class ConnectionManager {
 
             const data = JSON.parse(cached);
 
-            // INJECTED IMPROVEMENT: On page load/refresh, always start with 'loading' 
-            // This prevents the "Offline" flash on refresh.
+            // IMPROVEMENT: On page load/refresh, always start with 'loading' 
+            // but keep the 'lastSuccessfulConnection' to inform UI decisions.
             return {
-                status: 'loading', // Always start in loading to trigger initial check
+                status: 'loading',
                 lastSuccessfulConnection: data.lastSuccessfulConnection,
                 lastError: null,
                 errorType: null,

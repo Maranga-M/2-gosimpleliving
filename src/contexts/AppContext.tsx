@@ -115,7 +115,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         let timeoutId: ReturnType<typeof setTimeout>;
         const loadData = async () => {
             // 60s timeout to handle Supabase cold starts (Free Tier pauses)
-            const timeout = 45000; // 45s for initial load
+            const timeout = 60000; // Increased to 60s for initial load resilience
             const attemptTimeoutPromise = new Promise<never>((_, reject) => {
                 timeoutId = setTimeout(() => {
                     reject(new Error(`Database wakeup timeout (${timeout / 1000}s). This is common for free-tier projects warming up.`));
@@ -157,8 +157,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 clearTimeout(timeoutId);
                 console.warn(`[Background Hydration] Initial attempt failed:`, e.message);
 
-                // If the first attempt failed (e.g. cold start), don't give up immediately.
-                // connectionManager will handle the retry/background reconnection.
+                // If the first attempt failed (e.g. cold start), connectionManager will handle 
+                // the retry/background reconnection.
                 connectionManager.markFailed(e);
             }
         };
