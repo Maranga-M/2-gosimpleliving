@@ -9,6 +9,7 @@ import { dbService } from '../../services/database';
 import { connectionManager, ConnectionStatus } from '../../services/connectionManager';
 import { AppNotification, Product, BlogPost, SiteContent } from '../../types';
 import { generatePersonalizedAlerts } from '../../services/geminiService';
+import { CacheService } from '../modules/cache';
 
 // Define the shape of our context
 interface AppContextType {
@@ -103,11 +104,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const blog = useBlogPosts();
 
     // --- Data Loading ---
-    // Initialize with empty state (service layer now handles caching internally)
+    // Initialize with data from memory quickly if we have it!
     useEffect(() => {
-        products.setProducts([]);
-        blog.setBlogPosts([]);
-        // We don't set liveSiteContent to INITIAL_SITE_CONTENT anymore
+        const cachedProducts = CacheService.loadProducts();
+        const cachedBlogs = CacheService.loadBlogs();
+        const cachedContent = CacheService.loadContent();
+
+        if (cachedProducts) products.setProducts(cachedProducts);
+        else products.setProducts([]);
+
+        if (cachedBlogs) blog.setBlogPosts(cachedBlogs);
+        else blog.setBlogPosts([]);
+
+        if (cachedContent) content.setLiveSiteContent(cachedContent);
     }, []); // Run once on mount
 
     // Background data hydration (non-blocking)
@@ -149,9 +158,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
                 connectionManager.markConnected();
 
-                if (dbProducts) products.setProducts(dbProducts);
-                if (dbPosts) blog.setBlogPosts(dbPosts);
-                if (dbContent) content.setLiveSiteContent(dbContent);
+                if (dbProducts) {
+                    products.setProducts(dbProducts);
+                    CacheService.saveProducts(dbProducts); // Save new objects to memory
+                }
+                if (dbPosts) {
+                    blog.setBlogPosts(dbPosts);
+                    CacheService.saveBlogs(dbPosts); // Save new stories to memory
+                }
+                if (dbContent) {
+                    content.setLiveSiteContent(dbContent);
+                    CacheService.saveContent(dbContent); // Save new pictures to memory
+                }
 
             } catch (e: any) {
                 clearTimeout(timeoutId);
@@ -188,9 +206,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 throw new Error("Database responded but failed to return core data.");
             }
 
-            products.setProducts(dbProducts);
-            blog.setBlogPosts(dbPosts);
-            if (dbContent) content.setLiveSiteContent(dbContent);
+            if (dbProducts) {
+                products.setProducts(dbProducts);
+                CacheService.saveProducts(dbProducts);
+            }
+            if (dbPosts) {
+                blog.setBlogPosts(dbPosts);
+                CacheService.saveBlogs(dbPosts);
+            }
+            if (dbContent) {
+                content.setLiveSiteContent(dbContent);
+                CacheService.saveContent(dbContent);
+            }
 
             connectionManager.markConnected();
             toast.success("Successfully synced with Cloud Database!");
