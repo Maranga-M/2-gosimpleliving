@@ -8,25 +8,29 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
  * - Standard Node (process.env.*)
  */
 
-// Helper to get environment variables across different environments
-const getEnvVar = (key: string): string | undefined => {
-  // 1. Try import.meta.env (Vite)
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-    const value = (import.meta as any).env[key];
-    if (value) return value;
-  }
+// Try explicitly accessing import.meta.env for Vite static replacement during build.
+// Vite requires explicit property access (e.g., import.meta.env.VITE_SUPABASE_URL) 
+// to replace them statically. Dynamic access like import.meta.env[key] fails in production.
 
-  // 2. Try process.env (Node/Vercel)
+const getViteEnv = (key: string) => {
+  if (typeof import.meta === 'undefined' || !(import.meta as any).env) return undefined;
+
+  const env = (import.meta as any).env;
+  if (key === 'VITE_SUPABASE_URL') return env.VITE_SUPABASE_URL;
+  if (key === 'NEXT_PUBLIC_SUPABASE_URL') return env.NEXT_PUBLIC_SUPABASE_URL;
+  if (key === 'VITE_SUPABASE_ANON_KEY') return env.VITE_SUPABASE_ANON_KEY;
+  if (key === 'NEXT_PUBLIC_SUPABASE_ANON_KEY') return env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return undefined;
+}
+
+const getProcessEnv = (key: string): string | undefined => {
   try {
-    // @ts-ignore
     if (typeof process !== 'undefined' && process.env) {
-      // @ts-ignore
       return process.env[key];
     }
   } catch (e) {
     // Ignore errors if process is not defined
   }
-
   return undefined;
 };
 
@@ -35,21 +39,27 @@ console.log('🔧 Initializing Supabase Configuration...');
 
 // Try all possible prefixes for URL
 const supabaseUrl =
-  getEnvVar('VITE_SUPABASE_URL') ||
-  getEnvVar('NEXT_PUBLIC_SUPABASE_URL') ||
-  getEnvVar('SUPABASE_URL');
+  getViteEnv('VITE_SUPABASE_URL') ||
+  getViteEnv('NEXT_PUBLIC_SUPABASE_URL') ||
+  getProcessEnv('NEXT_PUBLIC_SUPABASE_URL') ||
+  getProcessEnv('VITE_SUPABASE_URL') ||
+  getProcessEnv('SUPABASE_URL');
 
 // Try all possible prefixes for Anon Key
 const supabaseKey =
-  getEnvVar('VITE_SUPABASE_ANON_KEY') ||
-  getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY') ||
-  getEnvVar('SUPABASE_ANON_KEY');
+  getViteEnv('VITE_SUPABASE_ANON_KEY') ||
+  getViteEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') ||
+  getProcessEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') ||
+  getProcessEnv('VITE_SUPABASE_ANON_KEY') ||
+  getProcessEnv('SUPABASE_ANON_KEY');
 
 // Determine which prefix is effectively being used (for logging)
 const getEffectivePrefix = () => {
-  if (getEnvVar('VITE_SUPABASE_URL')) return 'VITE_';
-  if (getEnvVar('NEXT_PUBLIC_SUPABASE_URL')) return 'NEXT_PUBLIC_';
-  if (getEnvVar('SUPABASE_URL')) return 'STANDARD';
+  if (getViteEnv('VITE_SUPABASE_URL')) return 'VITE_';
+  if (getViteEnv('NEXT_PUBLIC_SUPABASE_URL')) return 'NEXT_PUBLIC_';
+  if (getProcessEnv('NEXT_PUBLIC_SUPABASE_URL')) return 'PROCESS_NEXT_PUBLIC_';
+  if (getProcessEnv('VITE_SUPABASE_URL')) return 'PROCESS_VITE_';
+  if (getProcessEnv('SUPABASE_URL')) return 'STANDARD';
   return 'UNKNOWN';
 }
 
@@ -70,7 +80,7 @@ console.log('🔧 Supabase Config Status:', configStatus);
 let supabase: SupabaseClient | null = null;
 
 // Custom fetch with timeout to prevent "hanging" requests on cold starts
-const fetchWithTimeout = (url: string, options: any = {}) => {
+const fetchWithTimeout = (url: string | URL | Request, options: RequestInit = {}): Promise<Response> => {
   const timeout = 30000; // 30 seconds
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);

@@ -17,12 +17,15 @@ export interface DatabaseService {
 
     // Products (Return null if connection failed/fallback needed)
     getProducts: () => Promise<Product[] | null>;
+    getProductById: (id: string) => Promise<Product | null>;
     createProduct: (product: Product) => Promise<void>;
     updateProduct: (product: Product) => Promise<void>;
     deleteProduct: (id: string) => Promise<void>;
 
     // Blog Posts
     getBlogPosts: () => Promise<BlogPost[] | null>;
+    getBlogPostById: (id: string) => Promise<BlogPost | null>;
+    getBlogPostBySlug: (slug: string) => Promise<BlogPost | null>;
     createBlogPost: (post: BlogPost) => Promise<void>;
     updateBlogPost: (post: BlogPost) => Promise<void>;
     deleteBlogPost: (id: string) => Promise<void>;
@@ -67,12 +70,15 @@ export const dbService: DatabaseService = {
 
     // Products
     getProducts: supabaseService.getProducts,
+    getProductById: supabaseService.getProductById,
     createProduct: supabaseService.createProduct,
     updateProduct: supabaseService.updateProduct,
     deleteProduct: supabaseService.deleteProduct,
 
     // Blog Posts
     getBlogPosts: supabaseService.getBlogPosts,
+    getBlogPostById: supabaseService.getBlogPostById,
+    getBlogPostBySlug: supabaseService.getBlogPostBySlug,
     createBlogPost: supabaseService.createBlogPost,
     updateBlogPost: supabaseService.updateBlogPost,
     deleteBlogPost: supabaseService.deleteBlogPost,
