@@ -165,6 +165,10 @@ export interface AffiliateConfig {
   pinterestVerificationCode?: string;
   pinterestEnabled?: boolean;
 
+  // Google AdSense / Monetization
+  adSenseEnabled?: boolean;
+  adSenseClientId?: string;
+
   // CJ Affiliate
   cjPublisherId?: string; // PID
   cjSubId?: string; // Optional sub-tracking ID
@@ -197,6 +201,9 @@ export type Season =
   | 'aprilfools';
 
 export interface SiteContent {
+  // Contact Info
+  contactEmail: string;
+
   // Marketing Copy
   heroTitle: string;
   heroSubtitle: string;
@@ -204,7 +211,7 @@ export interface SiteContent {
 
   // Theme & Layout
   themeColor: ThemeColor;
-  season: Season;
+  season?: Season;
   logoText: string;
   pageTitle: string; // Browser tab title
   seoDescription: string; // Meta description
@@ -215,8 +222,6 @@ export interface SiteContent {
   logoUrl?: string; // Persisted in DB instead of localStorage
   aiChatEnabled?: boolean; // Persisted in DB instead of localStorage
   footerLinks?: { label: string; url: string }[];
-  adSenseEnabled?: boolean;
-  adSenseClientId?: string;
   amazonAssociatesId?: string;
   cjWebsiteId?: string; // CJ Publisher ID (PID)
   customPages?: CustomPage[];

@@ -226,22 +226,27 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
         console.log(`Supabase Auth Event: ${event}`);
 
         if (session?.user) {
+            // OPTIMISTIC UPDATE: Give UI an immediate dummy profile so login feels instant
+            const initialName = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User';
+            const initialRole = session.user.email === 'admin@demo.com' ? 'admin' : 'user';
+            callback(mapUser(session.user, { role: initialRole, wishlist: [], name: initialName }));
+
             try {
+                // Background fetch for real profile/wishlist
                 const profile = await getUserProfile(session.user.id, session.user);
                 if (!profile && session.user.email) {
-                    const name = session.user.user_metadata?.name || session.user.email.split('@')[0] || 'User';
-                    await createUserProfile(session.user.id, session.user.email, name);
-                    const initialRole = session.user.email === 'admin@demo.com' ? 'admin' : 'user';
-                    callback(mapUser(session.user, { role: initialRole, wishlist: [], name }));
+                    await createUserProfile(session.user.id, session.user.email, initialName);
                 } else if (profile) {
                     if (session.user.email === 'admin@demo.com' && profile.role !== 'admin') {
                         try { await updateUserRole(profile.uid, 'admin'); } catch (e) { }
                         profile.role = 'admin';
                     }
+                    // RE-UPDATE UI with the real data (wishlist)
                     callback(profile);
                 }
             } catch (e) {
-                callback(mapUser(session.user, { role: 'user', wishlist: [], name: 'User' }));
+                // If it fails, fallback was already provided above
+                console.warn("Background profile fetch failed in auth listener", e);
             }
         } else {
             callback(null);
@@ -592,6 +597,9 @@ export const saveSiteContent = async (content: SiteContent) => {
         console.error("Failed to SAVE site content to DB:", error.message);
         throw error;
     }
+
+    // Update cache when we save, so we don't serve stale data for 30mins
+    saveToCache(CACHE_KEYS.siteContent, content);
 };
 
 export const seedDatabase = async (products: Product[], posts: BlogPost[], content: SiteContent) => {

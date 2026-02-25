@@ -55,9 +55,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
+    // --- Data Loading: Initial Sync Cache ---
+    // Loading from cache directly into state on first render prevents blank flashes
+    const [initialCachedProducts] = useState(() => CacheService.loadProducts() || []);
+    const [initialCachedBlogs] = useState(() => CacheService.loadBlogs() || []);
+    const [initialCachedContent] = useState(() => CacheService.loadContent() || null);
+
     // --- Hooks ---
     const auth = useAuth();
-    const content = useSiteContent(auth.user?.role);
+    const content = useSiteContent(auth.user?.role, initialCachedContent);
 
     // Database Status State - Driven by connectionManager
     const [dbStatus, setDbStatus] = useState<ConnectionStatus>(connectionManager.getState().status);
@@ -99,25 +105,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return () => clearInterval(heartbeat);
     }, []);
 
-    // We initialize hooks with empty data, then populate via loadData
-    const products = useProducts(dbStatus, auth.user?.role, content.siteContent.categories);
-    const blog = useBlogPosts();
-
-    // --- Data Loading ---
-    // Initialize with data from memory quickly if we have it!
-    useEffect(() => {
-        const cachedProducts = CacheService.loadProducts();
-        const cachedBlogs = CacheService.loadBlogs();
-        const cachedContent = CacheService.loadContent();
-
-        if (cachedProducts) products.setProducts(cachedProducts);
-        else products.setProducts([]);
-
-        if (cachedBlogs) blog.setBlogPosts(cachedBlogs);
-        else blog.setBlogPosts([]);
-
-        if (cachedContent) content.setLiveSiteContent(cachedContent);
-    }, []); // Run once on mount
+    // We initialize hooks with initial cached data so UI renders immediately
+    const products = useProducts(dbStatus, auth.user?.role, content.siteContent.categories, initialCachedProducts);
+    const blog = useBlogPosts(initialCachedBlogs);
 
     // Background data hydration (non-blocking)
     useEffect(() => {

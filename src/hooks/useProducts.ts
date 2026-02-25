@@ -6,8 +6,8 @@ import toast from 'react-hot-toast';
 
 import { ConnectionStatus } from '../../services/connectionManager';
 
-export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, initialCategories: string[] = []) => {
-    const [products, setProducts] = useState<Product[]>([]);
+export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, initialCategories: string[] = [], initialData: Product[] = []) => {
+    const [products, setProducts] = useState<Product[]>(initialData);
     const [isPending, startTransition] = useTransition();
 
     // Categories merged from master list + actual products in DB

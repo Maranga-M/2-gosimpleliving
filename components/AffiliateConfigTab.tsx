@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Plus, Trash2, Code, CheckCircle, Eye, EyeOff, Copy, ExternalLink } from 'lucide-react';
+import { Save, Plus, Trash2, Code, CheckCircle, Eye, EyeOff, Copy, ExternalLink, TrendingUp } from 'lucide-react';
 import { AffiliateConfig, TrackingCode } from '../types';
 import { Button } from './Button';
 import { AffiliateNetworkManager } from './AffiliateNetworkManager';
@@ -263,6 +263,43 @@ export const AffiliateConfigTab: React.FC<AffiliateConfigTabProps> = ({ config, 
                             onChange={(e) => setLocalConfig({ ...localConfig, bingSiteVerification: e.target.value })}
                             placeholder="Enter verification code"
                             className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 dark:text-white"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Monetization / AdSense */}
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-xl">
+                        <TrendingUp size={24} />
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white">Google AdSense</h3>
+                        <p className="text-xs text-slate-500">Inject adsbygoogle.js globally</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={localConfig.adSenseEnabled || false}
+                            onChange={(e) => setLocalConfig({ ...localConfig, adSenseEnabled: e.target.checked })}
+                            className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-green-600"></div>
+                    </label>
+                </div>
+
+                <div className="space-y-3">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                            Publisher Client ID
+                        </label>
+                        <input
+                            type="text"
+                            value={localConfig.adSenseClientId || ''}
+                            onChange={(e) => setLocalConfig({ ...localConfig, adSenseClientId: e.target.value })}
+                            placeholder="ca-pub-xxxxxxxxxxxxxxxx"
+                            className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-green-500 dark:text-white"
                         />
                     </div>
                 </div>

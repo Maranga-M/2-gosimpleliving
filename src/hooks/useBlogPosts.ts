@@ -3,8 +3,8 @@ import { BlogPost } from '../../types';
 import { dbService } from '../../services/database';
 import toast from 'react-hot-toast';
 
-export const useBlogPosts = () => {
-    const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+export const useBlogPosts = (initialData: BlogPost[] = []) => {
+    const [blogPosts, setBlogPosts] = useState<BlogPost[]>(initialData);
 
     const publishedBlogPosts = useMemo(() => {
         return blogPosts.filter(b => b.status === 'published');

@@ -3,9 +3,9 @@ import { SiteContent } from '../../types';
 import { INITIAL_SITE_CONTENT } from '../../constants';
 import { dbService } from '../../services/database';
 
-export const useSiteContent = (userRole?: string) => {
-    const [liveSiteContent, setLiveSiteContent] = useState<SiteContent>(INITIAL_SITE_CONTENT);
-    const [previewSiteContent, setPreviewSiteContent] = useState<SiteContent>(INITIAL_SITE_CONTENT);
+export const useSiteContent = (userRole?: string, initialData?: SiteContent | null) => {
+    const [liveSiteContent, setLiveSiteContent] = useState<SiteContent>(initialData || INITIAL_SITE_CONTENT);
+    const [previewSiteContent, setPreviewSiteContent] = useState<SiteContent>(initialData || INITIAL_SITE_CONTENT);
     const [isPreviewing, setIsPreviewing] = useState(false);
 
     const siteContent = useMemo(() => {

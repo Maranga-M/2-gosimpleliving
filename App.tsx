@@ -112,6 +112,18 @@ const AppContent: React.FC = () => {
   // Removed blocking skeleton - app now renders immediately with fallback data
   // Database hydration happens in background (optimistic UI pattern)
 
+  // Wait for initial database load ONLY for brand new users without cached data
+  if (dbStatus === 'loading' && products.products.length === 0 && !siteContent.heroTitle) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+          <p className="text-sm font-medium text-slate-500">Loading your content...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 transition-all duration-300`}>
 
@@ -304,6 +316,8 @@ const AppContent: React.FC = () => {
             onRemove={toggleWishlist}
             onGoHome={() => setCurrentView('home')}
             uiText={siteContent.uiText}
+            themeColor={siteContent.themeColor}
+            affiliateConfig={siteContent.affiliateConfig}
           />
         )}
 
@@ -316,6 +330,8 @@ const AppContent: React.FC = () => {
                 onOpenProduct={(p: Product) => setSelectedProduct(p)}
                 onGoHome={() => setCurrentView('home')}
                 onRecordClick={trackProductClick}
+                themeColor={siteContent.themeColor}
+                affiliateConfig={siteContent.affiliateConfig}
               />
             </Suspense>
           </ErrorBoundary>

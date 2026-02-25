@@ -1342,92 +1342,59 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     </div>
                                 </div>
 
-                                {/* Monetization / AdSense */}
-                                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 text-green-600"><TrendingUp size={18} /> Monetization (AdSense)</h3>
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
-                                            <div>
-                                                <p className="font-semibold text-sm text-slate-800 dark:text-white">Enable Google AdSense</p>
-                                                <p className="text-xs text-slate-500">Injects adsbygoogle.js into the page head.</p>
-                                            </div>
-                                            <button
-                                                onClick={() => setDraftContent({ ...draftContent, adSenseEnabled: !draftContent.adSenseEnabled })}
-                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${draftContent.adSenseEnabled ? 'bg-green-500' : 'bg-slate-300'}`}
-                                            >
-                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${draftContent.adSenseEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                                            </button>
+                                {/* Styles */}
+                                <div className="space-y-6">
+                                    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 text-rose-500"><Palette size={18} /> Visual Theme</h3>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {colorOptions.map((opt) => (
+                                                <button key={opt.id} onClick={() => setDraftContent({ ...draftContent, themeColor: opt.id })} className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${draftContent.themeColor === opt.id ? 'border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800' : 'border-transparent bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                                                    <div className={`w-4 h-4 rounded-full ${opt.bg}`} />
+                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{opt.label}</span>
+                                                </button>
+                                            ))}
                                         </div>
+                                    </div>
 
-                                        {draftContent.adSenseEnabled && (
-                                            <div className="animate-in slide-in-from-top-2">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Publisher Client ID</label>
-                                                <input type="text" value={draftContent.adSenseClientId || ''} onChange={(e) => setDraftContent({ ...draftContent, adSenseClientId: e.target.value })} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white" placeholder="ca-pub-xxxxxxxxxxxxxxxx" />
-                                            </div>
-                                        )}
+                                    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 text-emerald-500"><Calendar size={18} /> Seasonal Overlay</h3>
+                                        <div className="space-y-2">
+                                            {seasonOptions.map((s) => (
+                                                <button key={s.id} onClick={() => setDraftContent({ ...draftContent, season: s.id })} className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${draftContent.season === s.id ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-900 dark:text-emerald-100' : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
+                                                    <span className="text-sm font-medium">{s.label}</span>
+                                                    <span className="text-lg">{s.emoji}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
 
-                                        <div className="mt-4 flex justify-end">
-                                            <Button size="sm" onClick={() => handleSaveSection('Monetization')} className="gap-2">
-                                                <Save size={16} /> Save Settings
+                                    {/* Preview & Publish Actions */}
+                                    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg border-t-4 border-t-amber-500">
+                                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2"><Sparkles size={18} className="text-amber-500" /> Theme Actions</h3>
+                                        <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+                                            Preview changes live on the site before publishing. Published changes will be visible to all visitors.
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => onStartPreview(draftContent)}
+                                                className="w-full flex items-center justify-center gap-2 border-slate-300 hover:bg-slate-50"
+                                            >
+                                                <Eye size={16} /> Live Preview
+                                            </Button>
+                                            <Button
+                                                onClick={() => handleSaveSection('Theme & Visuals')}
+                                                className="w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white"
+                                            >
+                                                <CloudUpload size={16} /> Publish Changes
                                             </Button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Styles */}
-                            <div className="space-y-6">
-                                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 text-rose-500"><Palette size={18} /> Visual Theme</h3>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {colorOptions.map((opt) => (
-                                            <button key={opt.id} onClick={() => setDraftContent({ ...draftContent, themeColor: opt.id })} className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${draftContent.themeColor === opt.id ? 'border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800' : 'border-transparent bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-                                                <div className={`w-4 h-4 rounded-full ${opt.bg}`} />
-                                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{opt.label}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 text-emerald-500"><Calendar size={18} /> Seasonal Overlay</h3>
-                                    <div className="space-y-2">
-                                        {seasonOptions.map((s) => (
-                                            <button key={s.id} onClick={() => setDraftContent({ ...draftContent, season: s.id })} className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${draftContent.season === s.id ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-900 dark:text-emerald-100' : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
-                                                <span className="text-sm font-medium">{s.label}</span>
-                                                <span className="text-lg">{s.emoji}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Preview & Publish Actions */}
-                                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg border-t-4 border-t-amber-500">
-                                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2"><Sparkles size={18} className="text-amber-500" /> Theme Actions</h3>
-                                    <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                                        Preview changes live on the site before publishing. Published changes will be visible to all visitors.
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => onStartPreview(draftContent)}
-                                            className="w-full flex items-center justify-center gap-2 border-slate-300 hover:bg-slate-50"
-                                        >
-                                            <Eye size={16} /> Live Preview
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleSaveSection('Theme & Visuals')}
-                                            className="w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white"
-                                        >
-                                            <CloudUpload size={16} /> Publish Changes
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
-                )
-            }
+                )}
 
             {activeTab === 'config' && <UserManagement />}
 
@@ -1444,179 +1411,182 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     config={liveSiteContent.affiliateConfig || {}}
                     onSave={handleSaveAffiliateConfig}
                 />
-            )}
+            )
+            }
 
-            {activeTab === 'pages' && (
-                <div className="animate-in fade-in duration-300">
-                    {editingPage ? (
-                        // FORM VIEW
-                        <div>
-                            <button onClick={() => setEditingPage(null)} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 mb-6"><ArrowLeft size={14} /> Back to Pages</button>
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{editingPage.title ? 'Edit Page' : 'Create Custom Page'}</h2>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Title</label><input type="text" value={editingPage.title} onChange={e => handlePageFormChange('title', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" placeholder="e.g. Best Travel Gadgets 2024" /></div>
-                                        <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">URL Slug</label><input type="text" value={editingPage.slug} onChange={e => handlePageFormChange('slug', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" placeholder="e.g. travel-gadgets" /></div>
-                                    </div>
+            {
+                activeTab === 'pages' && (
+                    <div className="animate-in fade-in duration-300">
+                        {editingPage ? (
+                            // FORM VIEW
+                            <div>
+                                <button onClick={() => setEditingPage(null)} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 mb-6"><ArrowLeft size={14} /> Back to Pages</button>
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{editingPage.title ? 'Edit Page' : 'Create Custom Page'}</h2>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Title</label><input type="text" value={editingPage.title} onChange={e => handlePageFormChange('title', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" placeholder="e.g. Best Travel Gadgets 2024" /></div>
+                                            <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">URL Slug</label><input type="text" value={editingPage.slug} onChange={e => handlePageFormChange('slug', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" placeholder="e.g. travel-gadgets" /></div>
+                                        </div>
 
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-1">
-                                            SEO Source Material / Ideas <Sparkles size={12} className="text-purple-500" />
-                                        </label>
-                                        <TipTapEditor
-                                            key={`page-seo-${editingPage.id}`}
-                                            value={editingPage.seoInput || ''}
-                                            onChange={val => handlePageFormChange('seoInput', val)}
-                                            onOpenLinkPicker={(editor) => handleOpenLinkPicker('tiptap', editor)}
-                                            placeholder="Paste raw notes, product features, or content you want the AI to optimize for SEO..."
-                                            minHeight="150px"
-                                            className="border-purple-200 dark:border-purple-900/30"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Final Content (Markdown)</label>
-                                        <TipTapEditor
-                                            key={`page-content-${editingPage.id}`}
-                                            value={editingPage.content || ''}
-                                            onChange={val => handlePageFormChange('content', val)}
-                                            onOpenLinkPicker={(editor) => handleOpenLinkPicker('tiptap', editor)}
-                                            comparisonTables={editingPage.comparisonTables || []}
-                                            minHeight="500px"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-6">
-                                    {/* Hero Image */}
-                                    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                        <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><ImageIcon size={18} className="text-blue-500" /> Hero Banner Image</h3>
-                                        <MediaManager currentImageUrl={editingPage.heroImageUrl || ''} onImageSelect={(url) => handlePageFormChange('heroImageUrl', url)} />
-                                        <p className="mt-2 text-[10px] text-slate-400 italic">Optional full-width banner image for the page.</p>
-                                    </div>
-
-                                    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                        <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><Sparkles size={18} className="text-purple-500" /> AI Tools</h3>
-                                        <Button onClick={handleGeneratePageContent} disabled={isGeneratingPage} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
-                                            {isGeneratingPage ? <Loader2 size={16} className="animate-spin mr-2" /> : <Wand2 size={16} className="mr-2" />}
-                                            {isGeneratingPage ? 'Generating...' : 'AI Generate SEO Content'}
-                                        </Button>
-                                        <p className="mt-2 text-[10px] text-slate-400 italic text-center">Uses Affiliate SEO Vibe Prompt logic</p>
-                                    </div>
-                                    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                        <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><Package size={18} className="text-amber-500" /> Linked Products</h3>
-                                        <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
-                                            {products.map(p => (
-                                                <label key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer">
-                                                    <input type="checkbox" checked={editingPage.linkedProductIds?.includes(p.id)} onChange={() => handleTogglePageProductLink(p.id)} className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500" />
-                                                    <img src={p.image} className="w-8 h-8 rounded-md object-cover" />
-                                                    <span className="text-sm text-slate-700 dark:text-slate-300 line-clamp-1">{p.title}</span>
-                                                </label>
-                                            ))}
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-1">
+                                                SEO Source Material / Ideas <Sparkles size={12} className="text-purple-500" />
+                                            </label>
+                                            <TipTapEditor
+                                                key={`page-seo-${editingPage.id}`}
+                                                value={editingPage.seoInput || ''}
+                                                onChange={val => handlePageFormChange('seoInput', val)}
+                                                onOpenLinkPicker={(editor) => handleOpenLinkPicker('tiptap', editor)}
+                                                placeholder="Paste raw notes, product features, or content you want the AI to optimize for SEO..."
+                                                minHeight="150px"
+                                                className="border-purple-200 dark:border-purple-900/30"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Final Content (Markdown)</label>
+                                            <TipTapEditor
+                                                key={`page-content-${editingPage.id}`}
+                                                value={editingPage.content || ''}
+                                                onChange={val => handlePageFormChange('content', val)}
+                                                onOpenLinkPicker={(editor) => handleOpenLinkPicker('tiptap', editor)}
+                                                comparisonTables={editingPage.comparisonTables || []}
+                                                minHeight="500px"
+                                            />
                                         </div>
                                     </div>
-
-                                    {/* Comparison Tables Builder */}
-                                    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                        <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><List size={18} className="text-teal-500" /> Comparison Tables</h3>
-                                        <ComparisonTableBuilder
-                                            tables={editingPage.comparisonTables || []}
-                                            products={products}
-                                            onChange={(tables) => handlePageFormChange('comparisonTables', tables)}
-                                        />
-                                    </div>
-
-                                    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                        <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><Save size={18} className="text-green-500" /> Actions</h3>
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <label className="text-sm text-slate-600 dark:text-slate-400">Status:</label>
-                                                <select value={editingPage.status} onChange={e => handlePageFormChange('status', e.target.value)} className="text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 outline-none dark:text-white">
-                                                    <option value="draft">Draft</option>
-                                                    <option value="published">Published</option>
-                                                </select>
-                                            </div>
-
-                                            {/* Navigation Toggle */}
-                                            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 mb-2">
-                                                <label className="flex items-center justify-between cursor-pointer">
-                                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Show in Navigation Menu</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handlePageFormChange('showInNav', !editingPage.showInNav)}
-                                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${editingPage.showInNav ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'}`}
-                                                    >
-                                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editingPage.showInNav ? 'translate-x-6' : 'translate-x-1'}`} />
-                                                    </button>
-                                                </label>
-                                                {editingPage.showInNav && (
-                                                    <div className="mt-3">
-                                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Menu Order</label>
-                                                        <input
-                                                            type="number"
-                                                            value={editingPage.navOrder || 0}
-                                                            onChange={e => handlePageFormChange('navOrder', parseInt(e.target.value) || 0)}
-                                                            className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white"
-                                                            placeholder="0 = first, higher = later"
-                                                        />
-                                                        <p className="text-[10px] text-slate-400 mt-1">Lower numbers appear first in menu</p>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <Button onClick={handleSavePage} className="w-full">Save Page</Button>
-                                            <Button variant="ghost" onClick={() => setEditingPage(null)} className="text-slate-500">Cancel</Button>
+                                    <div className="space-y-6">
+                                        {/* Hero Image */}
+                                        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                            <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><ImageIcon size={18} className="text-blue-500" /> Hero Banner Image</h3>
+                                            <MediaManager currentImageUrl={editingPage.heroImageUrl || ''} onImageSelect={(url) => handlePageFormChange('heroImageUrl', url)} />
+                                            <p className="mt-2 text-[10px] text-slate-400 italic">Optional full-width banner image for the page.</p>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        // LIST VIEW
-                        <div>
-                            <div className="flex items-center justify-between mb-6">
-                                <div><h2 className="text-2xl font-bold text-slate-900 dark:text-white">Custom Landing Pages</h2><p className="text-sm text-slate-500">Create specialized affiliate storefronts.</p></div>
-                                <Button size="sm" onClick={startAddPage} className="gap-2"><Plus size={16} /> New Custom Page</Button>
-                            </div>
-                            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase font-semibold text-slate-500 dark:text-slate-400">
-                                        <tr><th className="px-6 py-4">Status</th><th className="px-6 py-4">Title & Slug</th><th className="px-6 py-4">Linked</th><th className="px-6 py-4 text-right">Actions</th></tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                        {(liveSiteContent.customPages || [])
-                                            .map(page => (
-                                                <tr key={page.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                                    <td className="px-6 py-4">{getStatusBadge(page.status)}</td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="font-bold text-slate-900 dark:text-white">{page.title}</div>
-                                                        <div className="text-xs text-slate-500 font-mono">/p/{page.slug}</div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-slate-500">{page.linkedProductIds?.length || 0} Products</td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <a href={`/p/${page.slug}`} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"><ExternalLink size={18} /></a>
-                                                            <button onClick={() => handleDuplicatePage(page)} className="p-2 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg" title="Duplicate"><Copy size={18} /></button>
-                                                            <button onClick={() => startEditPage(page)} className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg"><Edit2 size={18} /></button>
-                                                            <button onClick={() => handleDeletePageInternal(page.id, page.title)} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={18} /></button>
+
+                                        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                            <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><Sparkles size={18} className="text-purple-500" /> AI Tools</h3>
+                                            <Button onClick={handleGeneratePageContent} disabled={isGeneratingPage} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                                                {isGeneratingPage ? <Loader2 size={16} className="animate-spin mr-2" /> : <Wand2 size={16} className="mr-2" />}
+                                                {isGeneratingPage ? 'Generating...' : 'AI Generate SEO Content'}
+                                            </Button>
+                                            <p className="mt-2 text-[10px] text-slate-400 italic text-center">Uses Affiliate SEO Vibe Prompt logic</p>
+                                        </div>
+                                        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                            <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><Package size={18} className="text-amber-500" /> Linked Products</h3>
+                                            <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                                                {products.map(p => (
+                                                    <label key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer">
+                                                        <input type="checkbox" checked={editingPage.linkedProductIds?.includes(p.id)} onChange={() => handleTogglePageProductLink(p.id)} className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500" />
+                                                        <img src={p.image} className="w-8 h-8 rounded-md object-cover" />
+                                                        <span className="text-sm text-slate-700 dark:text-slate-300 line-clamp-1">{p.title}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Comparison Tables Builder */}
+                                        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                            <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><List size={18} className="text-teal-500" /> Comparison Tables</h3>
+                                            <ComparisonTableBuilder
+                                                tables={editingPage.comparisonTables || []}
+                                                products={products}
+                                                onChange={(tables) => handlePageFormChange('comparisonTables', tables)}
+                                            />
+                                        </div>
+
+                                        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                            <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><Save size={18} className="text-green-500" /> Actions</h3>
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <label className="text-sm text-slate-600 dark:text-slate-400">Status:</label>
+                                                    <select value={editingPage.status} onChange={e => handlePageFormChange('status', e.target.value)} className="text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 outline-none dark:text-white">
+                                                        <option value="draft">Draft</option>
+                                                        <option value="published">Published</option>
+                                                    </select>
+                                                </div>
+
+                                                {/* Navigation Toggle */}
+                                                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 mb-2">
+                                                    <label className="flex items-center justify-between cursor-pointer">
+                                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Show in Navigation Menu</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handlePageFormChange('showInNav', !editingPage.showInNav)}
+                                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${editingPage.showInNav ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                                                        >
+                                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editingPage.showInNav ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                        </button>
+                                                    </label>
+                                                    {editingPage.showInNav && (
+                                                        <div className="mt-3">
+                                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Menu Order</label>
+                                                            <input
+                                                                type="number"
+                                                                value={editingPage.navOrder || 0}
+                                                                onChange={e => handlePageFormChange('navOrder', parseInt(e.target.value) || 0)}
+                                                                className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white"
+                                                                placeholder="0 = first, higher = later"
+                                                            />
+                                                            <p className="text-[10px] text-slate-400 mt-1">Lower numbers appear first in menu</p>
                                                         </div>
+                                                    )}
+                                                </div>
+
+                                                <Button onClick={handleSavePage} className="w-full">Save Page</Button>
+                                                <Button variant="ghost" onClick={() => setEditingPage(null)} className="text-slate-500">Cancel</Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            // LIST VIEW
+                            <div>
+                                <div className="flex items-center justify-between mb-6">
+                                    <div><h2 className="text-2xl font-bold text-slate-900 dark:text-white">Custom Landing Pages</h2><p className="text-sm text-slate-500">Create specialized affiliate storefronts.</p></div>
+                                    <Button size="sm" onClick={startAddPage} className="gap-2"><Plus size={16} /> New Custom Page</Button>
+                                </div>
+                                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase font-semibold text-slate-500 dark:text-slate-400">
+                                            <tr><th className="px-6 py-4">Status</th><th className="px-6 py-4">Title & Slug</th><th className="px-6 py-4">Linked</th><th className="px-6 py-4 text-right">Actions</th></tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                            {(liveSiteContent.customPages || [])
+                                                .map(page => (
+                                                    <tr key={page.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                                        <td className="px-6 py-4">{getStatusBadge(page.status)}</td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="font-bold text-slate-900 dark:text-white">{page.title}</div>
+                                                            <div className="text-xs text-slate-500 font-mono">/p/{page.slug}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-slate-500">{page.linkedProductIds?.length || 0} Products</td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                <a href={`/p/${page.slug}`} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"><ExternalLink size={18} /></a>
+                                                                <button onClick={() => handleDuplicatePage(page)} className="p-2 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg" title="Duplicate"><Copy size={18} /></button>
+                                                                <button onClick={() => startEditPage(page)} className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg"><Edit2 size={18} /></button>
+                                                                <button onClick={() => handleDeletePageInternal(page.id, page.title)} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={18} /></button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            {(!liveSiteContent.customPages || liveSiteContent.customPages.length === 0) && (
+                                                <tr>
+                                                    <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
+                                                        No custom pages created yet. Click "New Custom Page" to get started.
                                                     </td>
                                                 </tr>
-                                            ))}
-                                        {(!liveSiteContent.customPages || liveSiteContent.customPages.length === 0) && (
-                                            <tr>
-                                                <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
-                                                    No custom pages created yet. Click "New Custom Page" to get started.
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
-                    )
-                    }
-                </div >
-            )}
+                        )
+                        }
+                    </div >
+                )
+            }
 
             {
                 activeTab === 'content' && (
@@ -1820,124 +1790,128 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 )
             }
 
-            {activeTab === 'offers' && (
-                <AdminOffers
-                    siteContent={liveSiteContent}
-                    onUpdateSiteContent={(key, value) => {
-                        if (onUpdateSiteContent) {
-                            onUpdateSiteContent({ ...liveSiteContent, [key]: value });
-                        }
-                    }}
-                    onSaveChanges={async () => {
-                        if (onSaveChanges) {
-                            await onSaveChanges(liveSiteContent);
-                        }
-                    }}
-                    themeColor={liveSiteContent.themeColor}
-                />
-            )}
+            {
+                activeTab === 'offers' && (
+                    <AdminOffers
+                        siteContent={liveSiteContent}
+                        onUpdateSiteContent={(key, value) => {
+                            if (onUpdateSiteContent) {
+                                onUpdateSiteContent({ ...liveSiteContent, [key]: value });
+                            }
+                        }}
+                        onSaveChanges={async () => {
+                            if (onSaveChanges) {
+                                await onSaveChanges(liveSiteContent);
+                            }
+                        }}
+                        themeColor={liveSiteContent.themeColor}
+                    />
+                )
+            }
 
 
             {/* Connection Diagnostics Modal */}
-            {showDiagnostics && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowDiagnostics(false)}>
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-2xl p-6 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-xl ${diagnosticsResult?.success ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-red-100 dark:bg-red-900/30 text-red-600'}`}>
-                                    <Activity size={24} />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Connection Diagnostics</h3>
-                                    <p className="text-sm text-slate-500">Database health check results</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setShowDiagnostics(false)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        {diagnosticsLoading ? (
-                            <div className="flex items-center justify-center py-12">
-                                <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
-                            </div>
-                        ) : diagnosticsResult ? (
-                            <div className="space-y-4">
-                                {/* Overall Status */}
-                                <div className={`p-4 rounded-xl border ${diagnosticsResult.success ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'}`}>
-                                    <p className={`font-bold ${diagnosticsResult.success ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
-                                        {diagnosticsResult.success ? '✅ Connection Successful' : '❌ Connection Failed'}
-                                    </p>
-                                    {diagnosticsResult.errorMessage && (
-                                        <p className="text-sm mt-2 opacity-90">{diagnosticsResult.errorMessage}</p>
-                                    )}
-                                </div>
-
-                                {/* Error Type */}
-                                {diagnosticsResult.errorType && (
-                                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Error Category</p>
-                                        <p className="text-sm font-medium text-slate-900 dark:text-white">
-                                            {diagnosticsResult.errorType === 'network' && '🌐 Network Error'}
-                                            {diagnosticsResult.errorType === 'auth' && '🔐 Authentication Error'}
-                                            {diagnosticsResult.errorType === 'schema' && '📋 Schema/Table Error'}
-                                            {diagnosticsResult.errorType === 'timeout' && '⏱️ Timeout Error'}
-                                            {diagnosticsResult.errorType === 'unknown' && '❓ Unknown Error'}
-                                        </p>
+            {
+                showDiagnostics && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowDiagnostics(false)}>
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-2xl p-6 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-xl ${diagnosticsResult?.success ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-red-100 dark:bg-red-900/30 text-red-600'}`}>
+                                        <Activity size={24} />
                                     </div>
-                                )}
+                                    <div>
+                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Connection Diagnostics</h3>
+                                        <p className="text-sm text-slate-500">Database health check results</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setShowDiagnostics(false)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                    <X size={20} />
+                                </button>
+                            </div>
 
-                                {/* Detailed Checks */}
-                                {diagnosticsResult.details && (
-                                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Detailed Checks</p>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm text-slate-700 dark:text-slate-300">Database Reachable</span>
-                                                <span className={`text-sm font-bold ${diagnosticsResult.details.canReachDatabase ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {diagnosticsResult.details.canReachDatabase ? '✓ Yes' : '✗ No'}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm text-slate-700 dark:text-slate-300">Valid Credentials</span>
-                                                <span className={`text-sm font-bold ${diagnosticsResult.details.hasValidCredentials ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {diagnosticsResult.details.hasValidCredentials ? '✓ Yes' : '✗ No'}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm text-slate-700 dark:text-slate-300">Site Content Table</span>
-                                                <span className={`text-sm font-bold ${diagnosticsResult.details.hasSiteContentTable ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {diagnosticsResult.details.hasSiteContentTable ? '✓ Exists' : '✗ Missing'}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm text-slate-700 dark:text-slate-300">Products Table</span>
-                                                <span className={`text-sm font-bold ${diagnosticsResult.details.hasProductsTable ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {diagnosticsResult.details.hasProductsTable ? '✓ Exists' : '✗ Missing'}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm text-slate-700 dark:text-slate-300">Posts Table</span>
-                                                <span className={`text-sm font-bold ${diagnosticsResult.details.hasPostsTable ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {diagnosticsResult.details.hasPostsTable ? '✓ Exists' : '✗ Missing'}
-                                                </span>
+                            {diagnosticsLoading ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                                </div>
+                            ) : diagnosticsResult ? (
+                                <div className="space-y-4">
+                                    {/* Overall Status */}
+                                    <div className={`p-4 rounded-xl border ${diagnosticsResult.success ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'}`}>
+                                        <p className={`font-bold ${diagnosticsResult.success ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+                                            {diagnosticsResult.success ? '✅ Connection Successful' : '❌ Connection Failed'}
+                                        </p>
+                                        {diagnosticsResult.errorMessage && (
+                                            <p className="text-sm mt-2 opacity-90">{diagnosticsResult.errorMessage}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Error Type */}
+                                    {diagnosticsResult.errorType && (
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Error Category</p>
+                                            <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                                {diagnosticsResult.errorType === 'network' && '🌐 Network Error'}
+                                                {diagnosticsResult.errorType === 'auth' && '🔐 Authentication Error'}
+                                                {diagnosticsResult.errorType === 'schema' && '📋 Schema/Table Error'}
+                                                {diagnosticsResult.errorType === 'timeout' && '⏱️ Timeout Error'}
+                                                {diagnosticsResult.errorType === 'unknown' && '❓ Unknown Error'}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Detailed Checks */}
+                                    {diagnosticsResult.details && (
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Detailed Checks</p>
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm text-slate-700 dark:text-slate-300">Database Reachable</span>
+                                                    <span className={`text-sm font-bold ${diagnosticsResult.details.canReachDatabase ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {diagnosticsResult.details.canReachDatabase ? '✓ Yes' : '✗ No'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm text-slate-700 dark:text-slate-300">Valid Credentials</span>
+                                                    <span className={`text-sm font-bold ${diagnosticsResult.details.hasValidCredentials ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {diagnosticsResult.details.hasValidCredentials ? '✓ Yes' : '✗ No'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm text-slate-700 dark:text-slate-300">Site Content Table</span>
+                                                    <span className={`text-sm font-bold ${diagnosticsResult.details.hasSiteContentTable ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {diagnosticsResult.details.hasSiteContentTable ? '✓ Exists' : '✗ Missing'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm text-slate-700 dark:text-slate-300">Products Table</span>
+                                                    <span className={`text-sm font-bold ${diagnosticsResult.details.hasProductsTable ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {diagnosticsResult.details.hasProductsTable ? '✓ Exists' : '✗ Missing'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm text-slate-700 dark:text-slate-300">Posts Table</span>
+                                                    <span className={`text-sm font-bold ${diagnosticsResult.details.hasPostsTable ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {diagnosticsResult.details.hasPostsTable ? '✓ Exists' : '✗ Missing'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                {/* Action Buttons */}
-                                <div className="flex justify-end gap-3 pt-4">
-                                    <Button variant="ghost" onClick={() => setShowDiagnostics(false)}>Close</Button>
-                                    <Button onClick={handleTestConnection} disabled={diagnosticsLoading} className="bg-purple-600 hover:bg-purple-700 text-white">
-                                        <RefreshCw size={16} className="mr-2" /> Run Again
-                                    </Button>
+                                    {/* Action Buttons */}
+                                    <div className="flex justify-end gap-3 pt-4">
+                                        <Button variant="ghost" onClick={() => setShowDiagnostics(false)}>Close</Button>
+                                        <Button onClick={handleTestConnection} disabled={diagnosticsLoading} className="bg-purple-600 hover:bg-purple-700 text-white">
+                                            <RefreshCw size={16} className="mr-2" /> Run Again
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
-                        ) : null}
+                            ) : null}
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Link Picker Modal */}
             <LinkPickerModal
