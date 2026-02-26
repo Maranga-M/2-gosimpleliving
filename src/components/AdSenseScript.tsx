@@ -4,7 +4,8 @@ import { useApp } from '../contexts/AppContext';
 export const AdSenseScript: React.FC = () => {
     const { content } = useApp();
     const { siteContent } = content;
-    const { adSenseEnabled, adSenseClientId } = siteContent;
+    const adSenseEnabled = siteContent.affiliateConfig?.adSenseEnabled;
+    const adSenseClientId = siteContent.affiliateConfig?.adSenseClientId;
 
     useEffect(() => {
         // If disabled or no client ID, do nothing (or potentially remove script if we supported disabling)

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, User, Search, X, Share2, Check } from 'lucide-react';
-import { BlogPost, Product } from '../types';
+import { BlogPost, Product, ThemeColor, AffiliateConfig } from '../types';
 import { ProductCard } from './ProductCard';
 import { Button } from './Button';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -12,9 +12,11 @@ interface BlogPageProps {
     onOpenProduct: (product: Product) => void;
     onGoHome: () => void;
     onRecordClick?: (productId: string) => void;
+    themeColor?: ThemeColor;
+    affiliateConfig?: AffiliateConfig;
 }
 
-export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProduct, onGoHome, onRecordClick }) => {
+export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProduct, onGoHome, onRecordClick, themeColor, affiliateConfig }) => {
     const [activePost, setActivePost] = useState<BlogPost | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [copied, setCopied] = useState(false);
@@ -123,6 +125,8 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
                                     product={product}
                                     onOpenDetails={onOpenProduct}
                                     onRecordClick={onRecordClick}
+                                    themeColor={themeColor}
+                                    affiliateConfig={affiliateConfig}
                                 />
                             ))}
                         </div>

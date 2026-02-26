@@ -195,8 +195,10 @@ const mapUser = (sbUser: any, profile: any): User => ({
 export const authStateChanged = (callback: (user: User | null) => void) => {
     if (!supabase) {
         callback(null);
-        return () => { }; // Return a no-op unsubscribe function
+        return () => { };
     }
+
+    let initialCheckDone = false;
 
     // 1. Immediately check for existing session to prevent "guest flash" on refresh
     const initSession = async () => {
@@ -205,17 +207,21 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
             if (session?.user) {
                 const profile = await getUserProfile(session.user.id, session.user);
                 if (profile) {
+                    initialCheckDone = true;
                     callback(profile);
                 } else if (session.user.email) {
-                    // Fallback to basic user mapping if profile fetch fails
+                    initialCheckDone = true;
                     callback(mapUser(session.user, { role: 'user', wishlist: [], name: 'User' }));
                 }
             } else {
-                // If no session, wait for listener or explicitly set null if needed
-                // But usually better to wait for listener to be sure.
+                // Explicitly signal no session if we checked and found nothing
+                initialCheckDone = true;
+                callback(null);
             }
         } catch (e) {
             console.warn("Initial session check failed:", e);
+            initialCheckDone = true;
+            callback(null);
         }
     };
 
@@ -225,14 +231,21 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         console.log(`Supabase Auth Event: ${event}`);
 
+        // If it's the initial check and we already handled it in initSession, skip redundant callback
+        // This prevents double updates on first load
+        if (event === 'INITIAL_SESSION' && initialCheckDone) {
+            return;
+        }
+
         if (session?.user) {
+            // Background fetch for real profile/wishlist
             try {
                 const profile = await getUserProfile(session.user.id, session.user);
                 if (!profile && session.user.email) {
-                    const name = session.user.user_metadata?.name || session.user.email.split('@')[0] || 'User';
-                    await createUserProfile(session.user.id, session.user.email, name);
-                    const initialRole = session.user.email === 'admin@demo.com' ? 'admin' : 'user';
-                    callback(mapUser(session.user, { role: initialRole, wishlist: [], name }));
+                    const initialName = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User';
+                    await createUserProfile(session.user.id, session.user.email, initialName);
+                    const newUser = mapUser(session.user, { role: 'user', wishlist: [], name: initialName });
+                    callback(newUser);
                 } else if (profile) {
                     if (session.user.email === 'admin@demo.com' && profile.role !== 'admin') {
                         try { await updateUserRole(profile.uid, 'admin'); } catch (e) { }
@@ -241,7 +254,9 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
                     callback(profile);
                 }
             } catch (e) {
-                callback(mapUser(session.user, { role: 'user', wishlist: [], name: 'User' }));
+                console.warn("Auth listener profile fetch failed", e);
+                const fallbackName = session.user.user_metadata?.name || 'User';
+                callback(mapUser(session.user, { role: 'user', wishlist: [], name: fallbackName }));
             }
         } else {
             callback(null);
@@ -592,6 +607,9 @@ export const saveSiteContent = async (content: SiteContent) => {
         console.error("Failed to SAVE site content to DB:", error.message);
         throw error;
     }
+
+    // Update cache when we save, so we don't serve stale data for 30mins
+    saveToCache(CACHE_KEYS.siteContent, content);
 };
 
 export const seedDatabase = async (products: Product[], posts: BlogPost[], content: SiteContent) => {
