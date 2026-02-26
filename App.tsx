@@ -55,10 +55,28 @@ const AppContent: React.FC = () => {
 
   // View State (Local to AppContent mostly, but could be in context if needed globally)
   const [currentView, setCurrentView] = useState<View>(() => {
+    // 1. Check URL params
     const params = new URLSearchParams(window.location.search);
     if (params.get('article')) return 'blog';
+
+    // 2. Check localStorage for persisted view
+    const savedView = localStorage.getItem('gsl_current_view') as View;
+    const validViews: View[] = ['home', 'dashboard', 'settings', 'wishlist', 'blog', 'pages', 'offers'];
+    if (savedView && validViews.includes(savedView)) {
+      // Don't auto-restore dashboard if not logged in
+      if (savedView === 'dashboard' && !user) return 'home';
+      return savedView;
+    }
+
     return 'home';
   });
+
+  // Persist view changes
+  React.useEffect(() => {
+    if (currentView) {
+      localStorage.setItem('gsl_current_view', currentView);
+    }
+  }, [currentView]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
@@ -225,7 +243,11 @@ const AppContent: React.FC = () => {
               </button>
 
               <NotificationBell notifications={notifications} onMarkRead={markNotificationRead} onClearAll={clearAllNotifications} />
-              {user ? (
+              {auth.isLoading ? (
+                <div className="flex items-center px-4">
+                  <Loader2 size={18} className="animate-spin text-slate-400" />
+                </div>
+              ) : user ? (
                 <>
                   <button onClick={() => setCurrentView('wishlist')} className={`relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${currentView === 'wishlist' ? 'text-red-500 bg-red-50 dark:bg-red-900/10' : 'text-slate-600 dark:text-slate-400'}`} title="My Wishlist"><Heart size={20} className={currentView === 'wishlist' ? "fill-current" : ""} />{user.wishlist.length > 0 && (<span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>)}</button>
                   {(user.role === 'admin' || user.role === 'editor') && (<button onClick={() => setCurrentView('dashboard')} className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${currentView === 'dashboard' ? getThemeTextClass() : 'text-slate-600 dark:text-slate-400'}`} title="Dashboard"><LayoutDashboard size={20} /></button>)}

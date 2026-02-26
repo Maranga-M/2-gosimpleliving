@@ -195,8 +195,10 @@ const mapUser = (sbUser: any, profile: any): User => ({
 export const authStateChanged = (callback: (user: User | null) => void) => {
     if (!supabase) {
         callback(null);
-        return () => { }; // Return a no-op unsubscribe function
+        return () => { };
     }
+
+    let initialCheckDone = false;
 
     // 1. Immediately check for existing session to prevent "guest flash" on refresh
     const initSession = async () => {
@@ -205,17 +207,21 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
             if (session?.user) {
                 const profile = await getUserProfile(session.user.id, session.user);
                 if (profile) {
+                    initialCheckDone = true;
                     callback(profile);
                 } else if (session.user.email) {
-                    // Fallback to basic user mapping if profile fetch fails
+                    initialCheckDone = true;
                     callback(mapUser(session.user, { role: 'user', wishlist: [], name: 'User' }));
                 }
             } else {
-                // If no session, wait for listener or explicitly set null if needed
-                // But usually better to wait for listener to be sure.
+                // Explicitly signal no session if we checked and found nothing
+                initialCheckDone = true;
+                callback(null);
             }
         } catch (e) {
             console.warn("Initial session check failed:", e);
+            initialCheckDone = true;
+            callback(null);
         }
     };
 
@@ -225,28 +231,32 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         console.log(`Supabase Auth Event: ${event}`);
 
-        if (session?.user) {
-            // OPTIMISTIC UPDATE: Give UI an immediate dummy profile so login feels instant
-            const initialName = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User';
-            const initialRole = session.user.email === 'admin@demo.com' ? 'admin' : 'user';
-            callback(mapUser(session.user, { role: initialRole, wishlist: [], name: initialName }));
+        // If it's the initial check and we already handled it in initSession, skip redundant callback
+        // This prevents double updates on first load
+        if (event === 'INITIAL_SESSION' && initialCheckDone) {
+            return;
+        }
 
+        if (session?.user) {
+            // Background fetch for real profile/wishlist
             try {
-                // Background fetch for real profile/wishlist
                 const profile = await getUserProfile(session.user.id, session.user);
                 if (!profile && session.user.email) {
+                    const initialName = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User';
                     await createUserProfile(session.user.id, session.user.email, initialName);
+                    const newUser = mapUser(session.user, { role: 'user', wishlist: [], name: initialName });
+                    callback(newUser);
                 } else if (profile) {
                     if (session.user.email === 'admin@demo.com' && profile.role !== 'admin') {
                         try { await updateUserRole(profile.uid, 'admin'); } catch (e) { }
                         profile.role = 'admin';
                     }
-                    // RE-UPDATE UI with the real data (wishlist)
                     callback(profile);
                 }
             } catch (e) {
-                // If it fails, fallback was already provided above
-                console.warn("Background profile fetch failed in auth listener", e);
+                console.warn("Auth listener profile fetch failed", e);
+                const fallbackName = session.user.user_metadata?.name || 'User';
+                callback(mapUser(session.user, { role: 'user', wishlist: [], name: fallbackName }));
             }
         } else {
             callback(null);
