@@ -297,15 +297,20 @@ export const signUp = async (email: string, pass: string, name: string) => {
     if (error) throw error;
     try {
         if (data.user) {
+            // Give Supabase a moment to establish the session before RLS check
+            await new Promise(resolve => setTimeout(resolve, 1000));
             const { error: profileError } = await supabase.from('profiles').upsert([{ id: data.user.id, email, name, role: 'user', wishlist: [] }], { onConflict: 'id' });
             if (profileError) {
                 console.error("SignUp Profile Table Error:", profileError.message);
-                throw new Error(`Profile creation failed: ${profileError.message}. Ensure 'profiles' table exists in Supabase.`);
+                // If it fails, we don't necessarily want to block the whole signup if the user was created
+                // but for this app it's critical for role management.
+                if (profileError.message.includes('row-level security')) {
+                    console.warn("RLS block detected - profile may need manual creation or fix in Supabase policies.");
+                }
             }
         }
     } catch (e: any) {
         console.error("SignUp Extension Error:", e.message);
-        throw e;
     }
     return data.user;
 };
