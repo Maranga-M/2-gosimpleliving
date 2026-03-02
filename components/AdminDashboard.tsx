@@ -17,6 +17,7 @@ import { StarRating } from './StarRating';
 import { LinkPickerModal } from './LinkPickerModal';
 import { TipTapEditor } from './TipTapEditor';
 import { AdminOffers } from './AdminOffers';
+import { AISmartImport } from './AISmartImport';
 import { AffiliateConfigTab } from './AffiliateConfigTab';
 
 
@@ -174,6 +175,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const [isImporting, setIsImporting] = useState(false);
     const [isSeeding, setIsSeeding] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
+    const [isSmartImporting, setIsSmartImporting] = useState(false);
 
     const initialFormState: Product = {
         id: '',
@@ -793,6 +795,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </Button>
                             </div>
                         </div>
+                    ) : isSmartImporting ? (
+                        <AISmartImport
+                            categories={categories}
+                            onClose={() => setIsSmartImporting(false)}
+                            onImport={(partialProduct) => {
+                                const newProduct: Product = {
+                                    ...initialFormState,
+                                    ...partialProduct as any,
+                                    id: `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                                    status: 'draft'
+                                };
+                                onAddProduct(newProduct);
+                                setIsSmartImporting(false);
+                                toast.success('Product added as draft!');
+                            }}
+                        />
                     ) : isAdding || editingId ? (
                         <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl mb-8 animate-in zoom-in-95 duration-200">
                             <div className="flex items-center justify-between mb-8">
@@ -1040,8 +1058,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     <p className="text-sm text-slate-500">Manage products currently in store.</p>
                                 </div>
                                 <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => setIsSmartImporting(true)} className="gap-2 border-amber-200 text-amber-600 hover:bg-amber-50 dark:border-amber-800/30 dark:text-amber-400">
+                                        <Sparkles size={16} /> Smart Magic
+                                    </Button>
                                     <Button variant="outline" size="sm" onClick={() => setIsBulkImporting(true)} className="gap-2 border-purple-200 text-purple-600 hover:bg-purple-50 dark:border-purple-800/30 dark:text-purple-400">
-                                        <PackagePlus size={16} /> AI Import
+                                        <PackagePlus size={16} /> AI Bulk
                                     </Button>
                                     <Button size="sm" onClick={startAdd} className="gap-2">
                                         <Plus size={16} /> Add Single
