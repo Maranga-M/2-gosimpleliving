@@ -592,6 +592,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         }
     };
 
+    const handleSaveAffiliateConfig = async (newConfig: AffiliateConfig) => {
+        try {
+            const updatedContent = {
+                ...liveSiteContent,
+                affiliateConfig: newConfig
+            };
+            _onUpdateSiteContent?.(updatedContent);
+            if (onSaveChanges) {
+                await onSaveChanges(updatedContent);
+                toast.success("Affiliate settings saved to database!");
+            }
+        } catch (e: any) {
+            toast.error(`Failed to save affiliate settings: ${e.message}`);
+        }
+    };
+
     const startEdit = (product: Product) => {
         setFormData({ ...product });
         setEditingId(product.id);

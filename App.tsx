@@ -19,6 +19,7 @@ import { AppProvider, useApp } from './src/contexts/AppContext';
 import { HomePage } from './src/pages/HomePage';
 import { Footer } from './components/Footer';
 import { AdSenseScript } from './src/components/AdSenseScript';
+import { AffiliateScripts } from './src/components/AffiliateScripts';
 
 // Lazy loaded components for code splitting using retry logic
 const DashboardPage = lazyWithRetry(() => import('./src/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
@@ -187,6 +188,7 @@ const AppContent: React.FC = () => {
       )}
 
       <AdSenseScript />
+      <AffiliateScripts />
 
       {/* Navigation */}
       <nav className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm transition-colors duration-300">

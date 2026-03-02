@@ -7,6 +7,7 @@ import { Product, BlogPost, SiteContent } from './types';
 export const PRODUCTS: Product[] = [];
 export const BLOG_POSTS: BlogPost[] = [];
 export const INITIAL_SITE_CONTENT: SiteContent = {
+  contactEmail: '',
   heroTitle: '',
   heroSubtitle: '',
   heroButtonText: '',
@@ -33,5 +34,13 @@ export const INITIAL_SITE_CONTENT: SiteContent = {
     wishlistEmptySubtitle: ''
   },
   socialLinks: [],
-  categories: []
+  categories: [],
+  affiliateConfig: {
+    globalEnabled: true,
+    pinterestEnabled: false,
+    adSenseEnabled: false,
+    cjEnabled: false,
+    trackingCodes: [],
+    affiliateNetworks: []
+  }
 };
