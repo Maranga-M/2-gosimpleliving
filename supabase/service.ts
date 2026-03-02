@@ -202,6 +202,15 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
 
     // 1. Immediately check for existing session to prevent "guest flash" on refresh
     const initSession = async () => {
+        // Safety timeout to ensure loading state is ALWAYS cleared
+        const timeoutId = setTimeout(() => {
+            if (!initialCheckDone) {
+                console.warn("initSession hanging detect - forcing fallback clean-up");
+                initialCheckDone = true;
+                callback(null);
+            }
+        }, 10000); // 10 seconds
+
         try {
             // Use getSession but briefly delay to allow cookie parsing if initial
             const { data: { session }, error: sessionError } = await supabase!.auth.getSession();
@@ -211,6 +220,7 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
                 if (sessionError.message.includes('schema') || sessionError.message.includes('500')) {
                     console.error("CRITICAL: Supabase Schema/Auth 500 error detected. Please run REPAIR_SCHEMA.sql");
                 }
+                clearTimeout(timeoutId);
                 initialCheckDone = true;
                 callback(null);
                 return;
@@ -219,19 +229,23 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
             if (session?.user) {
                 const profile = await getUserProfile(session.user.id, session.user);
                 if (profile) {
+                    clearTimeout(timeoutId);
                     initialCheckDone = true;
                     callback(profile);
                 } else if (session.user.email) {
+                    clearTimeout(timeoutId);
                     initialCheckDone = true;
                     callback(mapUser(session.user, { role: 'user', wishlist: [], name: 'User' }));
                 }
             } else {
                 // Explicitly signal no session if we checked and found nothing
+                clearTimeout(timeoutId);
                 initialCheckDone = true;
                 callback(null);
             }
         } catch (e: any) {
             console.warn("Initial session check failed exception:", e.message);
+            clearTimeout(timeoutId);
             initialCheckDone = true;
             callback(null);
         }
