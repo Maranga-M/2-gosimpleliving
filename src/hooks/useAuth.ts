@@ -11,13 +11,26 @@ export const useAuth = () => {
     // Listen for auth changes from Supabase
     useEffect(() => {
         let isMounted = true;
+
+        // Redundant safety: Ensure loading state is cleared after 5 seconds
+        // This handles cases where the auth provider might hang completely
+        const safetyTimeout = setTimeout(() => {
+            if (isMounted && isLoading) {
+                console.warn("[useAuth] Safety timeout triggered - clearing loading state");
+                setIsLoading(false);
+            }
+        }, 5000);
+
         const unsubscribe = dbService.onAuthStateChanged((userProfile) => {
             if (!isMounted) return;
+            clearTimeout(safetyTimeout);
             setUser(userProfile);
             setIsLoading(false);
         });
+
         return () => {
             isMounted = false;
+            clearTimeout(safetyTimeout);
             if (typeof unsubscribe === 'function') unsubscribe();
         };
     }, []);
