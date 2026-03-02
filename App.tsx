@@ -148,10 +148,10 @@ const AppContent: React.FC = () => {
 
       {/* Fallback/Offline Banner */}
       {isUsingFallback && (
-        <div className="bg-amber-500 text-white py-1.5 px-4 text-[11px] font-bold uppercase tracking-widest text-center flex items-center justify-center gap-2 shadow-sm z-50">
-          <AlertTriangle size={12} /> {dbStatus === 'offline' ? 'Offline Mode (Using Demo Data)' : 'Local Catalogue active'}
+        <div className="bg-amber-500 text-white py-1.5 px-4 text-[11px] font-bold uppercase tracking-widest text-center flex items-center justify-center gap-2 shadow-sm z-50 cursor-pointer hover:bg-amber-600 transition-colors" onClick={() => window.location.reload()}>
+          <AlertTriangle size={12} /> {dbStatus === 'offline' ? 'Connection lost. Tap here to Refresh' : 'Local Catalogue active'}
           {user?.role === 'admin' && (
-            <button onClick={() => setCurrentView('dashboard')} className="ml-2 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded transition-colors flex items-center gap-1">
+            <button onClick={(e) => { e.stopPropagation(); setCurrentView('dashboard'); }} className="ml-2 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded transition-colors flex items-center gap-1">
               Sync to DB
             </button>
           )}
@@ -298,13 +298,14 @@ const AppContent: React.FC = () => {
       </nav>
 
       <main className="flex-grow">
+        {/* Error/Sync Banner */}
         {lastError && (
           <div className="max-w-7xl mx-auto px-4 mt-6">
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-400 px-4 py-3 rounded-xl text-sm flex items-center gap-3 shadow-sm">
+            <div className={`border px-4 py-3 rounded-xl text-sm flex items-center gap-3 shadow-sm ${dbStatus === 'offline' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-400' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-400'}`}>
               <AlertTriangle size={18} className="shrink-0" />
               <div className="flex-grow">
-                <p className="font-bold">Database Status: {dbStatus === 'offline' ? 'Disconnected' : 'Catalogue Sync Needed'}</p>
-                <p className="opacity-90 mt-1">{lastError}</p>
+                <p className="font-bold">{dbStatus === 'offline' ? 'Connection lost' : 'Refresh required'}</p>
+                <p className="opacity-90 mt-1">{dbStatus === 'offline' ? 'Please check your internet or tap the banner to Refresh.' : 'A sync with the cloud database is recommended.'}</p>
                 {user?.role === 'admin' && (
                   <p className="text-xs mt-2 opacity-75">
                     💡 Tip: Check your Supabase credentials in .env or use the Admin Dashboard to sync data.

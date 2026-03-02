@@ -203,7 +203,19 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
     // 1. Immediately check for existing session to prevent "guest flash" on refresh
     const initSession = async () => {
         try {
-            const { data: { session } } = await supabase!.auth.getSession();
+            // Use getSession but briefly delay to allow cookie parsing if initial
+            const { data: { session }, error: sessionError } = await supabase!.auth.getSession();
+
+            if (sessionError) {
+                console.warn("Session check returned error:", sessionError.message);
+                if (sessionError.message.includes('schema') || sessionError.message.includes('500')) {
+                    console.error("CRITICAL: Supabase Schema/Auth 500 error detected. Please run REPAIR_SCHEMA.sql");
+                }
+                initialCheckDone = true;
+                callback(null);
+                return;
+            }
+
             if (session?.user) {
                 const profile = await getUserProfile(session.user.id, session.user);
                 if (profile) {
@@ -218,8 +230,8 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
                 initialCheckDone = true;
                 callback(null);
             }
-        } catch (e) {
-            console.warn("Initial session check failed:", e);
+        } catch (e: any) {
+            console.warn("Initial session check failed exception:", e.message);
             initialCheckDone = true;
             callback(null);
         }
@@ -267,12 +279,22 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
 
 export const signIn = async (email: string, pass: string) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-    if (error) {
-        console.error("Supabase Auth SignIn Error:", error);
-        throw error;
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+        if (error) {
+            if (error.message.includes('Database error querying schema') || error.status === 500) {
+                throw new Error("Supabase internal error (500). Please run the REPAIR_SCHEMA.sql script in your Supabase SQL editor to fix the database auth schema.");
+            }
+            console.error("Supabase Auth SignIn Error:", error);
+            throw error;
+        }
+        return data.user;
+    } catch (e: any) {
+        if (e.message.includes('500') || e.message.includes('schema')) {
+            throw new Error("Supabase Database/Schema Error (500). This is usually caused by a broken trigger or missing grants. Please run REPAIR_SCHEMA.sql to fix.");
+        }
+        throw e;
     }
-    return data.user;
 };
 
 export const signInWithGoogle = async () => {
