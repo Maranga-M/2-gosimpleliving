@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { Plus, Edit2, Trash2, X, Save, Image as ImageIcon, TrendingUp, Sparkles, Loader2, List, Globe, Palette, Calendar, RefreshCw, Users as UsersIcon, Settings, Database, Shield, Wand2, Megaphone, Trash, Tag, Search, Copy, ArrowLeft, Wifi, WifiOff, PackagePlus, Eye, LinkIcon, CloudUpload, FileText, AlertTriangle, Package, ExternalLink, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Product, SiteContent, BlogPost, CustomPage, Role, ThemeColor, Season, SocialPlatform, AffiliateConfig } from '../types';
@@ -244,7 +245,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
 
     const startAddPost = () => {
-        setEditingPost({ ...initialPostState, id: `b-${Date.now()}` });
+        setEditingPost({ ...initialPostState, id: uuidv4() });
     };
 
     const handleTabChange = (tab: typeof activeTab) => {
@@ -388,7 +389,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     // --- Custom Pages Handlers ---
     const startAddPage = () => {
         setEditingPage({
-            id: Date.now().toString(),
+            id: uuidv4(),
             title: '',
             slug: '',
             content: '',
@@ -507,7 +508,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const handleDuplicatePage = (page: CustomPage) => {
         const duplicated: CustomPage = {
             ...page,
-            id: Date.now().toString(),
+            id: uuidv4(),
             slug: `${page.slug}-copy`,
             title: `${page.title} (Copy)`,
             status: 'draft'
@@ -547,7 +548,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     const newProduct: Product = {
                         ...initialFormState,
                         ...details as Product,
-                        id: `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                        id: uuidv4(),
                         affiliateLink: url.includes('amazon')
                             ? (url.includes('?') ? `${url}&tag=gosimpleliving-20` : `${url}?tag=gosimpleliving-20`)
                             : '#',
@@ -618,7 +619,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
 
     const startAdd = () => {
-        setFormData({ ...initialFormState, id: Date.now().toString() });
+        setFormData({ ...initialFormState, id: uuidv4() });
         setIsAdding(true);
         setEditingId(null);
         setIsBulkImporting(false);
@@ -797,7 +798,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 const newProduct: Product = {
                                     ...initialFormState,
                                     ...partialProduct as any,
-                                    id: `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                                    id: uuidv4(),
                                     status: 'draft'
                                 };
                                 onAddProduct(newProduct);

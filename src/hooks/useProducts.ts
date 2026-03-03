@@ -1,4 +1,5 @@
 import { useState, useMemo, useTransition } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { Product, SortOption, Review } from '../../types';
 import { dbService } from '../../services/database';
 import { AnalyticsService } from '../../services/analytics';
@@ -115,7 +116,7 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
 
         const newProduct: Product = {
             ...originalProduct,
-            id: `p-${Date.now()}`,
+            id: uuidv4(),
             title: `[COPY] ${originalProduct.title}`,
             status: 'draft',
             clicks: 0,
