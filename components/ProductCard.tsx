@@ -7,6 +7,8 @@ import { Button } from './Button';
 import { CJService } from '../services/cjService';
 import { AffiliateService } from '../services/affiliateService';
 
+import { getOptimizedUrl } from '../supabase/service';
+
 interface ProductCardProps {
   product: Product;
   onOpenDetails: (product: Product) => void;
@@ -157,7 +159,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
         onClick={() => onOpenDetails(product)}
       >
         <img
-          src={product.image}
+          src={getOptimizedUrl(product.image, { width: 400 })}
           alt={product.title}
           loading="lazy"
           className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"

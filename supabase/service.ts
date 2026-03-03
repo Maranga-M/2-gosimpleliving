@@ -789,8 +789,8 @@ export const uploadImage = async (base64: string, fileName: string): Promise<str
         .storage
         .from('media-assets')
         .upload(fileName, blob, {
-            cacheControl: '3600',
-            upsert: false,
+            cacheControl: '31536000', // 1 year
+            upsert: true,
             contentType: blob.type
         });
 
@@ -811,7 +811,7 @@ export const uploadFile = async (content: string, fileName: string, contentType:
             .storage
             .from('media-assets')
             .upload(fileName, content, {
-                cacheControl: '3600',
+                cacheControl: '31536000', // 1 year
                 upsert: true,
                 contentType: contentType
             });
@@ -873,5 +873,22 @@ export const deleteImage = async (fileName: string) => {
         .remove([fileName]);
 
     if (error) throw error;
+};
+
+/**
+ * Helper to get optimized image URLs from Supabase Storage
+ * Supports resizing, quality, and automatic WebP conversion
+ */
+export const getOptimizedUrl = (url: string | undefined, options: { width?: number; height?: number; quality?: number } = {}) => {
+    if (!url) return '';
+    if (!url.includes('supabase.co/storage/v1/object/public/')) return url;
+
+    const params = new URLSearchParams();
+    if (options.width) params.append('width', options.width.toString());
+    if (options.height) params.append('height', options.height.toString());
+    params.append('quality', (options.quality || 80).toString());
+    params.append('format', 'origin'); // Supabase handles WebP automatically if format is omitted or set correctly
+
+    return `${url}?${params.toString()}`;
 };
 

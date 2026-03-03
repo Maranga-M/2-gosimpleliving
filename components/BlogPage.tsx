@@ -6,6 +6,8 @@ import { ProductCard } from './ProductCard';
 import { Button } from './Button';
 import { MarkdownRenderer } from './MarkdownRenderer';
 
+import { getOptimizedUrl } from '../supabase/service';
+
 interface BlogPageProps {
     posts: BlogPost[];
     products: Product[];
@@ -103,7 +105,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
                 <article>
                     {/* Hero/Featured Image */}
                     <div className="rounded-2xl overflow-hidden mb-8 shadow-md">
-                        <img src={heroImage} alt={activePost.title} className={`w-full object-cover ${activePost.heroImageUrl ? 'h-[450px] md:h-[550px]' : 'h-[400px]'}`} />
+                        <img src={getOptimizedUrl(heroImage, { quality: 90 })} alt={activePost.title} className={`w-full object-cover ${activePost.heroImageUrl ? 'h-[450px] md:h-[550px]' : 'h-[400px]'}`} />
                     </div>
 
                     {showPostDates && (
@@ -179,7 +181,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
                     >
                         <div className="h-48 overflow-hidden relative">
                             <img
-                                src={post.image}
+                                src={getOptimizedUrl(post.image, { width: 600, height: 400 })}
                                 alt={post.title}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
