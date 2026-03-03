@@ -695,13 +695,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         }
     };
 
-    const handleSaveAffiliateConfig = async (config: any) => {
-        const updatedContent = { ...liveSiteContent, affiliateConfig: config };
-        _onUpdateSiteContent?.(updatedContent);
-        if (onSaveChanges) {
-            await onSaveChanges(updatedContent);
-        }
-    };
+
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
