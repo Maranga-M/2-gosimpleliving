@@ -11,7 +11,7 @@ interface LoginModalProps {
   onNavigateToSettings?: () => void;
 }
 
-export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onNavigateToSettings }) => {
+export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onNavigateToSettings: _onNavigateToSettings }) => {
   const { content: { siteContent } } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

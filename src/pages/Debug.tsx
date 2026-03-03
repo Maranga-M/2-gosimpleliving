@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/supabase/config';
 
 export default function DebugPage() {
@@ -25,6 +25,10 @@ export default function DebugPage() {
 
         // Test Connection
         async function testConn() {
+            if (!supabase) {
+                setStatus({ success: false, error: 'Supabase not configured' });
+                return;
+            }
             try {
                 const { data, error } = await supabase.from('site_content').select('id').limit(1);
                 setStatus({ success: !error, error: error?.message, data });

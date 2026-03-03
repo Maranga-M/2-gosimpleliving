@@ -1,11 +1,12 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { Save, Database, AlertCircle, CheckCircle, Key, FileCode, Lock, Globe, Info, Sparkles, ShieldCheck, Image, Wifi, WifiOff, Loader2, FileText, User } from 'lucide-react';
+import { Save, Database, AlertCircle, CheckCircle, Lock, Sparkles, ShieldCheck, Wifi, WifiOff, Loader2, FileText, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from './Button';
 import { dbService } from '../services/database';
 import { User as UserType, Role } from '../types';
+type AppUser = UserType;
 
 const getEnv = (key: string): string | undefined => {
   try {
@@ -27,12 +28,12 @@ export const SettingsPage: React.FC<{ currentUser?: { uid: string; name: string;
   const [isUpdatingName, setIsUpdatingName] = useState(false);
 
   const [areKeysSet, setAreKeysSet] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'valid' | 'invalid'>('idle');
   const [connectionMessage, setConnectionMessage] = useState('');
   const [blogStatus, setBlogStatus] = useState<'idle' | 'testing' | 'valid' | 'invalid'>('idle');
   const [blogMessage, setBlogMessage] = useState('');
-  const [userList, setUserList] = useState<User[]>([]);
+  const [userList, setUserList] = useState<AppUser[]>([]);
   const [usersStatus, setUsersStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [usersMessage, setUsersMessage] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');

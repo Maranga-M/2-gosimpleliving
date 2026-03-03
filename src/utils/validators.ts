@@ -1,4 +1,4 @@
-import { Product, BlogPost } from '../types';
+import { Product, BlogPost } from '../../types';
 
 /**
  * Validation Utilities

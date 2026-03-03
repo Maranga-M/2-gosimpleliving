@@ -20,10 +20,10 @@ async function verifyTables() {
     console.log('Verifying table names...');
 
     // Custom check for 'posts'
-    const { data: postsData, error: postsError } = await supabase.from('posts').select('count').limit(1);
+    const { data: _postsData, error: postsError } = await supabase.from('posts').select('count').limit(1);
 
     // Custom check for 'blog_posts'
-    const { data: blogPostsData, error: blogPostsError } = await supabase.from('blog_posts').select('count').limit(1);
+    const { data: _blogPostsData, error: blogPostsError } = await supabase.from('blog_posts').select('count').limit(1);
 
     console.log('--- Results ---');
     console.log(`'posts' table check: ${postsError ? 'FAILED (' + postsError.message + ')' : 'SUCCESS'}`);

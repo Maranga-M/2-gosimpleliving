@@ -300,8 +300,11 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
                 callback(fallbackUser);
             }
         } else {
-            localStorage.removeItem(CACHE_KEYS.userProfile);
-            callback(null);
+            // ONLY clear cache if this is a genuine SIGNED_OUT event or if initSession is done
+            if (event === 'SIGNED_OUT' || initialCheckDone) {
+                localStorage.removeItem(CACHE_KEYS.userProfile);
+                callback(null);
+            }
         }
     });
 

@@ -37,7 +37,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     label,
     onOpenLinkPicker,
     minHeight = '300px',
-    comparisonTables
+    comparisonTables: _comparisonTables
 }) => {
     const editor = useEditor({
         extensions: [

@@ -1,9 +1,8 @@
 
-import React, { useState } from 'react';
-import { X, Send, User, Heart, ExternalLink } from 'lucide-react';
+import React from 'react';
+import { X, User, Heart, ExternalLink } from 'lucide-react';
 import { Product, Review, ThemeColor } from '../types';
 import { AFFILIATE_THEMES, AffiliateTheme } from '../themeConfig';
-import { Button } from './Button';
 import { StarRating } from './StarRating';
 
 interface ProductModalProps {
@@ -21,35 +20,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   product,
   isOpen,
   onClose,
-  onAddReview,
+  onAddReview: _onAddReview,
   isWishlisted = false,
   onToggleWishlist,
   onRecordClick,
   themeColor = 'amber'
 }) => {
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const [userName, setUserName] = useState('');
 
   if (!isOpen) return null;
-
-  const handleSubmitReview = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (rating === 0 || !comment.trim() || !userName.trim()) return;
-
-    const newReview: Review = {
-      id: Date.now().toString(),
-      userName,
-      rating,
-      comment,
-      date: new Date().toLocaleDateString()
-    };
-
-    onAddReview(product.id, newReview);
-    setRating(0);
-    setComment('');
-    setUserName('');
-  };
 
   const handleBuyClick = () => {
     if (onRecordClick) {

@@ -8,7 +8,7 @@ interface ComparisonTableProps {
     onProductClick?: (product: Product) => void;
 }
 
-export const ComparisonTable: React.FC<ComparisonTableProps> = ({ table, onProductClick }) => {
+export const ComparisonTable: React.FC<ComparisonTableProps> = ({ table, onProductClick: _onProductClick }) => {
     const { products: productsHook, content } = useApp();
     const { products } = productsHook;
     const { siteContent } = content;
@@ -122,8 +122,8 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ table, onProdu
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all shadow-sm hover:shadow-md hover:scale-105 ${col.highlighted
-                                                        ? 'bg-slate-900 dark:bg-white text-white dark:text-black'
-                                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-600'
+                                                    ? 'bg-slate-900 dark:bg-white text-white dark:text-black'
+                                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-600'
                                                     }`}
                                             >
                                                 View Deal <ExternalLink size={14} />
@@ -187,8 +187,8 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ table, onProdu
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm transition-all shadow-md hover:shadow-lg hover:scale-[1.02] ${col.highlighted
-                                                ? 'bg-slate-900 dark:bg-white text-white dark:text-black'
-                                                : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                                            ? 'bg-slate-900 dark:bg-white text-white dark:text-black'
+                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
                                             }`}
                                     >
                                         View Deal <ExternalLink size={16} />

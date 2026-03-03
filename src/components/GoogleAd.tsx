@@ -11,7 +11,8 @@ interface GoogleAdProps {
 export const GoogleAd: React.FC<GoogleAdProps> = ({ slot, format = 'auto', style = {}, className = '' }) => {
     const { content } = useApp();
     const { siteContent } = content;
-    const { adSenseEnabled, adSenseClientId } = siteContent;
+    const adSenseEnabled = siteContent.affiliateConfig?.adSenseEnabled;
+    const adSenseClientId = siteContent.affiliateConfig?.adSenseClientId;
 
     useEffect(() => {
         if (!adSenseEnabled || !adSenseClientId) return;

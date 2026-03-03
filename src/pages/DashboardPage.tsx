@@ -45,6 +45,15 @@ export const DashboardPage: React.FC = () => {
         }
     };
 
+    if (auth.isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mb-4"></div>
+                <p className="text-slate-500">Restoring session...</p>
+            </div>
+        );
+    }
+
     if (!user || (user.role !== 'admin' && user.role !== 'editor')) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">

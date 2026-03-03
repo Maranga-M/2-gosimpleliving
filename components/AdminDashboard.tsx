@@ -1,10 +1,10 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Save, Image as ImageIcon, TrendingUp, Sparkles, Loader2, List, Globe, Palette, Calendar, RefreshCw, Users as UsersIcon, Settings, Database, Shield, Wand2, Megaphone, Trash, Tag, Search, Copy, ArrowLeft, Wifi, WifiOff, PackagePlus, Eye, LinkIcon, CloudUpload, FileText, AlertTriangle, Package, ExternalLink, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Product, SiteContent, BlogPost, CustomPage, Role, ThemeColor, Season, SocialPlatform } from '../types';
+import { Product, SiteContent, BlogPost, CustomPage, Role, ThemeColor, Season, SocialPlatform, AffiliateConfig } from '../types';
 import { AFFILIATE_THEMES } from '../themeConfig';
-import { connectionManager, ConnectionStatus } from '../services/connectionManager';
+import { ConnectionStatus } from '../services/connectionManager';
 import { Button } from './Button';
 import { generateSiteContent, fetchProductFromWeb, generateBlogPost, generateCustomPage } from '../services/geminiService';
 import { MediaManager } from './MediaManager';
@@ -153,7 +153,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     // Page state
     const [editingPage, setEditingPage] = useState<Partial<CustomPage> | null>(null);
     const [isGeneratingPage, setIsGeneratingPage] = useState(false);
-    const linkPickerTargetRef = useRef<any>(null);
+
 
 
     // Link picker state
@@ -1826,8 +1826,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <AdminOffers
                         siteContent={liveSiteContent}
                         onUpdateSiteContent={(key, value) => {
-                            if (onUpdateSiteContent) {
-                                onUpdateSiteContent({ ...liveSiteContent, [key]: value });
+                            if (_onUpdateSiteContent) {
+                                _onUpdateSiteContent({ ...liveSiteContent, [key]: value });
                             }
                         }}
                         onSaveChanges={async () => {

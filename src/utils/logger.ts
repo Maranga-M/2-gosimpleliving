@@ -5,7 +5,7 @@
  * while maintaining helpful debug output in development.
  */
 
-type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
+
 
 const isDevelopment = (import.meta as any).env?.DEV || process.env.NODE_ENV === 'development';
 

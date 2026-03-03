@@ -1,7 +1,7 @@
 import React from 'react';
 import { GoogleAd } from '../components/GoogleAd';
 import { useApp } from '../contexts/AppContext';
-import { Zap, Search } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { ProductCard } from '../../components/ProductCard';
 import { Button } from '../../components/Button';
 import { SmartFilter } from '../../components/SmartFilter';
@@ -17,7 +17,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     const {
         filteredProducts, categories, selectedCategory, setSelectedCategory,
         setSmartCollectionFilter, activeCollectionId, setActiveCollectionId,
-        sortBy, setSortBy, searchQuery, setSearchQuery, trackProductClick
+        sortBy, setSortBy, setSearchQuery, trackProductClick
     } = products;
 
     const { siteContent } = content;

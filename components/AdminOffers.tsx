@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, Edit3, Trash2, ExternalLink, Save, X, ChevronDown, ChevronUp, Image as ImageIcon, Star, HelpCircle } from 'lucide-react';
-import { ClickBankOffer, SiteContent, AffiliateTheme, Testimonial } from '../types';
+import { Plus, Edit3, Trash2, ExternalLink, Save, X, Image as ImageIcon } from 'lucide-react';
+import { ClickBankOffer, SiteContent, Testimonial, ThemeColor } from '../types';
 import { Button } from './Button';
 import { v4 as uuidv4 } from 'uuid';
 import { MediaManager } from './MediaManager';
@@ -10,13 +10,13 @@ interface AdminOffersProps {
     siteContent: SiteContent;
     onUpdateSiteContent: (field: keyof SiteContent, value: any) => void;
     onSaveChanges: () => Promise<void>;
-    themeColor: AffiliateTheme;
+    themeColor: ThemeColor;
 }
 
 export const AdminOffers: React.FC<AdminOffersProps> = ({ siteContent, onUpdateSiteContent, onSaveChanges, themeColor }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentOffer, setCurrentOffer] = useState<Partial<ClickBankOffer>>({});
-    const [expandedOfferId, setExpandedOfferId] = useState<string | null>(null);
+    const [_expandedOfferId, _setExpandedOfferId] = useState<string | null>(null);
 
     // Media Manager State
     const [isMediaManagerOpen, setIsMediaManagerOpen] = useState(false);
@@ -383,7 +383,7 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ siteContent, onUpdateS
                                     />
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-slate-500">Rating:</span>
-                                        <StarRating rating={t.rating || 5} interactive onChange={(r) => updateTestimonial(idx, 'rating', r)} color="amber" size={16} />
+                                        <StarRating rating={t.rating || 5} interactive onChange={(r) => updateTestimonial(idx, 'rating', r)} size={16} />
                                     </div>
                                 </div>
                             ))}
@@ -412,8 +412,8 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ siteContent, onUpdateS
                             </button>
                             <div className="h-full overflow-y-auto">
                                 <MediaManager
-                                    onSelect={handleMediaSelect}
-                                    onClose={() => setIsMediaManagerOpen(false)}
+                                    currentImageUrl={currentOffer.heroImageUrl || currentOffer.productImageUrl || ''}
+                                    onImageSelect={handleMediaSelect}
                                 />
                             </div>
                         </div>
