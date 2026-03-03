@@ -14,9 +14,10 @@ interface BlogPageProps {
     onRecordClick?: (productId: string) => void;
     themeColor?: ThemeColor;
     affiliateConfig?: AffiliateConfig;
+    showPostDates?: boolean;
 }
 
-export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProduct, onGoHome, onRecordClick, themeColor, affiliateConfig }) => {
+export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProduct, onGoHome, onRecordClick, themeColor, affiliateConfig, showPostDates = true }) => {
     const [activePost, setActivePost] = useState<BlogPost | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [copied, setCopied] = useState(false);
@@ -105,10 +106,12 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
                         <img src={heroImage} alt={activePost.title} className={`w-full object-cover ${activePost.heroImageUrl ? 'h-[450px] md:h-[550px]' : 'h-[400px]'}`} />
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-300 mb-6">
-                        <div className="flex items-center gap-1"><Calendar size={14} /> {activePost.date}</div>
-                        <div className="flex items-center gap-1"><User size={14} /> {activePost.author}</div>
-                    </div>
+                    {showPostDates && (
+                        <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-300 mb-6">
+                            <div className="flex items-center gap-1"><Calendar size={14} /> {activePost.date}</div>
+                            <div className="flex items-center gap-1"><User size={14} /> {activePost.author}</div>
+                        </div>
+                    )}
 
                     <h1 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6 leading-tight">{activePost.title}</h1>
 
@@ -190,7 +193,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
                             <p className="text-slate-500 dark:text-slate-300 mb-4 line-clamp-3 text-sm flex-1">{post.excerpt}</p>
 
                             <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-300 mt-auto pt-4 border-t border-slate-100 dark:border-slate-800">
-                                <span className="flex items-center gap-1"><Calendar size={12} /> {post.date}</span>
+                                {showPostDates && <span className="flex items-center gap-1"><Calendar size={12} /> {post.date}</span>}
                                 <span className="flex items-center gap-1"><User size={12} /> {post.author}</span>
                             </div>
                         </div>

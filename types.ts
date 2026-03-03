@@ -221,6 +221,7 @@ export interface SiteContent {
   heroImageUrl: string; // For AI Media Manager
   logoUrl?: string; // Persisted in DB instead of localStorage
   aiChatEnabled?: boolean; // Persisted in DB instead of localStorage
+  showPostDates?: boolean;
   footerLinks?: { label: string; url: string }[];
   amazonAssociatesId?: string;
   cjWebsiteId?: string; // CJ Publisher ID (PID)

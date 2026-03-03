@@ -1209,6 +1209,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white"
                                             />
                                         </div>
+
+                                        <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                            <div className="flex items-center gap-3">
+                                                <Calendar size={20} className="text-slate-400" />
+                                                <div>
+                                                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Display Post Dates</p>
+                                                    <p className="text-xs text-slate-500">Show or hide the publication date on blog posts</p>
+                                                </div>
+                                            </div>
+                                            <input
+                                                type="checkbox"
+                                                checked={siteContent.showPostDates !== false}
+                                                onChange={(e) => updateSiteContent({ showPostDates: e.target.checked })}
+                                                className="w-10 h-5 bg-slate-200 rounded-full appearance-none cursor-pointer checked:bg-amber-500 transition-colors relative before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 before:transition-transform checked:before:translate-x-5"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 

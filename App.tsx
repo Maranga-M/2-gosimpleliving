@@ -357,6 +357,7 @@ const AppContent: React.FC = () => {
                 onRecordClick={trackProductClick}
                 themeColor={siteContent.themeColor}
                 affiliateConfig={siteContent.affiliateConfig}
+                showPostDates={siteContent.showPostDates}
               />
             </Suspense>
           </ErrorBoundary>

@@ -180,10 +180,13 @@ class ConnectionManager {
 
             const data = JSON.parse(cached);
 
-            // IMPROVEMENT: On page load/refresh, always start with 'loading' 
-            // but keep the 'lastSuccessfulConnection' to inform UI decisions.
+            // If we had a successful connection recently (within last 30 mins),
+            // assume we are connected to avoid "Syncing..." flashes.
+            // The background hydration will verify this quickly.
+            const isRecent = data.lastSuccessfulConnection && (Date.now() - data.lastSuccessfulConnection < 1800000);
+
             return {
-                status: 'loading',
+                status: isRecent ? 'connected' : 'loading',
                 lastSuccessfulConnection: data.lastSuccessfulConnection,
                 lastError: null,
                 errorType: null,

@@ -21,6 +21,7 @@ export const INITIAL_SITE_CONTENT: SiteContent = {
   heroImageUrl: '',
   logoUrl: '',
   aiChatEnabled: true,
+  showPostDates: true,
   uiText: {
     shopNav: 'Shop',
     blogNav: 'Blog',
