@@ -266,6 +266,7 @@ export interface BlogPost {
   content: string; // Markdown or HTML
   author: string;
   date: string;
+  category: string;
   image: string;
   status: 'draft' | 'pending' | 'published';
   linkedProductIds: string[]; // IDs of products mentioned in the post

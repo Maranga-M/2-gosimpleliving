@@ -514,7 +514,29 @@ export const getProductById = async (id: string): Promise<Product | null> => {
 
 export const createProduct = async (product: Product) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('products').insert(product);
+
+    // Build clean DB row (strip extra frontend-only fields like regionalPricing)
+    const dbProduct = {
+        id: product.id,
+        title: product.title,
+        category: product.category,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        rating: product.rating,
+        reviews: product.reviews,
+        image: product.image,
+        description: product.description,
+        features: product.features,
+        affiliateLink: product.affiliateLink,
+        affiliateLinkLabel: product.affiliateLinkLabel,
+        affiliateLinkTheme: product.affiliateLinkTheme,
+        isBestSeller: product.isBestSeller,
+        status: product.status,
+        clicks: product.clicks || 0,
+        localReviews: product.localReviews || []
+    };
+
+    const { error } = await supabase.from('products').insert(dbProduct);
     if (error) {
         console.error("Failed to CREATE product in DB:", error.message);
         throw error;
@@ -523,7 +545,28 @@ export const createProduct = async (product: Product) => {
 
 export const updateProduct = async (product: Product) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('products').update(product).eq('id', product.id);
+
+    // Build clean DB row (strip extra frontend-only fields like regionalPricing)
+    const dbProduct = {
+        title: product.title,
+        category: product.category,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        rating: product.rating,
+        reviews: product.reviews,
+        image: product.image,
+        description: product.description,
+        features: product.features,
+        affiliateLink: product.affiliateLink,
+        affiliateLinkLabel: product.affiliateLinkLabel,
+        affiliateLinkTheme: product.affiliateLinkTheme,
+        isBestSeller: product.isBestSeller,
+        status: product.status,
+        clicks: product.clicks || 0,
+        localReviews: product.localReviews || []
+    };
+
+    const { error } = await supabase.from('products').update(dbProduct).eq('id', product.id);
     if (error) {
         console.error("Failed to UPDATE product in DB:", error.message);
         throw error;
@@ -616,6 +659,7 @@ export const createBlogPost = async (post: BlogPost) => {
         content: post.content,
         author: post.author,
         date: post.date,
+        category: post.category,
         image: post.image,
         status: post.status,
         focus_keyword: post.focusKeyword,
@@ -624,7 +668,7 @@ export const createBlogPost = async (post: BlogPost) => {
         meta_keywords: post.metaKeywords,
         hero_image_url: post.heroImageUrl,
         comparison_tables: post.comparisonTables ?? null,
-        linked_product_ids: post.linkedProductIds ?? [],   // ← was missing!
+        linked_product_ids: post.linkedProductIds ?? [],
     };
 
     const { error } = await supabase.from('posts').insert(dbPost);
@@ -644,6 +688,7 @@ export const updateBlogPost = async (post: BlogPost) => {
         content: post.content,
         author: post.author,
         date: post.date,
+        category: post.category,
         image: post.image,
         status: post.status,
         focus_keyword: post.focusKeyword,
@@ -652,7 +697,7 @@ export const updateBlogPost = async (post: BlogPost) => {
         meta_keywords: post.metaKeywords,
         hero_image_url: post.heroImageUrl,
         comparison_tables: post.comparisonTables ?? null,
-        linked_product_ids: post.linkedProductIds ?? [],   // ← was missing!
+        linked_product_ids: post.linkedProductIds ?? [],
     };
 
     const { error } = await supabase.from('posts').update(dbPost).eq('id', post.id);
