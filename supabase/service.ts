@@ -330,10 +330,20 @@ export const signIn = async (email: string, pass: string) => {
 
 export const signInWithGoogle = async () => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
+
+    // Use explicit origin to avoid redirect_uri mismatch errors.
+    // In production this will be 'https://gosimpleliving.com'.
+    // In development this will be 'http://localhost:5173'.
+    const redirectTo = `${window.location.origin}/`;
+
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: window.location.origin
+            redirectTo,
+            queryParams: {
+                // Force account picker so user can choose account every time
+                prompt: 'select_account',
+            }
         }
     });
     if (error) throw error;
@@ -439,8 +449,16 @@ export const updateUserRole = async (uid: string, role: Role) => {
 
 export const deleteUser = async (uid: string) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('profiles').delete().eq('id', uid);
-    if (error) throw error;
+
+    // Call the SECURITY DEFINER function which deletes from BOTH
+    // public.profiles AND auth.users. The anon client cannot touch
+    // auth.users directly — this function runs with elevated privileges.
+    const { error } = await supabase.rpc('delete_user_by_id', { target_uid: uid });
+
+    if (error) {
+        console.error('[deleteUser] Error:', error.message);
+        throw new Error(error.message);
+    }
 };
 
 export const requestPasswordReset = async (email: string, redirectTo?: string) => {
@@ -587,35 +605,58 @@ export const getBlogPostBySlug = async (slug: string): Promise<BlogPost | null> 
 export const createBlogPost = async (post: BlogPost) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
 
-    // Map internal camelCase to DB snake_case
-    const dbPost = {
-        ...post,
+    // Build a clean DB row with all snake_case conversions
+    const dbPost: Record<string, any> = {
+        id: post.id,
+        title: post.title,
+        excerpt: post.excerpt,
+        content: post.content,
+        author: post.author,
+        date: post.date,
+        image: post.image,
+        status: post.status,
+        focus_keyword: post.focusKeyword,
+        meta_title: post.metaTitle,
+        meta_description: post.metaDescription,
+        meta_keywords: post.metaKeywords,
         hero_image_url: post.heroImageUrl,
-        comparison_tables: post.comparisonTables
+        comparison_tables: post.comparisonTables ?? null,
+        linked_product_ids: post.linkedProductIds ?? [],   // ← was missing!
     };
-    // Remove camelCase keys
-    delete (dbPost as any).heroImageUrl;
-    delete (dbPost as any).comparisonTables;
 
     const { error } = await supabase.from('posts').insert(dbPost);
-    if (error) throw error;
+    if (error) {
+        console.error('[createBlogPost] Supabase insert error:', error);
+        throw new Error(error.message);
+    }
 };
 
 export const updateBlogPost = async (post: BlogPost) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
 
-    // Map internal camelCase to DB snake_case
-    const dbPost = {
-        ...post,
+    // Build a clean DB row with all snake_case conversions
+    const dbPost: Record<string, any> = {
+        title: post.title,
+        excerpt: post.excerpt,
+        content: post.content,
+        author: post.author,
+        date: post.date,
+        image: post.image,
+        status: post.status,
+        focus_keyword: post.focusKeyword,
+        meta_title: post.metaTitle,
+        meta_description: post.metaDescription,
+        meta_keywords: post.metaKeywords,
         hero_image_url: post.heroImageUrl,
-        comparison_tables: post.comparisonTables
+        comparison_tables: post.comparisonTables ?? null,
+        linked_product_ids: post.linkedProductIds ?? [],   // ← was missing!
     };
-    // Remove camelCase keys
-    delete (dbPost as any).heroImageUrl;
-    delete (dbPost as any).comparisonTables;
 
     const { error } = await supabase.from('posts').update(dbPost).eq('id', post.id);
-    if (error) throw error;
+    if (error) {
+        console.error('[updateBlogPost] Supabase update error:', error);
+        throw new Error(error.message);
+    }
 };
 
 export const deleteBlogPost = async (id: string) => {
