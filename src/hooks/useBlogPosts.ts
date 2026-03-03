@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { BlogPost } from '../../types';
 import { dbService } from '../../services/database';
+import { v4 as uuidv4 } from 'uuid';
 import toast from 'react-hot-toast';
 
 export const useBlogPosts = (initialData: BlogPost[] = []) => {
@@ -46,7 +47,7 @@ export const useBlogPosts = (initialData: BlogPost[] = []) => {
 
         const newPost: BlogPost = {
             ...originalPost,
-            id: `b-${Date.now()}`,
+            id: uuidv4(),
             title: `[COPY] ${originalPost.title}`,
             status: 'draft',
         };

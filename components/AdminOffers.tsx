@@ -8,7 +8,7 @@ import { StarRating } from './StarRating';
 
 interface AdminOffersProps {
     siteContent: SiteContent;
-    onUpdateSiteContent: (field: keyof SiteContent, value: any) => void;
+    onUpdateSiteContent: (content: SiteContent) => void;
     onSaveChanges: () => Promise<void>;
     themeColor: ThemeColor;
 }
@@ -51,7 +51,7 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ siteContent, onUpdateS
     const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this offer?')) {
             const updatedOffers = offers.filter(o => o.id !== id);
-            onUpdateSiteContent('clickBankOffers', updatedOffers);
+            onUpdateSiteContent({ ...siteContent, clickBankOffers: updatedOffers });
             await onSaveChanges();
         }
     };
@@ -73,7 +73,7 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ siteContent, onUpdateS
             updatedOffers = [...offers, newOffer];
         }
 
-        onUpdateSiteContent('clickBankOffers', updatedOffers);
+        onUpdateSiteContent({ ...siteContent, clickBankOffers: updatedOffers });
         await onSaveChanges();
         setIsEditing(false);
         setCurrentOffer({});

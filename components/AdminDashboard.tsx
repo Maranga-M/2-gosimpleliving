@@ -1825,9 +1825,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 activeTab === 'offers' && (
                     <AdminOffers
                         siteContent={liveSiteContent}
-                        onUpdateSiteContent={(key, value) => {
+                        onUpdateSiteContent={(content) => {
                             if (_onUpdateSiteContent) {
-                                _onUpdateSiteContent({ ...liveSiteContent, [key]: value });
+                                _onUpdateSiteContent(content);
                             }
                         }}
                         onSaveChanges={async () => {
