@@ -3,8 +3,8 @@ import { User } from '../../types';
 import { dbService } from '../../services/database';
 
 export const useAuth = () => {
-    const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [user, setUser] = useState<User | null>(() => dbService.getCachedProfile());
+    const [isLoading, setIsLoading] = useState(() => !dbService.getCachedProfile());
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
 

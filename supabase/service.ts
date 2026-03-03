@@ -10,7 +10,8 @@ const CACHE_TTL = 30 * 60 * 1000; // 30 minutes for persistent cache
 const CACHE_KEYS = {
     products: 'gsl_cache_products',
     posts: 'gsl_cache_posts',
-    siteContent: 'gsl_cache_site_content'
+    siteContent: 'gsl_cache_site_content',
+    userProfile: 'gsl_cache_user_profile'
 };
 
 const saveToCache = (key: string, data: any) => {
@@ -39,6 +40,10 @@ const getFromCache = (key: string) => {
     } catch (e) {
         return null;
     }
+};
+
+export const getCachedProfile = (): User | null => {
+    return getFromCache(CACHE_KEYS.userProfile);
 };
 
 // --- RETRY HELPER ---
@@ -212,14 +217,11 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
         }, 10000); // 10 seconds
 
         try {
-            // Use getSession but briefly delay to allow cookie parsing if initial
+            // 1. Immediately check for existing session to prevent "guest flash" on refresh
             const { data: { session }, error: sessionError } = await supabase!.auth.getSession();
 
             if (sessionError) {
                 console.warn("Session check returned error:", sessionError.message);
-                if (sessionError.message.includes('schema') || sessionError.message.includes('500')) {
-                    console.error("CRITICAL: Supabase Schema/Auth 500 error detected. Please run REPAIR_SCHEMA.sql");
-                }
                 clearTimeout(timeoutId);
                 initialCheckDone = true;
                 callback(null);
@@ -227,18 +229,28 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
             }
 
             if (session?.user) {
+                // Try to get from cache first for instant recovery
+                const cachedProfile = getFromCache(CACHE_KEYS.userProfile);
+                if (cachedProfile && cachedProfile.uid === session.user.id) {
+                    console.log("Supabase Service: Instant recovery from profile cache");
+                    callback(cachedProfile);
+                }
+
                 const profile = await getUserProfile(session.user.id, session.user);
                 if (profile) {
+                    saveToCache(CACHE_KEYS.userProfile, profile);
                     clearTimeout(timeoutId);
                     initialCheckDone = true;
                     callback(profile);
                 } else if (session.user.email) {
+                    const fallbackUser = mapUser(session.user, { role: 'user', wishlist: [], name: 'User' });
                     clearTimeout(timeoutId);
                     initialCheckDone = true;
-                    callback(mapUser(session.user, { role: 'user', wishlist: [], name: 'User' }));
+                    callback(fallbackUser);
                 }
             } else {
                 // Explicitly signal no session if we checked and found nothing
+                localStorage.removeItem(CACHE_KEYS.userProfile);
                 clearTimeout(timeoutId);
                 initialCheckDone = true;
                 callback(null);
@@ -271,23 +283,28 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
                     const initialName = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User';
                     await createUserProfile(session.user.id, session.user.email, initialName);
                     const newUser = mapUser(session.user, { role: 'user', wishlist: [], name: initialName });
+                    saveToCache(CACHE_KEYS.userProfile, newUser);
                     callback(newUser);
                 } else if (profile) {
                     if (session.user.email === 'admin@demo.com' && profile.role !== 'admin') {
                         try { await updateUserRole(profile.uid, 'admin'); } catch (e) { }
                         profile.role = 'admin';
                     }
+                    saveToCache(CACHE_KEYS.userProfile, profile);
                     callback(profile);
                 }
             } catch (e) {
                 console.warn("Auth listener profile fetch failed", e);
                 const fallbackName = session.user.user_metadata?.name || 'User';
-                callback(mapUser(session.user, { role: 'user', wishlist: [], name: fallbackName }));
+                const fallbackUser = mapUser(session.user, { role: 'user', wishlist: [], name: fallbackName });
+                callback(fallbackUser);
             }
         } else {
+            localStorage.removeItem(CACHE_KEYS.userProfile);
             callback(null);
         }
     });
+
     return () => subscription.unsubscribe();
 };
 

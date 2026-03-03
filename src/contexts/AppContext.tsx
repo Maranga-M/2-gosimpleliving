@@ -5,6 +5,7 @@ import { useProducts } from '../hooks/useProducts';
 import { useBlogPosts } from '../hooks/useBlogPosts';
 import { useSiteContent } from '../hooks/useSiteContent';
 import { useUsers } from '../hooks/useUsers';
+import { useRealtime } from '../hooks/useRealtime';
 import { dbService } from '../../services/database';
 import { connectionManager, ConnectionStatus } from '../../services/connectionManager';
 import { AppNotification, Product, BlogPost, SiteContent } from '../../types';
@@ -217,6 +218,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             toast.error(e.message || "Cloud Refresh Failed. Using local fallback.");
         }
     };
+
+    // --- Realtime Subscriptions ---
+    // When the DB is connected, subscribe to live changes so the UI
+    // auto-refreshes without needing a manual page reload.
+    useRealtime({
+        onProductChange: (product, eventType) => {
+            products.setProducts(prev => {
+                if (eventType === 'DELETE') return prev.filter(p => p.id !== product.id);
+                if (eventType === 'INSERT') return [...prev, product];
+                return prev.map(p => p.id === product.id ? product : p); // UPDATE
+            });
+        },
+        onPostChange: (post, eventType) => {
+            blog.setBlogPosts(prev => {
+                if (eventType === 'DELETE') return prev.filter(p => p.id !== post.id);
+                if (eventType === 'INSERT') return [...prev, post];
+                return prev.map(p => p.id === post.id ? post : p); // UPDATE
+            });
+        },
+        onSiteContentChange: (liveContent) => {
+            content.setLiveSiteContent(liveContent);
+            CacheService.saveContent(liveContent);
+        },
+        onAnalyticsInsert: () => {
+            // Signal the dashboard to refetch analytics summary
+            console.log('[Realtime] Analytics event received – dashboard can poll.');
+        }
+    }, dbStatus === 'connected');
 
     // --- Notifications ---
     const [notifications, setNotifications] = useState<AppNotification[]>([]);

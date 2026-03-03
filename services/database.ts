@@ -14,6 +14,7 @@ export interface DatabaseService {
     deleteUser: (uid: string) => Promise<void>;
     requestPasswordReset: (email: string, redirectTo?: string) => Promise<void>;
     seedDatabase: (products: Product[], posts: BlogPost[], content: SiteContent) => Promise<void>;
+    getCachedProfile: () => User | null;
 
     // Products (Return null if connection failed/fallback needed)
     getProducts: () => Promise<Product[] | null>;
@@ -67,6 +68,7 @@ export const dbService: DatabaseService = {
     deleteUser: supabaseService.deleteUser,
     requestPasswordReset: supabaseService.requestPasswordReset,
     seedDatabase: supabaseService.seedDatabase,
+    getCachedProfile: supabaseService.getCachedProfile,
 
     // Products
     getProducts: supabaseService.getProducts,
