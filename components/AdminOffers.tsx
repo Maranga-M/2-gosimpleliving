@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit3, Trash2, ExternalLink, Save, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit3, Trash2, ExternalLink, Save, X, Image as ImageIcon, Copy } from 'lucide-react';
 import { ClickBankOffer, SiteContent, Testimonial, ThemeColor } from '../types';
 import { Button } from './Button';
 import { v4 as uuidv4 } from 'uuid';
@@ -54,6 +54,19 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ siteContent, onUpdateS
             onUpdateSiteContent({ ...siteContent, clickBankOffers: updatedOffers });
             await onSaveChanges();
         }
+    };
+
+    const handleDuplicate = async (offer: ClickBankOffer) => {
+        const duplicatedOffer: ClickBankOffer = {
+            ...offer,
+            id: uuidv4(),
+            title: `${offer.title} (Copy)`,
+            slug: `${offer.slug}-copy`,
+            status: 'draft'
+        };
+        const updatedOffers = [...offers, duplicatedOffer];
+        onUpdateSiteContent({ ...siteContent, clickBankOffers: updatedOffers });
+        await onSaveChanges();
     };
 
     const handleSave = async () => {
@@ -466,8 +479,11 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ siteContent, onUpdateS
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Button variant="ghost" size="sm" onClick={() => window.open(`/offers/${offer.slug}`, '_blank')} themeColor={themeColor}>
+                                        <Button variant="ghost" size="sm" onClick={() => window.open(`/offers/${offer.slug}`, '_blank')} themeColor={themeColor} title="Preview">
                                             <ExternalLink size={16} />
+                                        </Button>
+                                        <Button variant="ghost" size="sm" onClick={() => handleDuplicate(offer)} themeColor={themeColor} title="Duplicate">
+                                            <Copy size={16} />
                                         </Button>
                                         <Button variant="ghost" size="sm" onClick={() => handleStartEdit(offer)} themeColor={themeColor}>
                                             <Edit3 size={16} />

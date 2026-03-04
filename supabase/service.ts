@@ -1,9 +1,8 @@
-
 import { supabase } from './config';
 import { User, Role, Product, BlogPost, SiteContent, AnalyticsEvent } from '../types';
 import { ConnectionErrorType } from '../services/connectionManager';
 
-const DB_NOT_CONFIGURED_ERROR = 'Database connection is not configured. Please set environment variables.';
+const DB_NOT_CONFIGURED_ERROR = "Supabase is not configured. Please check your environment variables.";
 
 // --- PERSISTENT CACHING STRATEGY ---
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes for persistent cache
@@ -204,24 +203,40 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
     }
 
     let initialCheckDone = false;
+    let refreshTimer: any = null;
+
+    const setupRefreshBuffer = async () => {
+        const { data: { session } } = await supabase!.auth.getSession();
+        if (session && session.expires_at) {
+            const expiresAt = session.expires_at * 1000;
+            const now = Date.now();
+            const buffer = 5 * 60 * 1000; // 5 minute buffer
+            const waitTime = expiresAt - now - buffer;
+
+            if (refreshTimer) clearTimeout(refreshTimer);
+            if (waitTime > 0) {
+                refreshTimer = setTimeout(async () => {
+                    console.log("Supabase Auth: Proactive token refresh (5m buffer)");
+                    await supabase!.auth.refreshSession();
+                    setupRefreshBuffer();
+                }, waitTime);
+            }
+        }
+    };
 
     // 1. Immediately check for existing session to prevent "guest flash" on refresh
     const initSession = async () => {
-        // Safety timeout to ensure loading state is ALWAYS cleared
         const timeoutId = setTimeout(() => {
             if (!initialCheckDone) {
-                console.warn("initSession hanging detect - forcing fallback clean-up");
                 initialCheckDone = true;
                 callback(null);
             }
-        }, 10000); // 10 seconds
+        }, 10000);
 
         try {
-            // 1. Immediately check for existing session to prevent "guest flash" on refresh
             const { data: { session }, error: sessionError } = await supabase!.auth.getSession();
 
             if (sessionError) {
-                console.warn("Session check returned error:", sessionError.message);
                 clearTimeout(timeoutId);
                 initialCheckDone = true;
                 callback(null);
@@ -229,10 +244,9 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
             }
 
             if (session?.user) {
-                // Try to get from cache first for instant recovery
+                setupRefreshBuffer();
                 const cachedProfile = getFromCache(CACHE_KEYS.userProfile);
                 if (cachedProfile && cachedProfile.uid === session.user.id) {
-                    console.log("Supabase Service: Instant recovery from profile cache");
                     callback(cachedProfile);
                 }
 
@@ -249,14 +263,12 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
                     callback(fallbackUser);
                 }
             } else {
-                // Explicitly signal no session if we checked and found nothing
                 localStorage.removeItem(CACHE_KEYS.userProfile);
                 clearTimeout(timeoutId);
                 initialCheckDone = true;
                 callback(null);
             }
         } catch (e: any) {
-            console.warn("Initial session check failed exception:", e.message);
             clearTimeout(timeoutId);
             initialCheckDone = true;
             callback(null);
@@ -269,14 +281,10 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         console.log(`Supabase Auth Event: ${event}`);
 
-        // If it's the initial check and we already handled it in initSession, skip redundant callback
-        // This prevents double updates on first load
-        if (event === 'INITIAL_SESSION' && initialCheckDone) {
-            return;
-        }
+        if (event === 'INITIAL_SESSION' && initialCheckDone) return;
 
         if (session?.user) {
-            // Background fetch for real profile/wishlist
+            setupRefreshBuffer();
             try {
                 const profile = await getUserProfile(session.user.id, session.user);
                 if (!profile && session.user.email) {
@@ -286,21 +294,16 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
                     saveToCache(CACHE_KEYS.userProfile, newUser);
                     callback(newUser);
                 } else if (profile) {
-                    if (session.user.email === 'admin@demo.com' && profile.role !== 'admin') {
-                        try { await updateUserRole(profile.uid, 'admin'); } catch (e) { }
-                        profile.role = 'admin';
-                    }
                     saveToCache(CACHE_KEYS.userProfile, profile);
                     callback(profile);
                 }
             } catch (e) {
-                console.warn("Auth listener profile fetch failed", e);
                 const fallbackName = session.user.user_metadata?.name || 'User';
                 const fallbackUser = mapUser(session.user, { role: 'user', wishlist: [], name: fallbackName });
                 callback(fallbackUser);
             }
         } else {
-            // ONLY clear cache if this is a genuine SIGNED_OUT event or if initSession is done
+            if (refreshTimer) clearTimeout(refreshTimer);
             if (event === 'SIGNED_OUT' || initialCheckDone) {
                 localStorage.removeItem(CACHE_KEYS.userProfile);
                 callback(null);
@@ -308,49 +311,42 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
         }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+        if (refreshTimer) clearTimeout(refreshTimer);
+        subscription.unsubscribe();
+    };
 };
 
 export const signIn = async (email: string, pass: string) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-        if (error) {
-            if (error.message.includes('Database error querying schema') || error.status === 500) {
-                throw new Error("Supabase internal error (500). Please run the REPAIR_SCHEMA.sql script in your Supabase SQL editor to fix the database auth schema.");
-            }
-            console.error("Supabase Auth SignIn Error:", error);
-            throw error;
-        }
-        return data.user;
-    } catch (e: any) {
-        if (e.message.includes('500') || e.message.includes('schema')) {
-            throw new Error("Supabase Database/Schema Error (500). This is usually caused by a broken trigger or missing grants. Please run REPAIR_SCHEMA.sql to fix.");
-        }
-        throw e;
-    }
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+    return data.user;
 };
 
-export const signInWithGoogle = async () => {
+export const signInWithProvider = async (provider: 'google' | 'github' | 'apple') => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-
-    // Use explicit origin to avoid redirect_uri mismatch errors.
-    // In production this will be 'https://gosimpleliving.com'.
-    // In development this will be 'http://localhost:5173'.
     const redirectTo = `${window.location.origin}/`;
-
     const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider,
         options: {
             redirectTo,
-            queryParams: {
-                // Force account picker so user can choose account every time
-                prompt: 'select_account',
-            }
+            queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined
         }
     });
     if (error) throw error;
     return data;
+};
+
+export const sendMagicLink = async (email: string) => {
+    if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
+    const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+            emailRedirectTo: `${window.location.origin}/`
+        }
+    });
+    if (error) throw error;
 };
 
 export const signUp = async (email: string, pass: string, name: string) => {
@@ -575,11 +571,36 @@ export const updateProduct = async (product: Product) => {
 
 export const deleteProduct = async (id: string) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('products').delete().eq('id', id);
+    const { error } = await supabase.from('products').update({ deleted_at: new Date().toISOString() }).eq('id', id);
     if (error) {
-        console.error("Failed to DELETE product from DB:", error.message);
+        console.error("Failed to SOFT DELETE product in DB:", error.message);
         throw error;
     }
+};
+
+export const restoreProduct = async (id: string) => {
+    if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
+    const { error } = await supabase.from('products').update({ deleted_at: null }).eq('id', id);
+    if (error) throw error;
+};
+
+export const duplicateProduct = async (id: string): Promise<string> => {
+    if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
+    const product = await getProductById(id);
+    if (!product) throw new Error("Product not found");
+
+    const newId = crypto.randomUUID();
+    const duplicated: Product = {
+        ...product,
+        id: newId,
+        title: `${product.title} (Copy)`,
+        status: 'draft',
+        clicks: 0,
+        deleted_at: undefined
+    };
+
+    await createProduct(duplicated);
+    return newId;
 };
 
 export const getBlogPosts = async (): Promise<BlogPost[] | null> => {
@@ -709,13 +730,36 @@ export const updateBlogPost = async (post: BlogPost) => {
 
 export const deleteBlogPost = async (id: string) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    console.log(`Attempting to delete blog post with ID: ${id}`);
-    const { error, data } = await supabase.from('posts').delete().eq('id', id);
+    const { error } = await supabase.from('posts').update({ deleted_at: new Date().toISOString() }).eq('id', id);
     if (error) {
-        console.error(`Failed to DELETE blog post from DB [${error.code}]:`, error.message);
+        console.error(`Failed to SOFT DELETE blog post from DB:`, error.message);
         throw error;
     }
-    console.log(`Successfully deleted blog post with ID: ${id}`, data);
+};
+
+export const restoreBlogPost = async (id: string) => {
+    if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
+    const { error } = await supabase.from('posts').update({ deleted_at: null }).eq('id', id);
+    if (error) throw error;
+};
+
+export const duplicateBlogPost = async (id: string): Promise<string> => {
+    if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
+    const post = await getBlogPostById(id);
+    if (!post) throw new Error("Blog post not found");
+
+    const newId = crypto.randomUUID();
+    const duplicated: BlogPost = {
+        ...post,
+        id: newId,
+        title: `${post.title} (Copy)`,
+        status: 'draft',
+        date: new Date().toISOString().split('T')[0],
+        deleted_at: undefined
+    };
+
+    await createBlogPost(duplicated);
+    return newId;
 };
 
 export const getSiteContent = async (): Promise<SiteContent | null> => {

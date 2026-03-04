@@ -11,6 +11,7 @@ import { Wishlist } from './components/Wishlist';
 import { NotificationBell } from './components/NotificationBell';
 import { AnalyticsService } from './services/analytics'; // Import Analytics Service
 import { Toaster } from 'react-hot-toast';
+import { ConnectionStatus } from './components/ConnectionStatus';
 import { lazyWithRetry } from './src/utils/lazyWithRetry';
 import { Analytics } from '@vercel/analytics/react';
 
@@ -476,7 +477,8 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <AppProvider>
-      <Toaster position="top-right" />
+      <Toaster position="bottom-center" />
+      <ConnectionStatus />
       <Analytics />
       <Router>
         <AppContent />

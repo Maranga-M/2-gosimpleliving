@@ -30,6 +30,7 @@ export interface Product {
   additionalAffiliateLinks?: { label: string; url: string; theme?: AffiliateTheme }[];
   cjAffiliateId?: string; // CJ advertiser ID
   cjDeepLink?: string; // CJ deep link URL
+  deleted_at?: string; // Soft delete timestamp
 }
 
 export type Category = string;
@@ -262,6 +263,7 @@ export interface ImageAsset {
 export interface BlogPost {
   id: string;
   title: string;
+  slug?: string;
   excerpt: string;
   content: string; // Markdown or HTML
   author: string;
@@ -276,6 +278,7 @@ export interface BlogPost {
   metaDescription?: string;
   metaKeywords?: string;
   comparisonTables?: ComparisonTable[];
+  deleted_at?: string; // Soft delete timestamp
 }
 
 export interface CustomPage {

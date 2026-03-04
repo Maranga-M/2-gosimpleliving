@@ -647,6 +647,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         setNewCategoryName('');
     };
 
+    const handleDuplicateCategory = (name: string) => {
+        setNewCategoryName(`${name} Copy`);
+        // Focus the input would be nice but not strictly needed
+        toast.success(`Press (+) to add duplicated category "${name} Copy"`);
+    };
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'published': return <span className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 font-bold">Published</span>;
@@ -1115,7 +1121,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     {categories.filter(c => c !== 'All').map(cat => (
                                         <div key={cat} className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg group">
                                             <span className="text-sm text-slate-700 dark:text-slate-300">{cat}</span>
-                                            <button onClick={() => onDeleteCategory(cat)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash size={14} /></button>
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => handleDuplicateCategory(cat)} className="text-slate-400 hover:text-amber-500" title="Duplicate"><Copy size={14} /></button>
+                                                <button onClick={() => onDeleteCategory(cat)} className="text-slate-400 hover:text-red-500" title="Delete"><Trash size={14} /></button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

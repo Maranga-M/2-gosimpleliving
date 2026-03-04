@@ -1,12 +1,17 @@
 import * as supabaseService from '../supabase/service';
 import { User, Role, Product, BlogPost, SiteContent, AnalyticsEvent } from '../types';
+import { offlineQueue } from '../utils/offlineQueue';
 
 export interface DatabaseService {
     signIn: (email: string, pass: string) => Promise<any>;
     signInWithGoogle: () => Promise<any>;
+    signInWithGitHub: () => Promise<any>;
+    sendMagicLink: (email: string) => Promise<void>;
     signUp: (email: string, pass: string, name: string) => Promise<any>;
     signOut: () => Promise<void>;
     onAuthStateChanged: (callback: (user: User | null) => void) => Function;
+    testConnection: () => Promise<boolean>;
+    testConnectionDetailed: () => Promise<any>;
     updateWishlist: (uid: string, wishlist: string[]) => Promise<void>;
     updateUserName: (uid: string, name: string) => Promise<void>;
     getAllUsers: () => Promise<User[]>;
@@ -22,6 +27,8 @@ export interface DatabaseService {
     createProduct: (product: Product) => Promise<void>;
     updateProduct: (product: Product) => Promise<void>;
     deleteProduct: (id: string) => Promise<void>;
+    duplicateProduct: (id: string) => Promise<string>;
+    restoreProduct: (id: string) => Promise<void>;
 
     // Blog Posts
     getBlogPosts: () => Promise<BlogPost[] | null>;
@@ -30,6 +37,8 @@ export interface DatabaseService {
     createBlogPost: (post: BlogPost) => Promise<void>;
     updateBlogPost: (post: BlogPost) => Promise<void>;
     deleteBlogPost: (id: string) => Promise<void>;
+    duplicateBlogPost: (id: string) => Promise<string>;
+    restoreBlogPost: (id: string) => Promise<void>;
 
     // Site Content (Theme, Hero, etc)
     getSiteContent: () => Promise<SiteContent | null>;
@@ -43,23 +52,26 @@ export interface DatabaseService {
 
     // Analytics
     logAnalyticsEvent: (event: AnalyticsEvent) => Promise<void>;
-    testConnection: () => Promise<boolean>;
-    testConnectionDetailed: () => Promise<supabaseService.DetailedConnectionResult>;
 }
 
 
 
 export const dbService: DatabaseService = {
     signIn: supabaseService.signIn,
-    signInWithGoogle: supabaseService.signInWithGoogle,
+    signInWithGoogle: () => supabaseService.signInWithProvider('google'),
+    signInWithGitHub: () => supabaseService.signInWithProvider('github'),
+    sendMagicLink: supabaseService.sendMagicLink,
     signUp: supabaseService.signUp,
     signOut: supabaseService.signOut,
-
-    onAuthStateChanged: (callback) => {
-        return supabaseService.authStateChanged((user) => {
-            callback(user);
-        });
-    },
+    onAuthStateChanged: supabaseService.authStateChanged,
+    testConnection: supabaseService.testConnection,
+    testConnectionDetailed: supabaseService.testConnectionDetailed,
+    // The original onAuthStateChanged implementation was:
+    // onAuthStateChanged: (callback) => {
+    //     return supabaseService.authStateChanged((user) => {
+    //         callback(user);
+    //     });
+    // },
 
     updateWishlist: supabaseService.updateWishlist,
     updateUserName: supabaseService.updateUserName,
@@ -73,17 +85,39 @@ export const dbService: DatabaseService = {
     // Products
     getProducts: supabaseService.getProducts,
     getProductById: supabaseService.getProductById,
-    createProduct: supabaseService.createProduct,
-    updateProduct: supabaseService.updateProduct,
-    deleteProduct: supabaseService.deleteProduct,
+    createProduct: async (product) => {
+        offlineQueue.enqueue('insert', 'products', product);
+        await supabaseService.createProduct(product);
+    },
+    updateProduct: async (product) => {
+        offlineQueue.enqueue('update', 'products', product);
+        await supabaseService.updateProduct(product);
+    },
+    deleteProduct: async (id) => {
+        offlineQueue.enqueue('update', 'products', { id, deleted_at: new Date().toISOString() });
+        await supabaseService.deleteProduct(id);
+    },
+    duplicateProduct: supabaseService.duplicateProduct,
+    restoreProduct: supabaseService.restoreProduct,
 
     // Blog Posts
     getBlogPosts: supabaseService.getBlogPosts,
     getBlogPostById: supabaseService.getBlogPostById,
     getBlogPostBySlug: supabaseService.getBlogPostBySlug,
-    createBlogPost: supabaseService.createBlogPost,
-    updateBlogPost: supabaseService.updateBlogPost,
-    deleteBlogPost: supabaseService.deleteBlogPost,
+    createBlogPost: async (post) => {
+        offlineQueue.enqueue('insert', 'posts', post);
+        await supabaseService.createBlogPost(post);
+    },
+    updateBlogPost: async (post) => {
+        offlineQueue.enqueue('update', 'posts', post);
+        await supabaseService.updateBlogPost(post);
+    },
+    deleteBlogPost: async (id) => {
+        offlineQueue.enqueue('update', 'posts', { id, deleted_at: new Date().toISOString() });
+        await supabaseService.deleteBlogPost(id);
+    },
+    duplicateBlogPost: supabaseService.duplicateBlogPost,
+    restoreBlogPost: supabaseService.restoreBlogPost,
 
     // Site Content
     getSiteContent: supabaseService.getSiteContent,
@@ -97,9 +131,6 @@ export const dbService: DatabaseService = {
 
     // Analytics
     logAnalyticsEvent: supabaseService.logAnalyticsEvent,
-
-    testConnection: supabaseService.testConnection,
-    testConnectionDetailed: supabaseService.testConnectionDetailed,
 };
 
 // Register health check handler

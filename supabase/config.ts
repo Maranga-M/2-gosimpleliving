@@ -79,16 +79,40 @@ console.log('🔧 Supabase Config Status:', configStatus);
 
 let supabase: SupabaseClient | null = null;
 
-// Custom fetch with timeout to prevent "hanging" requests on cold starts
-const fetchWithTimeout = (url: string | URL | Request, options: RequestInit = {}): Promise<Response> => {
+// --- REQUEST DE-DUPLICATION ---
+const pendingRequests = new Map<string, Promise<Response>>();
+
+const fetchWithDeDup = (url: string | URL | Request, options: RequestInit = {}): Promise<Response> => {
+  // Only de-duplicate GET requests
+  if (options.method && options.method !== 'GET') {
+    return fetch(url, options);
+  }
+
+  const cacheKey = JSON.stringify({ url: url.toString(), options });
+  if (pendingRequests.has(cacheKey)) {
+    return pendingRequests.get(cacheKey)!;
+  }
+
+  const request = fetch(url, options).finally(() => {
+    pendingRequests.delete(cacheKey);
+  });
+
+  pendingRequests.set(cacheKey, request);
+  return request;
+};
+
+// Custom fetch with timeout AND de-duplication
+const enhancedFetch = (url: string | URL | Request, options: RequestInit = {}): Promise<Response> => {
   const timeout = 30000; // 30 seconds
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
 
-  return fetch(url, {
+  const mergedOptions = {
     ...options,
     signal: controller.signal
-  }).finally(() => clearTimeout(id));
+  };
+
+  return fetchWithDeDup(url, mergedOptions).finally(() => clearTimeout(id));
 };
 
 if (supabaseUrl && supabaseKey) {
@@ -97,23 +121,25 @@ if (supabaseUrl && supabaseKey) {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true
+        detectSessionInUrl: true,
+        storageKey: 'vibe_auth_token', // Distinct key for persistence
+        storage: window.localStorage
       },
       global: {
-        fetch: fetchWithTimeout,
-        headers: { 'x-application-name': 'go-simple-living' }
+        fetch: enhancedFetch,
+        headers: { 'x-application-name': 'go-simple-living-vibe' }
       },
       db: {
         schema: 'public'
       },
       realtime: {
         params: {
-          eventsPerSecond: 10
+          eventsPerSecond: 20 // Increased for better interactivity
         },
-        heartbeatIntervalMs: 30000 // 30s heartbeat
+        heartbeatIntervalMs: 25000 // Slightly faster heartbeat
       }
     });
-    console.log(`✅ Supabase client initialized successfully with timeout protection`);
+    console.log(`✅ Supabase Vibe-Client initialized with pooling and de-duplication`);
   } catch (err) {
     console.error('❌ Failed to initialize Supabase client:', err);
   }

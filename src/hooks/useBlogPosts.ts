@@ -48,8 +48,10 @@ export const useBlogPosts = (initialData: BlogPost[] = []) => {
         const newPost: BlogPost = {
             ...originalPost,
             id: uuidv4(),
-            title: `[COPY] ${originalPost.title}`,
+            title: `${originalPost.title} (Copy)`,
+            slug: '', // Clear slug so DB trigger can generate a new one
             status: 'draft',
+            heroImageUrl: '', // Clear hero image if it was specific
         };
 
         handleAddBlogPost(newPost);
