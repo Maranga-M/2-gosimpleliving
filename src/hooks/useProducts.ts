@@ -11,9 +11,11 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
     const [isPending, startTransition] = useTransition();
 
     // Categories merged from master list + actual products in DB
+    // Always deduplicated and sorted for consistency
     const categories = useMemo(() => {
-        const productCategories = Array.from(new Set(products.map(p => p.category)));
-        const combined = Array.from(new Set([...initialCategories, ...productCategories]));
+        const productCategories = Array.from(new Set(products.map(p => p.category).filter(c => c)));
+        const masterCategories = Array.from(new Set((initialCategories || []).filter(c => c)));
+        const combined = Array.from(new Set([...masterCategories, ...productCategories]));
         const sorted = combined.filter(c => c && c !== 'All').sort();
         return ['All', ...sorted];
     }, [products, initialCategories]);

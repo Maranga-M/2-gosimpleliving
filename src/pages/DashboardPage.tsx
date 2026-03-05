@@ -12,18 +12,29 @@ export const DashboardPage: React.FC = () => {
     const [activeTab] = useState<'products' | 'content' | 'theme' | 'users' | 'config'>('products');
 
     const handleAddCategory = async (name: string) => {
-        const categories = content.liveSiteContent.categories || [];
-        if (categories.includes(name)) return;
+        const trimmedName = name.trim();
+        if (!trimmedName) {
+            toast.error("Category name cannot be empty.");
+            return;
+        }
 
+        const categories = content.liveSiteContent.categories || [];
+        if (categories.includes(trimmedName)) {
+            toast.error("This category already exists.");
+            return;
+        }
+
+        // Ensure categories are unique before adding
+        const uniqueCategories = Array.from(new Set(categories));
         const updatedContent = {
             ...content.liveSiteContent,
-            categories: [...categories, name]
+            categories: [...uniqueCategories, trimmedName]
         };
 
         content.updateSiteContent(updatedContent);
         try {
             await content.saveChanges(updatedContent);
-            toast.success(`Category "${name}" added!`);
+            toast.success(`Category "${trimmedName}" added!`);
         } catch (e) {
             toast.error("Failed to save category change.");
         }

@@ -588,6 +588,12 @@ export const getSiteContent = async (): Promise<SiteContent | null> => {
         });
 
         const content = result?.content as SiteContent;
+        
+        // Validate and clean categories to prevent corruption
+        if (content && content.categories) {
+            content.categories = Array.from(new Set(content.categories.filter(c => c && typeof c === 'string')));
+        }
+        
         saveToCache(CACHE_KEYS.siteContent, content);
 
         return content;
@@ -599,9 +605,16 @@ export const getSiteContent = async (): Promise<SiteContent | null> => {
 
 export const saveSiteContent = async (content: SiteContent) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
+    
+    // Deduplicate and clean categories before saving
+    const cleanedContent = {
+        ...content,
+        categories: content.categories ? Array.from(new Set(content.categories.filter(c => c && typeof c === 'string'))) : []
+    };
+    
     const { error } = await supabase.from('site_content').upsert({
         id: 'main',
-        content: content
+        content: cleanedContent
     });
     if (error) {
         console.error("Failed to SAVE site content to DB:", error.message);
@@ -609,7 +622,7 @@ export const saveSiteContent = async (content: SiteContent) => {
     }
 
     // Update cache when we save, so we don't serve stale data for 30mins
-    saveToCache(CACHE_KEYS.siteContent, content);
+    saveToCache(CACHE_KEYS.siteContent, cleanedContent);
 };
 
 export const seedDatabase = async (products: Product[], posts: BlogPost[], content: SiteContent) => {
