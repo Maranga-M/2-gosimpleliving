@@ -4,15 +4,34 @@ import { dbService } from '../../services/database';
 import { v4 as uuidv4 } from 'uuid';
 import toast from 'react-hot-toast';
 
-export const useBlogPosts = (initialData: BlogPost[] = []) => {
+export const useBlogPosts = (initialData: BlogPost[] = [], userRole?: string, setIsLoginModalOpen?: (open: boolean) => void) => {
     const [blogPosts, setBlogPosts] = useState<BlogPost[]>(initialData);
     const [isPending, startTransition] = useTransition();
 
-    const publishedBlogPosts = useMemo(() => {
+    const filteredPosts = useMemo(() => {
+        // Admin/Editor sees ALL, guests/users see published only
+        if (userRole === 'admin' || userRole === 'editor') {
+            return blogPosts;
+        }
         return blogPosts.filter(b => b.status === 'published');
-    }, [blogPosts]);
+    }, [blogPosts, userRole]);
+
+    const ensureAuth = (): boolean => {
+        if (!userRole || (userRole !== 'admin' && userRole !== 'editor')) {
+            if (setIsLoginModalOpen) {
+                setIsLoginModalOpen(true);
+                toast("Please sign in as an Editor to make changes.", { icon: '🔐' });
+            } else {
+                toast.error("You do not have permission to make changes.");
+            }
+            return false;
+        }
+        return true;
+    };
 
     const handleAddBlogPost = async (post: BlogPost) => {
+        if (!ensureAuth()) return;
+
         startTransition(() => {
             setBlogPosts(prev => [post, ...prev]);
         });
@@ -27,6 +46,8 @@ export const useBlogPosts = (initialData: BlogPost[] = []) => {
     };
 
     const handleUpdateBlogPost = async (updatedPost: BlogPost) => {
+        if (!ensureAuth()) return;
+
         const original = blogPosts.find(p => p.id === updatedPost.id);
         startTransition(() => {
             setBlogPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
@@ -44,6 +65,8 @@ export const useBlogPosts = (initialData: BlogPost[] = []) => {
     };
 
     const handleDeleteBlogPost = async (id: string) => {
+        if (!ensureAuth()) return;
+
         const original = blogPosts.find(p => p.id === id);
         startTransition(() => {
             setBlogPosts(prev => prev.filter(p => p.id !== id));
@@ -63,6 +86,8 @@ export const useBlogPosts = (initialData: BlogPost[] = []) => {
     };
 
     const handleDuplicateBlogPost = (postId: string) => {
+        if (!ensureAuth()) return;
+
         const originalPost = blogPosts.find(p => p.id === postId);
         if (!originalPost) return;
 
@@ -81,7 +106,7 @@ export const useBlogPosts = (initialData: BlogPost[] = []) => {
     return {
         blogPosts,
         setBlogPosts,
-        publishedBlogPosts,
+        publishedBlogPosts: filteredPosts,
         isUpdatingBlog: isPending,
         addBlogPost: handleAddBlogPost,
         updateBlogPost: handleUpdateBlogPost,

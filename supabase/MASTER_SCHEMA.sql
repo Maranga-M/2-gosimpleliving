@@ -121,24 +121,42 @@ CREATE POLICY "Public Read Profiles" ON public.profiles FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Owner Write Profiles" ON public.profiles;
 CREATE POLICY "Owner Write Profiles" ON public.profiles FOR ALL USING (auth.uid() = id);
 
--- Products & Posts & Site Content (Open for now as requested for the Vibe app, or restricted to admins)
+-- Products & Posts & Site Content
 DROP POLICY IF EXISTS "Public Read Products" ON public.products;
 CREATE POLICY "Public Read Products" ON public.products FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Admin Write Products" ON public.products;
-CREATE POLICY "Admin Write Products" ON public.products FOR ALL USING (true); -- Simplify for now
+CREATE POLICY "Admin Write Products" ON public.products FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE profiles.id = auth.uid() 
+        AND (profiles.role = 'admin' OR profiles.role = 'editor')
+    )
+);
 
 DROP POLICY IF EXISTS "Public Read Posts" ON public.posts;
 CREATE POLICY "Public Read Posts" ON public.posts FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Admin Write Posts" ON public.posts;
-CREATE POLICY "Admin Write Posts" ON public.posts FOR ALL USING (true);
+CREATE POLICY "Admin Write Posts" ON public.posts FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE profiles.id = auth.uid() 
+        AND (profiles.role = 'admin' OR profiles.role = 'editor')
+    )
+);
 
 DROP POLICY IF EXISTS "Public Read Site Content" ON public.site_content;
 CREATE POLICY "Public Read Site Content" ON public.site_content FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Admin Write Site Content" ON public.site_content;
-CREATE POLICY "Admin Write Site Content" ON public.site_content FOR ALL USING (true);
+CREATE POLICY "Admin Write Site Content" ON public.site_content FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE profiles.id = auth.uid() 
+        AND (profiles.role = 'admin' OR profiles.role = 'editor')
+    )
+);
 
 -- Analytics
 DROP POLICY IF EXISTS "Enable Insert Analytics" ON public.analytics;

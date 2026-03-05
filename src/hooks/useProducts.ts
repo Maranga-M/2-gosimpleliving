@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 
 import { ConnectionStatus } from '../../services/connectionManager';
 
-export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, initialCategories: string[] = [], initialData: Product[] = []) => {
+export const useProducts = (_dbStatus: ConnectionStatus, userRole?: string, initialCategories: string[] = [], initialData: Product[] = [], setIsLoginModalOpen?: (open: boolean) => void) => {
     const [products, setProducts] = useState<Product[]>(initialData);
     const [isPending, startTransition] = useTransition();
 
@@ -29,19 +29,13 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
     const [smartCollectionFilter, setSmartCollectionFilter] = useState<string[] | null>(null);
     const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
 
-    // Initial Load Logic usually handled by parent or a useData hook, 
-    // but we need CRUD methods here.
-    // For now, we will expose setProducts to allow initial data loading.
-
     const filteredProducts = useMemo(() => {
         let result = products;
 
-        // Admin sees all, users see published only
-        // Actually App.tsx filtered by 'published' for everyone in the main view.
-        // We will expose a base filter logic effectively.
-        // Adapt logic: In the main grid we only show published.
-
-        result = result.filter(p => p.status === 'published');
+        // Admin/Editor sees ALL, guests/users see published only
+        if (userRole !== 'admin' && userRole !== 'editor') {
+            result = result.filter(p => p.status === 'published');
+        }
 
         if (selectedCategory !== 'All') result = result.filter(p => p.category === selectedCategory);
         if (smartCollectionFilter) result = result.filter(p => smartCollectionFilter.includes(p.id));
@@ -64,11 +58,26 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
                 default: return (b.isBestSeller ? 1 : 0) - (a.isBestSeller ? 1 : 0);
             }
         });
-    }, [products, selectedCategory, searchQuery, sortBy, smartCollectionFilter, showSalesOnly]);
+    }, [products, selectedCategory, searchQuery, sortBy, smartCollectionFilter, showSalesOnly, userRole]);
 
     // --- Actions ---
 
+    const ensureAuth = (): boolean => {
+        if (!userRole || (userRole !== 'admin' && userRole !== 'editor')) {
+            if (setIsLoginModalOpen) {
+                setIsLoginModalOpen(true);
+                toast("Please sign in as an Editor to make changes.", { icon: '🔐' });
+            } else {
+                toast.error("You do not have permission to make changes.");
+            }
+            return false;
+        }
+        return true;
+    };
+
     const handleAddProduct = async (newProduct: Product) => {
+        if (!ensureAuth()) return;
+
         startTransition(() => {
             setProducts(prev => [newProduct, ...prev]);
         });
@@ -81,6 +90,8 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
     };
 
     const handleUpdateProduct = async (updatedProduct: Product) => {
+        if (!ensureAuth()) return;
+
         const original = products.find(p => p.id === updatedProduct.id);
         startTransition(() => {
             setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
@@ -96,6 +107,8 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
     };
 
     const handleDeleteProduct = async (id: string) => {
+        if (!ensureAuth()) return;
+
         const original = products.find(p => p.id === id);
         startTransition(() => {
             setProducts(prev => prev.filter(p => p.id !== id));
@@ -111,6 +124,8 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
     };
 
     const handleDuplicateProduct = (productId: string) => {
+        if (!ensureAuth()) return;
+
         const originalProduct = products.find(p => p.id === productId);
         if (!originalProduct) return;
 
@@ -128,6 +143,7 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
     };
 
     const handleAddReview = async (productId: string, review: Review) => {
+        // Reviews can be added by anyone in this implementation (or restricted in RLS)
         const product = products.find(p => p.id === productId);
         if (!product) return;
 

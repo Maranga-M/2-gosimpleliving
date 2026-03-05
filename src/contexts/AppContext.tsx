@@ -107,8 +107,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, []);
 
     // We initialize hooks with initial cached data so UI renders immediately
-    const products = useProducts(dbStatus, auth.user?.role, content.siteContent.categories, initialCachedProducts);
-    const blog = useBlogPosts(initialCachedBlogs);
+    const products = useProducts(dbStatus, auth.user?.role, content.siteContent.categories, initialCachedProducts, auth.setIsLoginModalOpen);
+    const blog = useBlogPosts(initialCachedBlogs, auth.user?.role, auth.setIsLoginModalOpen);
 
     // Background data hydration (non-blocking)
     useEffect(() => {
