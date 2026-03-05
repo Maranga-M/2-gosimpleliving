@@ -77,7 +77,9 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
             startTransition(() => {
                 setProducts(prev => prev.filter(p => p.id !== newProduct.id));
             });
-            toast.error("Persistence Error: Failed to save product to database.");
+            const errorMsg = e instanceof Error ? e.message : 'Unknown error';
+            console.error("[v0] Product creation failed:", errorMsg);
+            toast.error(`Persistence Error: Failed to save product to database. ${errorMsg}`);
         }
     };
 
@@ -86,13 +88,15 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
         startTransition(() => {
             setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
         });
-        try { await dbService.updateProduct(updatedProduct); } catch (e) {
+            try { await dbService.updateProduct(updatedProduct); } catch (e) {
             if (original) {
                 startTransition(() => {
                     setProducts(prev => prev.map(p => p.id === updatedProduct.id ? original : p));
                 });
             }
-            toast.error("Persistence Error: Failed to update product in database.");
+            const errorMsg = e instanceof Error ? e.message : 'Unknown error';
+            console.error("[v0] Product update failed:", errorMsg);
+            toast.error(`Persistence Error: Failed to update product in database. ${errorMsg}`);
         }
     };
 
@@ -107,7 +111,9 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
                     setProducts(prev => [original, ...prev]);
                 });
             }
-            toast.error("Persistence Error: Failed to delete product.");
+            const errorMsg = e instanceof Error ? e.message : 'Unknown error';
+            console.error("[v0] Product delete failed:", errorMsg);
+            toast.error(`Persistence Error: Failed to delete product. ${errorMsg}`);
         }
     };
 

@@ -437,8 +437,13 @@ export const createProduct = async (product: Product) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
     const { error } = await supabase.from('products').insert(product);
     if (error) {
-        console.error("Failed to CREATE product in DB:", error.message);
-        throw error;
+        console.error("Failed to CREATE product in DB:", {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
+        throw new Error(`Database error: ${error.message}${error.code ? ` (${error.code})` : ''}`);
     }
 };
 
@@ -446,8 +451,13 @@ export const updateProduct = async (product: Product) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
     const { error } = await supabase.from('products').update(product).eq('id', product.id);
     if (error) {
-        console.error("Failed to UPDATE product in DB:", error.message);
-        throw error;
+        console.error("Failed to UPDATE product in DB:", {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
+        throw new Error(`Database error: ${error.message}${error.code ? ` (${error.code})` : ''}`);
     }
 };
 
@@ -455,7 +465,12 @@ export const deleteProduct = async (id: string) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
     const { error } = await supabase.from('products').delete().eq('id', id);
     if (error) {
-        console.error("Failed to DELETE product from DB:", error.message);
+        console.error("Failed to DELETE product from DB:", {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
         throw error;
     }
 };
