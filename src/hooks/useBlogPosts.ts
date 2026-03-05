@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useTransition } from 'react';
 import { BlogPost } from '../../types';
 import { dbService } from '../../services/database';
 import { v4 as uuidv4 } from 'uuid';
@@ -6,37 +6,58 @@ import toast from 'react-hot-toast';
 
 export const useBlogPosts = (initialData: BlogPost[] = []) => {
     const [blogPosts, setBlogPosts] = useState<BlogPost[]>(initialData);
+    const [isPending, startTransition] = useTransition();
 
     const publishedBlogPosts = useMemo(() => {
         return blogPosts.filter(b => b.status === 'published');
     }, [blogPosts]);
 
     const handleAddBlogPost = async (post: BlogPost) => {
-        setBlogPosts(prev => [post, ...prev]);
-        try { await dbService.createBlogPost(post); } catch (e: any) {
-            setBlogPosts(prev => prev.filter(p => p.id !== post.id));
+        startTransition(() => {
+            setBlogPosts(prev => [post, ...prev]);
+        });
+        try {
+            await dbService.createBlogPost(post);
+        } catch (e: any) {
+            startTransition(() => {
+                setBlogPosts(prev => prev.filter(p => p.id !== post.id));
+            });
             toast.error(`Persistence Error: Failed to save blog post. ${e?.message || ''}`);
         }
     };
 
     const handleUpdateBlogPost = async (updatedPost: BlogPost) => {
         const original = blogPosts.find(p => p.id === updatedPost.id);
-        setBlogPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
-        try { await dbService.updateBlogPost(updatedPost); } catch (e: any) {
-            if (original) setBlogPosts(prev => prev.map(p => p.id === updatedPost.id ? original : p));
+        startTransition(() => {
+            setBlogPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+        });
+        try {
+            await dbService.updateBlogPost(updatedPost);
+        } catch (e: any) {
+            if (original) {
+                startTransition(() => {
+                    setBlogPosts(prev => prev.map(p => p.id === updatedPost.id ? original : p));
+                });
+            }
             toast.error(`Persistence Error: Failed to update blog post. ${e?.message || ''}`);
         }
     };
 
     const handleDeleteBlogPost = async (id: string) => {
         const original = blogPosts.find(p => p.id === id);
-        setBlogPosts(prev => prev.filter(p => p.id !== id));
+        startTransition(() => {
+            setBlogPosts(prev => prev.filter(p => p.id !== id));
+        });
         try {
             await dbService.deleteBlogPost(id);
             toast.success('Blog post deleted successfully!');
         } catch (e: any) {
             console.error('Delete blog post error:', e);
-            if (original) setBlogPosts(prev => [original, ...prev]);
+            if (original) {
+                startTransition(() => {
+                    setBlogPosts(prev => [original, ...prev]);
+                });
+            }
             toast.error(`Failed to delete blog post from database: ${e?.message || 'Unknown error'}`);
         }
     };
@@ -61,6 +82,7 @@ export const useBlogPosts = (initialData: BlogPost[] = []) => {
         blogPosts,
         setBlogPosts,
         publishedBlogPosts,
+        isUpdatingBlog: isPending,
         addBlogPost: handleAddBlogPost,
         updateBlogPost: handleUpdateBlogPost,
         deleteBlogPost: handleDeleteBlogPost,

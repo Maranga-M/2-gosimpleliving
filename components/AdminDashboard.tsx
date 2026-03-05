@@ -648,9 +648,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
 
     const handleDuplicateCategory = (name: string) => {
-        setNewCategoryName(`${name} Copy`);
-        // Focus the input would be nice but not strictly needed
-        toast.success(`Press (+) to add duplicated category "${name} Copy"`);
+        const newName = `${name} (Copy)`;
+        setNewCategoryName(newName);
+        toast.success(`Press (+) to add duplicated category "${newName}"`);
     };
 
     const getStatusBadge = (status: string) => {

@@ -117,7 +117,7 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
         const newProduct: Product = {
             ...originalProduct,
             id: uuidv4(),
-            title: `[COPY] ${originalProduct.title}`,
+            title: `${originalProduct.title} (Copy)`,
             status: 'draft',
             clicks: 0,
             localReviews: [],

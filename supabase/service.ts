@@ -529,7 +529,11 @@ export const createProduct = async (product: Product) => {
         isBestSeller: product.isBestSeller,
         status: product.status,
         clicks: product.clicks || 0,
-        localReviews: product.localReviews || []
+        localReviews: product.localReviews || [],
+        regionalPricing: product.regionalPricing || {},
+        additionalAffiliateLinks: product.additionalAffiliateLinks || [],
+        cjAffiliateId: product.cjAffiliateId,
+        cjDeepLink: product.cjDeepLink
     };
 
     const { error } = await supabase.from('products').insert(dbProduct);
@@ -537,6 +541,9 @@ export const createProduct = async (product: Product) => {
         console.error("Failed to CREATE product in DB:", error.message);
         throw error;
     }
+
+    // Invalidate Cache
+    localStorage.removeItem(CACHE_KEYS.products);
 };
 
 export const updateProduct = async (product: Product) => {
@@ -559,7 +566,11 @@ export const updateProduct = async (product: Product) => {
         isBestSeller: product.isBestSeller,
         status: product.status,
         clicks: product.clicks || 0,
-        localReviews: product.localReviews || []
+        localReviews: product.localReviews || [],
+        regionalPricing: product.regionalPricing || {},
+        additionalAffiliateLinks: product.additionalAffiliateLinks || [],
+        cjAffiliateId: product.cjAffiliateId,
+        cjDeepLink: product.cjDeepLink
     };
 
     const { error } = await supabase.from('products').update(dbProduct).eq('id', product.id);
@@ -567,6 +578,9 @@ export const updateProduct = async (product: Product) => {
         console.error("Failed to UPDATE product in DB:", error.message);
         throw error;
     }
+
+    // Invalidate Cache
+    localStorage.removeItem(CACHE_KEYS.products);
 };
 
 export const deleteProduct = async (id: string) => {
@@ -576,6 +590,8 @@ export const deleteProduct = async (id: string) => {
         console.error("Failed to SOFT DELETE product in DB:", error.message);
         throw error;
     }
+    // Invalidate Cache
+    localStorage.removeItem(CACHE_KEYS.products);
 };
 
 export const restoreProduct = async (id: string) => {
@@ -676,6 +692,7 @@ export const createBlogPost = async (post: BlogPost) => {
     const dbPost: Record<string, any> = {
         id: post.id,
         title: post.title,
+        slug: post.slug,
         excerpt: post.excerpt,
         content: post.content,
         author: post.author,
@@ -697,6 +714,8 @@ export const createBlogPost = async (post: BlogPost) => {
         console.error('[createBlogPost] Supabase insert error:', error);
         throw new Error(error.message);
     }
+    // Invalidate cache
+    localStorage.removeItem(CACHE_KEYS.posts);
 };
 
 export const updateBlogPost = async (post: BlogPost) => {
@@ -705,6 +724,7 @@ export const updateBlogPost = async (post: BlogPost) => {
     // Build a clean DB row with all snake_case conversions
     const dbPost: Record<string, any> = {
         title: post.title,
+        slug: post.slug,
         excerpt: post.excerpt,
         content: post.content,
         author: post.author,
@@ -726,6 +746,8 @@ export const updateBlogPost = async (post: BlogPost) => {
         console.error('[updateBlogPost] Supabase update error:', error);
         throw new Error(error.message);
     }
+    // Invalidate cache
+    localStorage.removeItem(CACHE_KEYS.posts);
 };
 
 export const deleteBlogPost = async (id: string) => {
@@ -735,6 +757,8 @@ export const deleteBlogPost = async (id: string) => {
         console.error(`Failed to SOFT DELETE blog post from DB:`, error.message);
         throw error;
     }
+    // Invalidate cache
+    localStorage.removeItem(CACHE_KEYS.posts);
 };
 
 export const restoreBlogPost = async (id: string) => {
