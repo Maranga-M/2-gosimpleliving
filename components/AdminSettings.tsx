@@ -186,7 +186,7 @@ export const AdminSettings: React.FC<{
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-slate-600 dark:text-slate-400 text-xs">SUPABASE_URL</span>
-                                    {!!process.env.SUPABASE_URL || !!(import.meta as any).env?.VITE_SUPABASE_URL ? (
+                                    {!!(typeof process !== 'undefined' && process.env.SUPABASE_URL) || !!import.meta.env.VITE_SUPABASE_URL ? (
                                         <span className="text-[10px] px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full font-bold">DETECTED</span>
                                     ) : (
                                         <span className="text-[10px] px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full font-bold">MISSING</span>
@@ -194,7 +194,7 @@ export const AdminSettings: React.FC<{
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-slate-600 dark:text-slate-400 text-xs">SUPABASE_ANON_KEY</span>
-                                    {!!process.env.SUPABASE_ANON_KEY || !!(import.meta as any).env?.VITE_SUPABASE_ANON_KEY ? (
+                                    {!!(typeof process !== 'undefined' && process.env.SUPABASE_ANON_KEY) || !!import.meta.env.VITE_SUPABASE_ANON_KEY ? (
                                         <span className="text-[10px] px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full font-bold">DETECTED</span>
                                     ) : (
                                         <span className="text-[10px] px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full font-bold">MISSING</span>

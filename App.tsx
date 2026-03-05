@@ -10,7 +10,7 @@ import { LoginModal } from './components/LoginModal';
 import { Wishlist } from './components/Wishlist';
 import { NotificationBell } from './components/NotificationBell';
 import { AnalyticsService } from './services/analytics'; // Import Analytics Service
-import { Toaster, toast } from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { lazyWithRetry } from './src/utils/lazyWithRetry';
 import { Analytics } from '@vercel/analytics/react';
@@ -246,21 +246,15 @@ const AppContent: React.FC = () => {
               </button>
 
               <NotificationBell notifications={notifications} onMarkRead={markNotificationRead} onClearAll={clearAllNotifications} />
-              <button
-                onClick={() => {
-                  if (!user) {
-                    setIsLoginModalOpen(true);
-                  } else if (user.role === 'admin' || user.role === 'editor') {
-                    setCurrentView('dashboard');
-                  } else {
-                    toast.error("Editor permissions required.");
-                  }
-                }}
-                className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${currentView === 'dashboard' ? getThemeTextClass() : 'text-slate-600 dark:text-slate-400'}`}
-                title="Dashboard"
-              >
-                <LayoutDashboard size={20} />
-              </button>
+              {user && (user.role === 'admin' || user.role === 'editor') && (
+                <button
+                  onClick={() => setCurrentView('dashboard')}
+                  className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${currentView === 'dashboard' ? getThemeTextClass() : 'text-slate-600 dark:text-slate-400'}`}
+                  title="Dashboard"
+                >
+                  <LayoutDashboard size={20} />
+                </button>
+              )}
               {auth.isLoading ? (
                 <div className="flex items-center px-4">
                   <Loader2 size={18} className="animate-spin text-slate-400" />
@@ -306,22 +300,17 @@ const AppContent: React.FC = () => {
               {(siteContent.showPagesInNav !== false) && (
                 <button onClick={() => { setCurrentView('pages'); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">{siteContent.uiText.pagesNav}</button>
               )}
-              <button
-                onClick={() => {
-                  if (!user) {
-                    setIsLoginModalOpen(true);
-                    setMobileMenuOpen(false);
-                  } else if (user.role === 'admin' || user.role === 'editor') {
+              {user && (user.role === 'admin' || user.role === 'editor') && (
+                <button
+                  onClick={() => {
                     setCurrentView('dashboard');
                     setMobileMenuOpen(false);
-                  } else {
-                    toast.error("Editor permissions required.");
-                  }
-                }}
-                className="block w-full text-left px-3 py-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg"
-              >
-                Dashboard
-              </button>
+                  }}
+                  className="block w-full text-left px-3 py-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg"
+                >
+                  Dashboard
+                </button>
+              )}
               {user && (<button onClick={() => { setCurrentView('wishlist'); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">{siteContent.uiText.wishlistTitle}</button>)}
             </div>
           </div>

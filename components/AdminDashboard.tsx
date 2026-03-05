@@ -1159,7 +1159,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             }
 
             {
-                activeTab === 'theme' && (
+                activeTab === 'customizer' && (
                     <div className="space-y-8 animate-in fade-in duration-300">
                         <div className="flex items-center justify-between">
                             <div>
