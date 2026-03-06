@@ -40,9 +40,6 @@ const DEFAULT_CONFIG: ConnectionConfig = {
 class ConnectionManager {
     private state: ConnectionState;
     private config: ConnectionConfig;
-    private backgroundRetryTimer: ReturnType<typeof setTimeout> | null = null;
-    private healthCheckInterval: ReturnType<typeof setTimeout> | null = null;
-    private healthCheckHandler: (() => Promise<boolean>) | null = null;
     private listeners: Set<(state: ConnectionState) => void> = new Set();
 
     constructor(config?: Partial<ConnectionConfig>) {
@@ -66,63 +63,21 @@ class ConnectionManager {
     }
 
     /**
-     * Register a health check handler
-     */
-    setHealthCheckHandler(handler: () => Promise<boolean>) {
-        this.healthCheckHandler = handler;
-    }
-
-    /**
      * Start active health checking (heartbeat)
      */
     startHealthCheck() {
-        if (this.healthCheckInterval) return;
-
-        // Check visibility to optimize health checks
-        const checkInterval = document.visibilityState === 'hidden' ? 180000 : 45000;
-
-        this.healthCheckInterval = setInterval(async () => {
-            if (this.state.status === 'reconnecting' || this.state.isBackgroundReconnecting) return;
-
-            // Don't check if page is hidden to save connections/resources
-            if (document.visibilityState === 'hidden') return;
-
-            if (this.healthCheckHandler) {
-                try {
-                    const isHealthy = await this.healthCheckHandler();
-                    if (isHealthy) {
-                        this.state.lastSuccessfulConnection = Date.now();
-                        this.cacheState();
-                    } else {
-                        console.warn('⚠️ Connection heartbeat failed - triggering reconnect');
-                        this.handleDisconnect();
-                    }
-                } catch (err) {
-                    console.error('❌ Error during connection heartbeat:', err);
-                    this.handleDisconnect();
-                }
-            }
-        }, checkInterval);
+        // Disabled active polling to prevent Supabase connection limits/handshake spam.
+        // Relying on passive fetch error catching instead.
     }
 
     /**
      * Stop active health checking
      */
     stopHealthCheck() {
-        if (this.healthCheckInterval) {
-            clearInterval(this.healthCheckInterval);
-            this.healthCheckInterval = null;
-        }
+        // Disabled
     }
 
-    /**
-     * Handle a detected disconnection
-     */
-    private handleDisconnect() {
-        if (this.state.status !== 'offline' && this.state.status !== 'reconnecting') {
-            this.markFailed(new Error('Connection lost (heartbeat failed)'));
-        }
-    }
+
 
     /**
      * Get current connection state
@@ -347,46 +302,9 @@ class ConnectionManager {
     }
 
     /**
-     * Start background reconnection attempts
-     */
-    private startBackgroundReconnection() {
-        if (this.backgroundRetryTimer) return;
-
-        this.updateState({ isBackgroundReconnecting: true });
-
-        this.backgroundRetryTimer = setInterval(() => {
-            if (this.state.status === 'connected') {
-                this.stopBackgroundReconnection();
-            }
-        }, this.config.backgroundRetryInterval);
-    }
-
-    /**
-     * Stop background reconnection
-     */
-    private stopBackgroundReconnection() {
-        if (this.backgroundRetryTimer) {
-            clearInterval(this.backgroundRetryTimer);
-            this.backgroundRetryTimer = null;
-        }
-        if (this.state.isBackgroundReconnecting) {
-            this.updateState({ isBackgroundReconnecting: false });
-        }
-    }
-
-    /**
-     * Manually trigger background reconnection
-     */
-    triggerBackgroundReconnection() {
-        this.stopBackgroundReconnection();
-        this.startBackgroundReconnection();
-    }
-
-    /**
      * Clean up resources
      */
     destroy() {
-        this.stopBackgroundReconnection();
         this.stopHealthCheck();
         this.listeners.clear();
     }
