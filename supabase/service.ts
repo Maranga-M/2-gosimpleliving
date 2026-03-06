@@ -4,62 +4,9 @@ import { ConnectionErrorType } from '../services/connectionManager';
 
 const DB_NOT_CONFIGURED_ERROR = "Supabase is not configured. Please check your environment variables.";
 
-// --- PERSISTENT CACHING STRATEGY ---
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes for persistent cache
-const CACHE_KEYS = {
-    products: 'gsl_cache_products',
-    posts: 'gsl_cache_posts',
-    siteContent: 'gsl_cache_site_content',
-    userProfile: 'gsl_cache_user_profile'
-};
-
-const saveToCache = (key: string, data: any) => {
-    try {
-        const cacheEntry = {
-            data,
-            timestamp: Date.now()
-        };
-        localStorage.setItem(key, JSON.stringify(cacheEntry));
-    } catch (e) {
-        console.warn(`Failed to save to cache: ${key}`, e);
-    }
-};
-
-const getFromCache = (key: string) => {
-    try {
-        const cached = localStorage.getItem(key);
-        if (!cached) return null;
-
-        const { data, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp > CACHE_TTL) {
-            localStorage.removeItem(key);
-            return null;
-        }
-        return data;
-    } catch (e) {
-        return null;
-    }
-};
-
 export const getCachedProfile = (): User | null => {
-    return getFromCache(CACHE_KEYS.userProfile);
-};
-
-// --- RETRY HELPER ---
-const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> => {
-    let lastError: any;
-    for (let i = 0; i <= maxRetries; i++) {
-        try {
-            return await fn();
-        } catch (err: any) {
-            lastError = err;
-            const isTransient = err.message?.includes('fetch') || err.message?.includes('network') || err.status === 502 || err.status === 503 || err.status === 504;
-            if (!isTransient || i === maxRetries) throw err;
-            const delay = 1000 * Math.pow(2, i);
-            await new Promise(resolve => setTimeout(resolve, delay));
-        }
-    }
-    throw lastError;
+    // Rely exclusively on auth state listeners or AppContext going forward.
+    return null;
 };
 
 export interface DetailedConnectionResult {
@@ -79,16 +26,11 @@ export const testConnection = async (): Promise<boolean> => {
     if (!supabase) return false;
     try {
         console.log("Supabase Service: testConnection START");
-        // Lightweight query to check if connection is alive and site_content table is reachable
-        // Using withRetry here to handle transient failures during the status check itself
-        const result = await withRetry(async () => {
-            const { error } = await supabase!.from('site_content').select('id').limit(1);
-            if (error) throw error;
-            return true;
-        }, 2); // 2 dedicated retries for health check
+        const { error } = await supabase.from('site_content').select('id').limit(1);
+        if (error) throw error;
 
-        console.log("Supabase Service: testConnection END", { success: result });
-        return result;
+        console.log("Supabase Service: testConnection END", { success: true });
+        return true;
     } catch (e) {
         console.error("Supabase Service: testConnection EXCEPTION", e);
         return false;
@@ -202,7 +144,6 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
         return () => { };
     }
 
-    let initialCheckDone = false;
     let refreshTimer: any = null;
 
     const setupRefreshBuffer = async () => {
@@ -224,53 +165,24 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
         }
     };
 
-    // 1. Immediately check for existing session to prevent "guest flash" on refresh
+    // 1. Immediately check for existing session
     const initSession = async () => {
-        const timeoutId = setTimeout(() => {
-            if (!initialCheckDone) {
-                initialCheckDone = true;
-                callback(null);
-            }
-        }, 10000);
-
         try {
             const { data: { session }, error: sessionError } = await supabase!.auth.getSession();
-
-            if (sessionError) {
-                clearTimeout(timeoutId);
-                initialCheckDone = true;
+            if (sessionError || !session?.user) {
                 callback(null);
                 return;
             }
 
-            if (session?.user) {
-                setupRefreshBuffer();
-                const cachedProfile = getFromCache(CACHE_KEYS.userProfile);
-                if (cachedProfile && cachedProfile.uid === session.user.id) {
-                    callback(cachedProfile);
-                }
-
-                const profile = await getUserProfile(session.user.id, session.user);
-                if (profile) {
-                    saveToCache(CACHE_KEYS.userProfile, profile);
-                    clearTimeout(timeoutId);
-                    initialCheckDone = true;
-                    callback(profile);
-                } else if (session.user.email) {
-                    const fallbackUser = mapUser(session.user, { role: 'user', wishlist: [], name: 'User' });
-                    clearTimeout(timeoutId);
-                    initialCheckDone = true;
-                    callback(fallbackUser);
-                }
-            } else {
-                localStorage.removeItem(CACHE_KEYS.userProfile);
-                clearTimeout(timeoutId);
-                initialCheckDone = true;
-                callback(null);
+            setupRefreshBuffer();
+            const profile = await getUserProfile(session.user.id, session.user);
+            if (profile) {
+                callback(profile);
+            } else if (session.user.email) {
+                const fallbackUser = mapUser(session.user, { role: 'user', wishlist: [], name: 'User' });
+                callback(fallbackUser);
             }
         } catch (e: any) {
-            clearTimeout(timeoutId);
-            initialCheckDone = true;
             callback(null);
         }
     };
@@ -281,8 +193,6 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         console.log(`Supabase Auth Event: ${event}`);
 
-        if (event === 'INITIAL_SESSION' && initialCheckDone) return;
-
         if (session?.user) {
             setupRefreshBuffer();
             try {
@@ -291,10 +201,8 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
                     const initialName = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User';
                     await createUserProfile(session.user.id, session.user.email, initialName);
                     const newUser = mapUser(session.user, { role: 'user', wishlist: [], name: initialName });
-                    saveToCache(CACHE_KEYS.userProfile, newUser);
                     callback(newUser);
                 } else if (profile) {
-                    saveToCache(CACHE_KEYS.userProfile, profile);
                     callback(profile);
                 }
             } catch (e) {
@@ -304,8 +212,7 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
             }
         } else {
             if (refreshTimer) clearTimeout(refreshTimer);
-            if (event === 'SIGNED_OUT' || initialCheckDone) {
-                localStorage.removeItem(CACHE_KEYS.userProfile);
+            if (event === 'SIGNED_OUT') {
                 callback(null);
             }
         }
@@ -471,25 +378,14 @@ export const requestPasswordReset = async (email: string, redirectTo?: string) =
 export const getProducts = async (): Promise<Product[] | null> => {
     if (!supabase) return null;
 
-    const cached = getFromCache(CACHE_KEYS.products);
-    if (cached) {
-        console.log("Supabase Service: Returning cached products");
-        return cached;
-    }
-
     try {
         console.log("Supabase Service: getProducts START (Network)");
-        const result = await withRetry(async () => {
-            const { data, error } = await supabase!.from('products').select('*');
-            if (error) throw error;
-            return data;
-        });
+        const { data, error } = await supabase.from('products').select('*');
+        if (error) throw error;
 
-        const data = result || [];
-        saveToCache(CACHE_KEYS.products, data);
-
-        console.log("Supabase Service: getProducts END", { count: data.length });
-        return data;
+        const productsData = data || [];
+        console.log("Supabase Service: getProducts END", { count: productsData.length });
+        return productsData;
     } catch (e: any) {
         console.warn(`Supabase getProducts error:`, e.message);
         return null;
@@ -541,9 +437,6 @@ export const createProduct = async (product: Product) => {
         console.error("Failed to CREATE product in DB:", error.message);
         throw error;
     }
-
-    // Invalidate Cache
-    localStorage.removeItem(CACHE_KEYS.products);
 };
 
 export const updateProduct = async (product: Product) => {
@@ -578,9 +471,6 @@ export const updateProduct = async (product: Product) => {
         console.error("Failed to UPDATE product in DB:", error.message);
         throw error;
     }
-
-    // Invalidate Cache
-    localStorage.removeItem(CACHE_KEYS.products);
 };
 
 export const deleteProduct = async (id: string) => {
@@ -590,8 +480,6 @@ export const deleteProduct = async (id: string) => {
         console.error("Failed to SOFT DELETE product in DB:", error.message);
         throw error;
     }
-    // Invalidate Cache
-    localStorage.removeItem(CACHE_KEYS.products);
 };
 
 export const restoreProduct = async (id: string) => {
@@ -622,27 +510,16 @@ export const duplicateProduct = async (id: string): Promise<string> => {
 export const getBlogPosts = async (): Promise<BlogPost[] | null> => {
     if (!supabase) return null;
 
-    const cached = getFromCache(CACHE_KEYS.posts);
-    if (cached) {
-        console.log("Supabase Service: Returning cached posts");
-        return cached;
-    }
-
     try {
-        const result = await withRetry(async () => {
-            const { data, error } = await supabase!.from('posts').select('*');
-            if (error) throw error;
-            return data;
-        });
+        const { data, error } = await supabase.from('posts').select('*');
+        if (error) throw error;
 
-        const mappedPosts = (result || []).map((p: any) => ({
+        const mappedPosts = (data || []).map((p: any) => ({
             ...p,
             heroImageUrl: p.hero_image_url,
             comparisonTables: p.comparison_tables || [],
             linkedProductIds: p.linkedProductIds || p.linked_product_ids || []
         }));
-
-        saveToCache(CACHE_KEYS.posts, mappedPosts);
 
         return mappedPosts;
     } catch (e: any) {
@@ -714,8 +591,6 @@ export const createBlogPost = async (post: BlogPost) => {
         console.error('[createBlogPost] Supabase insert error:', error);
         throw new Error(error.message);
     }
-    // Invalidate cache
-    localStorage.removeItem(CACHE_KEYS.posts);
 };
 
 export const updateBlogPost = async (post: BlogPost) => {
@@ -746,8 +621,6 @@ export const updateBlogPost = async (post: BlogPost) => {
         console.error('[updateBlogPost] Supabase update error:', error);
         throw new Error(error.message);
     }
-    // Invalidate cache
-    localStorage.removeItem(CACHE_KEYS.posts);
 };
 
 export const deleteBlogPost = async (id: string) => {
@@ -757,8 +630,6 @@ export const deleteBlogPost = async (id: string) => {
         console.error(`Failed to SOFT DELETE blog post from DB:`, error.message);
         throw error;
     }
-    // Invalidate cache
-    localStorage.removeItem(CACHE_KEYS.posts);
 };
 
 export const restoreBlogPost = async (id: string) => {
@@ -789,23 +660,11 @@ export const duplicateBlogPost = async (id: string): Promise<string> => {
 export const getSiteContent = async (): Promise<SiteContent | null> => {
     if (!supabase) return null;
 
-    const cached = getFromCache(CACHE_KEYS.siteContent);
-    if (cached) {
-        console.log("Supabase Service: Returning cached site content");
-        return cached;
-    }
-
     try {
-        const result = await withRetry(async () => {
-            const { data, error } = await supabase!.from('site_content').select('*').eq('id', 'main').single();
-            if (error) throw error;
-            return data;
-        });
+        const { data, error } = await supabase.from('site_content').select('*').eq('id', 'main').single();
+        if (error) throw error;
 
-        const content = result?.content as SiteContent;
-        saveToCache(CACHE_KEYS.siteContent, content);
-
-        return content;
+        return data?.content as SiteContent;
     } catch (e: any) {
         console.warn(`Supabase getSiteContent error:`, e.message);
         return null;
@@ -822,9 +681,6 @@ export const saveSiteContent = async (content: SiteContent) => {
         console.error("Failed to SAVE site content to DB:", error.message);
         throw error;
     }
-
-    // Update cache when we save, so we don't serve stale data for 30mins
-    saveToCache(CACHE_KEYS.siteContent, content);
 };
 
 export const seedDatabase = async (products: Product[], posts: BlogPost[], content: SiteContent) => {
@@ -925,7 +781,7 @@ export const listImages = async (): Promise<{ name: string; url: string }[]> => 
             };
         });
 
-        return images.filter(img => img.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
+        return images.filter(img => img.name.match(/const data = (data as any) || [];.(jpg|jpeg|png|gif|webp)$/i));
 
     } catch (error: any) {
         console.error("Error listing images:", error.message);

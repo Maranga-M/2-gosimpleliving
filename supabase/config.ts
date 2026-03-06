@@ -79,42 +79,6 @@ console.log('🔧 Supabase Config Status:', configStatus);
 
 let supabase: SupabaseClient | null = null;
 
-// --- REQUEST DE-DUPLICATION ---
-const pendingRequests = new Map<string, Promise<Response>>();
-
-const fetchWithDeDup = (url: string | URL | Request, options: RequestInit = {}): Promise<Response> => {
-  // Only de-duplicate GET requests
-  if (options.method && options.method !== 'GET') {
-    return fetch(url, options);
-  }
-
-  const cacheKey = JSON.stringify({ url: url.toString(), options });
-  if (pendingRequests.has(cacheKey)) {
-    return pendingRequests.get(cacheKey)!;
-  }
-
-  const request = fetch(url, options).finally(() => {
-    pendingRequests.delete(cacheKey);
-  });
-
-  pendingRequests.set(cacheKey, request);
-  return request;
-};
-
-// Custom fetch with timeout AND de-duplication
-const enhancedFetch = (url: string | URL | Request, options: RequestInit = {}): Promise<Response> => {
-  const timeout = 30000; // 30 seconds
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-
-  const mergedOptions = {
-    ...options,
-    signal: controller.signal
-  };
-
-  return fetchWithDeDup(url, mergedOptions).finally(() => clearTimeout(id));
-};
-
 if (supabaseUrl && supabaseKey) {
   try {
     supabase = createClient(supabaseUrl, supabaseKey, {
@@ -126,7 +90,7 @@ if (supabaseUrl && supabaseKey) {
         storage: window.localStorage
       },
       global: {
-        fetch: enhancedFetch,
+        fetch: (...args) => fetch(...args), // Use standard native fetch without custom timeouts/dedup
         headers: { 'x-application-name': 'go-simple-living-vibe' }
       },
       db: {
@@ -134,9 +98,8 @@ if (supabaseUrl && supabaseKey) {
       },
       realtime: {
         params: {
-          eventsPerSecond: 20 // Increased for better interactivity
-        },
-        heartbeatIntervalMs: 25000 // Slightly faster heartbeat
+          eventsPerSecond: 10 // Standard interactivity limit
+        }
       }
     });
     console.log(`✅ Supabase Vibe-Client initialized with pooling and de-duplication`);
