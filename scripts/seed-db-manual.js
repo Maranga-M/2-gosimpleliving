@@ -1,5 +1,5 @@
-
 import { createClient } from '@supabase/supabase-js';
+import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -13,8 +13,10 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Stable UUIDs — so re-running seed always upserts the same rows (idempotent)
 const PRODUCTS = [
     {
+        id: 'a1b2c3d4-0001-4000-8000-000000000001',
         title: 'Sony WH-1000XM5 Wireless Headphones',
         category: 'Electronics',
         price: 348.00,
@@ -29,6 +31,7 @@ const PRODUCTS = [
         status: 'published'
     },
     {
+        id: 'a1b2c3d4-0002-4000-8000-000000000002',
         title: 'Nespresso Vertuo Plus Coffee Machine',
         category: 'Home',
         price: 159.00,
@@ -43,6 +46,7 @@ const PRODUCTS = [
         status: 'published'
     },
     {
+        id: 'a1b2c3d4-0003-4000-8000-000000000003',
         title: 'Instant Pot Duo 7-in-1',
         category: 'Kitchen',
         price: 79.99,
@@ -50,13 +54,14 @@ const PRODUCTS = [
         rating: 4.9,
         reviews: 150000,
         image: 'https://images.unsplash.com/photo-1546549063-959546d03d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        description: 'America\'s most loved multi-cooker, built with the latest 3rd generation technology.',
+        description: "America's most loved multi-cooker, built with the latest 3rd generation technology.",
         features: ['7-in-1 Functionality', 'Dishwasher Safe', 'Safety Features', 'One-Touch Programs'],
         affiliateLink: 'https://amazon.com',
         isBestSeller: false,
         status: 'published'
     },
     {
+        id: 'a1b2c3d4-0004-4000-8000-000000000004',
         title: 'Kindle Paperwhite (16 GB)',
         category: 'Electronics',
         price: 139.99,
@@ -71,6 +76,7 @@ const PRODUCTS = [
         status: 'published'
     },
     {
+        id: 'a1b2c3d4-0005-4000-8000-000000000005',
         title: 'Hydro Flask Wide Mouth Bottle',
         category: 'Outdoors',
         price: 39.95,
@@ -88,27 +94,30 @@ const PRODUCTS = [
 
 const POSTS = [
     {
+        id: 'b2c3d4e5-0001-4000-8000-000000000001',
         title: 'The Ultimate Guide to Home Coffee Brewing',
         excerpt: 'Discover the best methods to brew café-quality coffee at home.',
-        content: '# The Ultimate Guide to Home Coffee Brewing\n\nBrewing better coffee at home is a journey...',
+        content: '# The Ultimate Guide to Home Coffee Brewing\n\nBrewing better coffee at home is a journey worth taking. From French press to pour-over, each method produces a unique cup. Start with freshly ground beans for the best flavour.',
         author: 'SimpleLiving Team',
         image: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
         hero_image_url: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
         status: 'published'
     },
     {
+        id: 'b2c3d4e5-0002-4000-8000-000000000002',
         title: 'Top 5 Tech Gadgets of 2024',
         excerpt: 'We review the hottest tech gadgets that are worth your money this year.',
-        content: '# Top 5 Tech Gadgets\n\nTechnology moves fast. Here are our top picks...',
+        content: '# Top 5 Tech Gadgets\n\nTechnology moves fast. Here are our top picks for gadgets that genuinely improve your day-to-day life without breaking the bank.',
         author: 'Tech Editor',
         image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
         hero_image_url: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
         status: 'published'
     },
     {
+        id: 'b2c3d4e5-0003-4000-8000-000000000003',
         title: 'Minimalist Living: How to Start',
         excerpt: 'Simple steps to declutter your home and mind.',
-        content: '# Minimalist Living\n\nMinimalism is not just about having less stuff...',
+        content: '# Minimalist Living\n\nMinimalism is not just about having less stuff — it is about making room for what truly matters. Start with one drawer and go from there.',
         author: 'Lifestyle Guru',
         image: 'https://images.unsplash.com/photo-1484100356142-db6ab6244067?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
         hero_image_url: 'https://images.unsplash.com/photo-1484100356142-db6ab6244067?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
@@ -116,20 +125,38 @@ const POSTS = [
     }
 ];
 
+const SITE_CONTENT = {
+    id: 'main',
+    content: {
+        heroTitle: 'Smart Shopping Made Simple.',
+        heroSubtitle: 'Discover top-rated products curated by experts.',
+        heroButtonText: 'Shop Best Sellers',
+        themeColor: 'emerald',
+        categories: [],
+        uiText: { shopNav: 'Shop', blogNav: 'Blog' }
+    }
+};
+
 async function seed() {
     console.log("🚀 Starting database push...");
 
     // Push Products
     console.log("📦 Pushing products...");
-    const { error: prodError } = await supabase.from('products').upsert(PRODUCTS, { onConflict: 'title' });
+    const { error: prodError } = await supabase.from('products').upsert(PRODUCTS, { onConflict: 'id' });
     if (prodError) console.error("❌ Error pushing products:", prodError.message);
     else console.log("✅ Products synced.");
 
     // Push Posts
     console.log("📝 Pushing posts...");
-    const { error: postError } = await supabase.from('posts').upsert(POSTS, { onConflict: 'title' });
+    const { error: postError } = await supabase.from('posts').upsert(POSTS, { onConflict: 'id' });
     if (postError) console.error("❌ Error pushing posts:", postError.message);
     else console.log("✅ Posts synced.");
+
+    // Push Site Content
+    console.log("🌐 Pushing site content...");
+    const { error: contentError } = await supabase.from('site_content').upsert(SITE_CONTENT, { onConflict: 'id' });
+    if (contentError) console.error("❌ Error pushing site content:", contentError.message);
+    else console.log("✅ Site content synced.");
 
     console.log("✨ Database push complete!");
 }
