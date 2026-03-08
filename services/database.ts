@@ -133,8 +133,4 @@ export const dbService: DatabaseService = {
     logAnalyticsEvent: supabaseService.logAnalyticsEvent,
 };
 
-// Register health check handler
-import { connectionManager } from './connectionManager';
-connectionManager.setHealthCheckHandler(async () => {
-    return await supabaseService.testConnection();
-});
+

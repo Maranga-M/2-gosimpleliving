@@ -77,6 +77,19 @@ class ConnectionManager {
         // Disabled
     }
 
+    /**
+     * Start background reconnection attempts (no-op — AppContext handles retry logic)
+     */
+    startBackgroundReconnection() {
+        // Disabled: AppContext handles reconnection via its own polling / retry
+    }
+
+    /**
+     * Stop background reconnection attempts (no-op)
+     */
+    stopBackgroundReconnection() {
+        // Disabled
+    }
 
 
     /**
