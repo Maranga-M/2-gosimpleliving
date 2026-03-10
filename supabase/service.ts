@@ -1,6 +1,7 @@
 import { supabase } from './config';
 import { User, Role, Product, BlogPost, SiteContent, AnalyticsEvent } from '../types';
 import { ConnectionErrorType } from '../services/connectionManager';
+import { handleDbError } from '../src/utils/handleDbError';
 
 const DB_NOT_CONFIGURED_ERROR = "Supabase is not configured. Please check your environment variables.";
 
@@ -138,9 +139,9 @@ const mapUser = (sbUser: any, profile: any): User => ({
     wishlist: profile?.wishlist || []
 });
 
-export const authStateChanged = (callback: (user: User | null) => void) => {
+export const authStateChanged = (callback: (user: User | null, event?: string) => void) => {
     if (!supabase) {
-        callback(null);
+        callback(null, 'INITIAL_SESSION');
         return () => { };
     }
 
@@ -170,20 +171,20 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
         try {
             const { data: { session }, error: sessionError } = await supabase!.auth.getSession();
             if (sessionError || !session?.user) {
-                callback(null);
+                callback(null, 'INITIAL_SESSION');
                 return;
             }
 
             setupRefreshBuffer();
             const profile = await getUserProfile(session.user.id, session.user);
             if (profile) {
-                callback(profile);
+                callback(profile, 'INITIAL_SESSION');
             } else if (session.user.email) {
                 const fallbackUser = mapUser(session.user, { role: 'user', wishlist: [], name: 'User' });
-                callback(fallbackUser);
+                callback(fallbackUser, 'INITIAL_SESSION');
             }
         } catch (e: any) {
-            callback(null);
+            callback(null, 'INITIAL_SESSION');
         }
     };
 
@@ -201,19 +202,19 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
                     const initialName = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User';
                     await createUserProfile(session.user.id, session.user.email, initialName);
                     const newUser = mapUser(session.user, { role: 'user', wishlist: [], name: initialName });
-                    callback(newUser);
+                    callback(newUser, event);
                 } else if (profile) {
-                    callback(profile);
+                    callback(profile, event);
                 }
             } catch (e) {
                 const fallbackName = session.user.user_metadata?.name || 'User';
                 const fallbackUser = mapUser(session.user, { role: 'user', wishlist: [], name: fallbackName });
-                callback(fallbackUser);
+                callback(fallbackUser, event);
             }
         } else {
             if (refreshTimer) clearTimeout(refreshTimer);
-            if (event === 'SIGNED_OUT') {
-                callback(null);
+            if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+                callback(null, event);
             }
         }
     });
@@ -435,6 +436,7 @@ export const createProduct = async (product: Product) => {
     const { error } = await supabase.from('products').insert(dbProduct);
     if (error) {
         console.error("Failed to CREATE product in DB:", error.message);
+        await handleDbError(error);
         throw error;
     }
 };
@@ -469,6 +471,7 @@ export const updateProduct = async (product: Product) => {
     const { error } = await supabase.from('products').update(dbProduct).eq('id', product.id);
     if (error) {
         console.error("Failed to UPDATE product in DB:", error.message);
+        await handleDbError(error);
         throw error;
     }
 };
@@ -478,6 +481,7 @@ export const deleteProduct = async (id: string) => {
     const { error } = await supabase.from('products').update({ deleted_at: new Date().toISOString() }).eq('id', id);
     if (error) {
         console.error("Failed to SOFT DELETE product in DB:", error.message);
+        await handleDbError(error);
         throw error;
     }
 };
@@ -589,6 +593,7 @@ export const createBlogPost = async (post: BlogPost) => {
     const { error } = await supabase.from('posts').insert(dbPost);
     if (error) {
         console.error('[createBlogPost] Supabase insert error:', error);
+        await handleDbError(error);
         throw new Error(error.message);
     }
 };
@@ -619,6 +624,7 @@ export const updateBlogPost = async (post: BlogPost) => {
     const { error } = await supabase.from('posts').update(dbPost).eq('id', post.id);
     if (error) {
         console.error('[updateBlogPost] Supabase update error:', error);
+        await handleDbError(error);
         throw new Error(error.message);
     }
 };
@@ -628,6 +634,7 @@ export const deleteBlogPost = async (id: string) => {
     const { error } = await supabase.from('posts').update({ deleted_at: new Date().toISOString() }).eq('id', id);
     if (error) {
         console.error(`Failed to SOFT DELETE blog post from DB:`, error.message);
+        await handleDbError(error);
         throw error;
     }
 };
@@ -679,6 +686,7 @@ export const saveSiteContent = async (content: SiteContent) => {
     });
     if (error) {
         console.error("Failed to SAVE site content to DB:", error.message);
+        await handleDbError(error);
         throw error;
     }
 };

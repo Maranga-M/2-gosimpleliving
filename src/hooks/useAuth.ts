@@ -21,11 +21,17 @@ export const useAuth = () => {
             }
         }, 5000);
 
-        const unsubscribe = dbService.onAuthStateChanged((userProfile) => {
+        const unsubscribe = dbService.onAuthStateChanged((userProfile, event) => {
             if (!isMounted) return;
             clearTimeout(safetyTimeout);
             setUser(userProfile);
             setIsLoading(false);
+
+            if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+                // Force the UI back to the home page to avoid breaking in a protected view
+                localStorage.setItem('gsl_current_view', 'home');
+                window.location.href = '/';
+            }
         });
 
         return () => {

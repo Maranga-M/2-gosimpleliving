@@ -9,7 +9,7 @@ export interface DatabaseService {
     sendMagicLink: (email: string) => Promise<void>;
     signUp: (email: string, pass: string, name: string) => Promise<any>;
     signOut: () => Promise<void>;
-    onAuthStateChanged: (callback: (user: User | null) => void) => Function;
+    onAuthStateChanged: (callback: (user: User | null, event?: string) => void) => Function;
     testConnection: () => Promise<boolean>;
     testConnectionDetailed: () => Promise<any>;
     updateWishlist: (uid: string, wishlist: string[]) => Promise<void>;
