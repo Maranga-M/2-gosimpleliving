@@ -9,15 +9,29 @@ export const useAuth = () => {
 
 
     // Listen for auth changes from Supabase
+    // Add a timeout to prevent infinite "loading" state if connection hangs
     useEffect(() => {
         let isMounted = true;
+        let authTimeout: NodeJS.Timeout;
+
         const unsubscribe = dbService.onAuthStateChanged((userProfile) => {
             if (!isMounted) return;
             setUser(userProfile);
             setIsLoading(false);
+            clearTimeout(authTimeout);
         });
+
+        // Force loading to false after 5 seconds max, even if auth hasn't responded
+        authTimeout = setTimeout(() => {
+            if (isMounted) {
+                console.warn('[useAuth] Auth check timeout - allowing app to load');
+                setIsLoading(false);
+            }
+        }, 5000);
+
         return () => {
             isMounted = false;
+            clearTimeout(authTimeout);
             if (typeof unsubscribe === 'function') unsubscribe();
         };
     }, []);

@@ -201,9 +201,17 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
     let initialCheckDone = false;
 
     // 1. Immediately check for existing session to prevent "guest flash" on refresh
+    // BUT add a timeout to prevent hanging on cold starts or network issues
     const initSession = async () => {
         try {
-            const { data: { session } } = await supabase!.auth.getSession();
+            // Race between getSession and a 5-second timeout
+            const sessionPromise = supabase!.auth.getSession();
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Session check timeout')), 5000)
+            );
+
+            const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+            
             if (session?.user) {
                 const profile = await getUserProfile(session.user.id, session.user);
                 if (profile) {
@@ -219,12 +227,14 @@ export const authStateChanged = (callback: (user: User | null) => void) => {
                 callback(null);
             }
         } catch (e) {
-            console.warn("Initial session check failed:", e);
+            console.warn("Initial session check failed or timed out:", e instanceof Error ? e.message : 'Unknown error');
             initialCheckDone = true;
+            // Important: Always signal callback even on timeout to unblock UI
             callback(null);
         }
     };
 
+    // Start session check in background, don't wait for it
     initSession();
 
     // 2. Set up listener for subsequent changes
