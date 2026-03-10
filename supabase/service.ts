@@ -322,7 +322,34 @@ export const signUp = async (email: string, pass: string, name: string) => {
 
 export const signOut = async () => {
     if (!supabase) return;
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+        console.error("Sign out error:", error);
+        throw error;
+    }
+};
+
+/**
+ * Check if an error is an RLS violation (permission denied)
+ */
+export const isRLSViolationError = (error: any): boolean => {
+    if (!error) return false;
+    const message = error.message?.toLowerCase() || '';
+    return message.includes('permission denied') || 
+           message.includes('policy') || 
+           error.code === 'PGRST301'; // Supabase RLS error code
+};
+
+/**
+ * Check if an error is due to invalid/expired session
+ */
+export const isSessionExpiredError = (error: any): boolean => {
+    if (!error) return false;
+    const message = error.message?.toLowerCase() || '';
+    return message.includes('unauthorized') || 
+           message.includes('invalid') || 
+           message.includes('expired') ||
+           message.includes('jwt');
 };
 
 const createUserProfile = async (uid: string, email: string, name: string) => {
@@ -453,6 +480,21 @@ export const createProduct = async (product: Product) => {
             details: error.details,
             hint: error.hint
         });
+
+        // Check for RLS violation
+        if (isRLSViolationError(error)) {
+            const rlsError = new Error(`Permission denied. You don't have permission to create products. Ensure you're logged in with an editor or admin role.`);
+            (rlsError as any).isRLSViolation = true;
+            throw rlsError;
+        }
+
+        // Check for session expiration
+        if (isSessionExpiredError(error)) {
+            const sessionError = new Error(`Your session has expired. Please log in again.`);
+            (sessionError as any).isSessionExpired = true;
+            throw sessionError;
+        }
+
         throw new Error(`Database error: ${error.message}${error.code ? ` (${error.code})` : ''}`);
     }
 };
@@ -467,6 +509,21 @@ export const updateProduct = async (product: Product) => {
             details: error.details,
             hint: error.hint
         });
+
+        // Check for RLS violation
+        if (isRLSViolationError(error)) {
+            const rlsError = new Error(`Permission denied. You don't have permission to update products. Ensure you're logged in with an editor or admin role.`);
+            (rlsError as any).isRLSViolation = true;
+            throw rlsError;
+        }
+
+        // Check for session expiration
+        if (isSessionExpiredError(error)) {
+            const sessionError = new Error(`Your session has expired. Please log in again.`);
+            (sessionError as any).isSessionExpired = true;
+            throw sessionError;
+        }
+
         throw new Error(`Database error: ${error.message}${error.code ? ` (${error.code})` : ''}`);
     }
 };
@@ -481,6 +538,21 @@ export const deleteProduct = async (id: string) => {
             details: error.details,
             hint: error.hint
         });
+
+        // Check for RLS violation
+        if (isRLSViolationError(error)) {
+            const rlsError = new Error(`Permission denied. You don't have permission to delete products.`);
+            (rlsError as any).isRLSViolation = true;
+            throw rlsError;
+        }
+
+        // Check for session expiration
+        if (isSessionExpiredError(error)) {
+            const sessionError = new Error(`Your session has expired. Please log in again.`);
+            (sessionError as any).isSessionExpired = true;
+            throw sessionError;
+        }
+
         throw error;
     }
 };

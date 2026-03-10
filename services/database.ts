@@ -100,6 +100,10 @@ export const dbService: DatabaseService = {
     testConnectionDetailed: supabaseService.testConnectionDetailed,
 };
 
+// Export error checking utilities
+export const isRLSViolationError = supabaseService.isRLSViolationError;
+export const isSessionExpiredError = supabaseService.isSessionExpiredError;
+
 // Register health check handler
 import { connectionManager } from './connectionManager';
 connectionManager.setHealthCheckHandler(async () => {

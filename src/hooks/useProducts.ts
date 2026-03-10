@@ -79,7 +79,19 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
             });
             const errorMsg = e instanceof Error ? e.message : 'Unknown error';
             console.error("[v0] Product creation failed:", errorMsg);
-            toast.error(`Persistence Error: Failed to save product to database. ${errorMsg}`);
+            
+            // Handle RLS violations - user lacks permission
+            if ((e as any)?.isRLSViolation) {
+                toast.error(`Access Denied: ${errorMsg}`);
+            }
+            // Handle session expiration - automatic logout will happen via auth listener
+            else if ((e as any)?.isSessionExpired) {
+                toast.error(`${errorMsg}`);
+            }
+            // Generic database error
+            else {
+                toast.error(`Persistence Error: Failed to save product. ${errorMsg}`);
+            }
         }
     };
 
@@ -96,7 +108,19 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
             }
             const errorMsg = e instanceof Error ? e.message : 'Unknown error';
             console.error("[v0] Product update failed:", errorMsg);
-            toast.error(`Persistence Error: Failed to update product in database. ${errorMsg}`);
+            
+            // Handle RLS violations - user lacks permission
+            if ((e as any)?.isRLSViolation) {
+                toast.error(`Access Denied: ${errorMsg}`);
+            }
+            // Handle session expiration
+            else if ((e as any)?.isSessionExpired) {
+                toast.error(`${errorMsg}`);
+            }
+            // Generic database error
+            else {
+                toast.error(`Persistence Error: Failed to update product. ${errorMsg}`);
+            }
         }
     };
 
@@ -113,7 +137,19 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
             }
             const errorMsg = e instanceof Error ? e.message : 'Unknown error';
             console.error("[v0] Product delete failed:", errorMsg);
-            toast.error(`Persistence Error: Failed to delete product. ${errorMsg}`);
+            
+            // Handle RLS violations - user lacks permission
+            if ((e as any)?.isRLSViolation) {
+                toast.error(`Access Denied: ${errorMsg}`);
+            }
+            // Handle session expiration
+            else if ((e as any)?.isSessionExpired) {
+                toast.error(`${errorMsg}`);
+            }
+            // Generic database error
+            else {
+                toast.error(`Persistence Error: Failed to delete product. ${errorMsg}`);
+            }
         }
     };
 
