@@ -659,9 +659,23 @@ export const AdminSettings: React.FC<{
                                     const products = await dbService.getProducts() || [];
                                     const posts = await dbService.getBlogPosts() || [];
                                     const customPages = liveSiteContent.customPages || [];
+                                    const offers = liveSiteContent.clickBankOffers || [];
 
                                     // 2. Build XML
                                     const baseUrl = window.location.origin;
+
+                                    // XML escape helper
+                                    const escapeXml = (str: string) => str.replace(/[<>&'"]/g, (c) => {
+                                        switch (c) {
+                                            case '<': return '&lt;';
+                                            case '>': return '&gt;';
+                                            case '&': return '&amp;';
+                                            case '\'': return '&apos;';
+                                            case '"': return '&quot;';
+                                            default: return c;
+                                        }
+                                    });
+
                                     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
@@ -674,17 +688,17 @@ export const AdminSettings: React.FC<{
         <changefreq>daily</changefreq>
         <priority>0.8</priority>
     </url>
-    ${products.map(p => `
+    ${products.filter(p => p.status === 'published').map(p => `
     <url>
-        <loc>${baseUrl}/?product=${p.id}</loc>
+        <loc>${baseUrl}/?product=${escapeXml(p.id)}</loc>
         <lastmod>${new Date().toISOString()}</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.7</priority>
     </url>
     `).join('')}
-    ${posts.map(p => `
+    ${posts.filter(p => p.status === 'published').map(p => `
     <url>
-        <loc>${baseUrl}/blog#${p.id}</loc>
+        <loc>${baseUrl}/blog?article=${escapeXml(p.id)}</loc>
         <lastmod>${new Date(p.date).toISOString()}</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
@@ -692,7 +706,15 @@ export const AdminSettings: React.FC<{
     `).join('')}
     ${customPages.filter(p => p.status === 'published').map(p => `
     <url>
-        <loc>${baseUrl}/p/${p.slug}</loc>
+        <loc>${baseUrl}/p/${escapeXml(p.slug)}</loc>
+        <lastmod>${new Date().toISOString()}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    `).join('')}
+    ${offers.filter(o => o.status === 'published').map(o => `
+    <url>
+        <loc>${baseUrl}/offers/${escapeXml(o.slug)}</loc>
         <lastmod>${new Date().toISOString()}</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.7</priority>

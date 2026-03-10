@@ -84,20 +84,25 @@ export const SitemapPage: React.FC = () => {
                         Products by Category
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                        {categories.map(cat => (
-                            <div key={cat}>
-                                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-2 border-b border-slate-100 dark:border-slate-800 pb-2">{cat}</h3>
-                                <ul className="space-y-2">
-                                    {allProducts.filter(p => p.category === cat && p.status === 'published').map(p => (
-                                        <li key={p.id}>
-                                            <a href={p.affiliateLink} target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 hover:underline block truncate">
-                                                {p.title}
-                                            </a>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
+                        {categories.map(cat => {
+                            const catProducts = allProducts.filter(p => p.category === cat && p.status === 'published');
+                            if (catProducts.length === 0) return null;
+
+                            return (
+                                <div key={cat}>
+                                    <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-2 border-b border-slate-100 dark:border-slate-800 pb-2">{cat}</h3>
+                                    <ul className="space-y-2">
+                                        {catProducts.map(p => (
+                                            <li key={p.id}>
+                                                <a href={p.affiliateLink} target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 hover:underline block truncate">
+                                                    {p.title}
+                                                </a>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 
