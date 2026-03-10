@@ -102,8 +102,11 @@ BEGIN
     DROP POLICY IF EXISTS "Public Read Profiles" ON public.profiles;
     CREATE POLICY "Public Read Profiles" ON public.profiles FOR SELECT USING (true);
     
-    DROP POLICY IF EXISTS "Owner Write Profiles" ON public.profiles;
-    CREATE POLICY "Owner Write Profiles" ON public.profiles FOR ALL USING (auth.uid() = id);
+    DROP POLICY IF EXISTS "Owner Insert Profiles" ON public.profiles;
+    CREATE POLICY "Owner Insert Profiles" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
+    DROP POLICY IF EXISTS "Owner Update Profiles" ON public.profiles;
+    CREATE POLICY "Owner Update Profiles" ON public.profiles FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id AND role IS NOT DISTINCT FROM (SELECT role FROM public.profiles WHERE id = auth.uid()));
 
     -- Products: Public read, Admin write (simplified to 'True' for demo/dev ease)
     DROP POLICY IF EXISTS "Public Read Products" ON public.products;
@@ -273,3 +276,5 @@ VALUES
   'https://images.unsplash.com/photo-1484100356142-db6ab6244067?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
   'published'
 );
+;  
+ 

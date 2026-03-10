@@ -182,22 +182,30 @@ export const AdminSettings: React.FC<{
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         {/* Environment Check */}
                         <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Vercel Environment Keys</h4>
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Environment Variables</h4>
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-slate-600 dark:text-slate-400 text-xs">SUPABASE_URL</span>
-                                    {!!(typeof process !== 'undefined' && process.env.SUPABASE_URL) || !!import.meta.env.VITE_SUPABASE_URL ? (
-                                        <span className="text-[10px] px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full font-bold">DETECTED</span>
+                                    <span className="text-sm text-slate-600 dark:text-slate-400 font-mono">VITE_SUPABASE_URL</span>
+                                    {import.meta.env.VITE_SUPABASE_URL ? (
+                                        <span className="text-[10px] px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full font-bold">✓ SET</span>
                                     ) : (
                                         <span className="text-[10px] px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full font-bold">MISSING</span>
                                     )}
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-slate-600 dark:text-slate-400 text-xs">SUPABASE_ANON_KEY</span>
-                                    {!!(typeof process !== 'undefined' && process.env.SUPABASE_ANON_KEY) || !!import.meta.env.VITE_SUPABASE_ANON_KEY ? (
-                                        <span className="text-[10px] px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full font-bold">DETECTED</span>
+                                    <span className="text-sm text-slate-600 dark:text-slate-400 font-mono">VITE_SUPABASE_ANON_KEY</span>
+                                    {import.meta.env.VITE_SUPABASE_ANON_KEY ? (
+                                        <span className="text-[10px] px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full font-bold">✓ SET</span>
                                     ) : (
                                         <span className="text-[10px] px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full font-bold">MISSING</span>
+                                    )}
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-slate-600 dark:text-slate-400 font-mono">VITE_API_KEY</span>
+                                    {import.meta.env.VITE_API_KEY && import.meta.env.VITE_API_KEY !== 'your_gemini_api_key_here' ? (
+                                        <span className="text-[10px] px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full font-bold">✓ SET</span>
+                                    ) : (
+                                        <span className="text-[10px] px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full font-bold">NOT SET</span>
                                     )}
                                 </div>
                             </div>
