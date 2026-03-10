@@ -31,7 +31,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
-  const totalReviewCount = product.reviews + (product.localReviews?.length || 0);
+  const totalReviewCount = product.reviews;
 
   const handleWishlistClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();

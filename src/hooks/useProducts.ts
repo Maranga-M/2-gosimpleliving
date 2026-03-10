@@ -127,7 +127,6 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
             title: `[COPY] ${originalProduct.title}`,
             status: 'draft',
             clicks: 0,
-            localReviews: [],
             isBestSeller: false,
         };
 
@@ -139,8 +138,7 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
         if (!product) return;
 
         const updatedProduct = {
-            ...product,
-            localReviews: [...(product.localReviews || []), review]
+            ...product
         };
 
         setProducts(prev => prev.map(p => p.id === productId ? updatedProduct : p));

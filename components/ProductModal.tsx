@@ -194,15 +194,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               <div className="flex items-center gap-2">
                 <StarRating rating={product.rating} size={18} />
                 <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                  {product.reviews + (product.localReviews?.length || 0)} ratings
+                  {product.reviews} ratings
                 </span>
               </div>
             </div>
 
             {/* Review List */}
             <div className="space-y-4 mb-8">
-              {product.localReviews && product.localReviews.length > 0 ? (
-                product.localReviews.map((review: Review) => (
+              {false ? (
+                [].map((review: Review) => (
                   <div key={review.id} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">

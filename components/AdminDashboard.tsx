@@ -186,7 +186,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         description: '',
         features: [],
         affiliateLink: '#',
-        localReviews: [],
         clicks: 0,
         status: 'draft',
         isBestSeller: false,

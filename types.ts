@@ -16,7 +16,6 @@ export interface Product {
   originalPrice?: number;
   rating: number; // Aggregate Amazon rating
   reviews: number; // Amazon review count
-  localReviews?: Review[]; // User submitted reviews on this site
   image: string;
   description: string;
   features: string[];
