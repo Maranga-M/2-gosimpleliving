@@ -13,11 +13,16 @@ export const useProducts = (_dbStatus: ConnectionStatus, userRole?: string, init
 
     // Categories merged from master list + actual products in DB
     const categories = useMemo(() => {
-        const productCategories = Array.from(new Set(products.map(p => p.category)));
+        let visibleProducts = products;
+        if (userRole !== 'admin' && userRole !== 'editor') {
+            visibleProducts = visibleProducts.filter(p => p.status === 'published');
+        }
+
+        const productCategories = Array.from(new Set(visibleProducts.map(p => p.category)));
         const combined = Array.from(new Set([...initialCategories, ...productCategories]));
         const sorted = combined.filter(c => c && c !== 'All').sort();
         return ['All', ...sorted];
-    }, [products, initialCategories]);
+    }, [products, initialCategories, userRole]);
 
     // Filter State
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
