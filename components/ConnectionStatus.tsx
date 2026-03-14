@@ -67,7 +67,7 @@ export const ConnectionStatus: React.FC = () => {
 
                 {state.status === 'offline' && (
                     <button
-                        onClick={() => connectionManager.triggerBackgroundReconnection()}
+                        onClick={() => connectionManager.startBackgroundReconnection()}
                         className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-indigo-500"
                         title="Retry Connection"
                     >

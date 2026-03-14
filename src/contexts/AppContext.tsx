@@ -115,7 +115,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         let timeoutId: ReturnType<typeof setTimeout>;
         const loadData = async () => {
             // 60s timeout to handle Supabase cold starts (Free Tier pauses)
-            const timeout = 60000; // Increased to 60s for initial load resilience
+            const timeout = 60000;
             const attemptTimeoutPromise = new Promise<never>((_, reject) => {
                 timeoutId = setTimeout(() => {
                     reject(new Error(`Database wakeup timeout (${timeout / 1000}s). This is common for free-tier projects warming up.`));
@@ -123,51 +123,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             });
 
             try {
-                // Don't mark as 'loading' if we already have fallback data,
-                // but we use connectionManager to track it.
                 connectionManager.markLoading();
 
-                const [isConnected, dbProducts, dbPosts, dbContent] = await Promise.race([
+                // 3 reads only — a null return signals a failed connection (no separate testConnection ping needed)
+                const [dbProducts, dbPosts, dbContent] = await Promise.race([
                     Promise.all([
-                        dbService.testConnection(),
                         dbService.getProducts(),
                         dbService.getBlogPosts(),
                         dbService.getSiteContent()
                     ]),
                     attemptTimeoutPromise
-                ]) as [boolean, Product[] | null, BlogPost[] | null, SiteContent | null];
+                ]) as [Product[] | null, BlogPost[] | null, SiteContent | null];
 
                 clearTimeout(timeoutId);
 
-                if (!isConnected) {
-                    throw new Error("Failed to connect to the database. Server might be down or credentials invalid.");
-                }
-
                 if (dbProducts === null || dbPosts === null) {
-                    throw new Error("Missing response from database (connection might be throttled or blocked).");
+                    throw new Error("Failed to load data from database. Server might be down or credentials invalid.");
                 }
 
                 connectionManager.markConnected();
 
-                if (dbProducts) {
-                    products.setProducts(dbProducts);
-                    CacheService.saveProducts(dbProducts); // Save new objects to memory
-                }
-                if (dbPosts) {
-                    blog.setBlogPosts(dbPosts);
-                    CacheService.saveBlogs(dbPosts); // Save new stories to memory
-                }
+                products.setProducts(dbProducts);
+                CacheService.saveProducts(dbProducts);
+
+                blog.setBlogPosts(dbPosts);
+                CacheService.saveBlogs(dbPosts);
+
                 if (dbContent) {
                     content.setLiveSiteContent(dbContent);
-                    CacheService.saveContent(dbContent); // Save new pictures to memory
+                    CacheService.saveContent(dbContent);
                 }
 
             } catch (e: any) {
                 clearTimeout(timeoutId);
-                console.warn(`[Background Hydration] Initial attempt failed:`, e.message);
-
-                // If the first attempt failed (e.g. cold start), connectionManager will handle 
-                // the retry/background reconnection.
+                console.warn(`[Background Hydration] Failed:`, e.message);
                 connectionManager.markFailed(e);
             }
         };
@@ -182,29 +171,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const refreshData = async () => {
         try {
             connectionManager.markLoading();
-            const [isConnected, dbProducts, dbPosts, dbContent] = await Promise.all([
-                dbService.testConnection(),
+            // 3 reads only — null return signals failure, no separate ping needed
+            const [dbProducts, dbPosts, dbContent] = await Promise.all([
                 dbService.getProducts(),
                 dbService.getBlogPosts(),
                 dbService.getSiteContent()
             ]);
 
-            if (!isConnected) {
-                throw new Error("Cloud database is unreachable.");
-            }
-
             if (dbProducts === null || dbPosts === null) {
                 throw new Error("Database responded but failed to return core data.");
             }
 
-            if (dbProducts) {
-                products.setProducts(dbProducts);
-                CacheService.saveProducts(dbProducts);
-            }
-            if (dbPosts) {
-                blog.setBlogPosts(dbPosts);
-                CacheService.saveBlogs(dbPosts);
-            }
+            products.setProducts(dbProducts);
+            CacheService.saveProducts(dbProducts);
+
+            blog.setBlogPosts(dbPosts);
+            CacheService.saveBlogs(dbPosts);
+
             if (dbContent) {
                 content.setLiveSiteContent(dbContent);
                 CacheService.saveContent(dbContent);

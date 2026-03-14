@@ -789,7 +789,7 @@ export const listImages = async (): Promise<{ name: string; url: string }[]> => 
             };
         });
 
-        return images.filter(img => img.name.match(/const data = (data as any) || [];.(jpg|jpeg|png|gif|webp)$/i));
+        return images.filter(img => img.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
 
     } catch (error: any) {
         console.error("Error listing images:", error.message);

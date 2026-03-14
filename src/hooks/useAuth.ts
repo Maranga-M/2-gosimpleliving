@@ -12,10 +12,9 @@ export const useAuth = () => {
     useEffect(() => {
         let isMounted = true;
 
-        // Redundant safety: Ensure loading state is cleared after 5 seconds
-        // This handles cases where the auth provider might hang completely
+        // Safety: clear loading state after 5s in case the auth provider hangs completely
         const safetyTimeout = setTimeout(() => {
-            if (isMounted && isLoading) {
+            if (isMounted) {
                 console.warn("[useAuth] Safety timeout triggered - clearing loading state");
                 setIsLoading(false);
             }

@@ -1,6 +1,5 @@
 import * as supabaseService from '../supabase/service';
 import { User, Role, Product, BlogPost, SiteContent, AnalyticsEvent } from '../types';
-import { offlineQueue } from '../utils/offlineQueue';
 
 export interface DatabaseService {
     signIn: (email: string, pass: string) => Promise<any>;
@@ -86,15 +85,12 @@ export const dbService: DatabaseService = {
     getProducts: supabaseService.getProducts,
     getProductById: supabaseService.getProductById,
     createProduct: async (product) => {
-        offlineQueue.enqueue('insert', 'products', product);
         await supabaseService.createProduct(product);
     },
     updateProduct: async (product) => {
-        offlineQueue.enqueue('update', 'products', product);
         await supabaseService.updateProduct(product);
     },
     deleteProduct: async (id) => {
-        offlineQueue.enqueue('update', 'products', { id, deleted_at: new Date().toISOString() });
         await supabaseService.deleteProduct(id);
     },
     duplicateProduct: supabaseService.duplicateProduct,
@@ -105,15 +101,12 @@ export const dbService: DatabaseService = {
     getBlogPostById: supabaseService.getBlogPostById,
     getBlogPostBySlug: supabaseService.getBlogPostBySlug,
     createBlogPost: async (post) => {
-        offlineQueue.enqueue('insert', 'posts', post);
         await supabaseService.createBlogPost(post);
     },
     updateBlogPost: async (post) => {
-        offlineQueue.enqueue('update', 'posts', post);
         await supabaseService.updateBlogPost(post);
     },
     deleteBlogPost: async (id) => {
-        offlineQueue.enqueue('update', 'posts', { id, deleted_at: new Date().toISOString() });
         await supabaseService.deleteBlogPost(id);
     },
     duplicateBlogPost: supabaseService.duplicateBlogPost,
