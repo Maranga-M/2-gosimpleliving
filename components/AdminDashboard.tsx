@@ -240,6 +240,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         author: currentUserName,
         date: new Date().toLocaleDateString('en-CA'),
         image: 'https://picsum.photos/id/101/800/400',
+        category: 'General',
         status: 'draft',
         linkedProductIds: []
     };
@@ -1229,8 +1230,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             </div>
                                             <input
                                                 type="checkbox"
-                                                checked={siteContent.showPostDates !== false}
-                                                onChange={(e) => updateSiteContent({ showPostDates: e.target.checked })}
+                                                checked={draftContent.showPostDates !== false}
+                                                onChange={(e) => setDraftContent({ ...draftContent, showPostDates: e.target.checked })}
                                                 className="w-10 h-5 bg-slate-200 rounded-full appearance-none cursor-pointer checked:bg-amber-500 transition-colors relative before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 before:transition-transform checked:before:translate-x-5"
                                             />
                                         </div>
