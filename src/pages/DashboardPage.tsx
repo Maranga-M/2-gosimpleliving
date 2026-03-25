@@ -4,7 +4,7 @@ import { AdminDashboard } from '../../components/AdminDashboard';
 import { Button } from '../../components/Button';
 import toast from 'react-hot-toast';
 
-export const DashboardPage: React.FC = () => {
+export const DashboardPage: React.FC<{ onNavigate: (view: string) => void }> = ({ onNavigate }) => {
     const { auth, products, blog, content, dbStatus, lastError, isUsingFallback, refreshData } = useApp();
     const { user } = auth;
 
@@ -80,7 +80,10 @@ export const DashboardPage: React.FC = () => {
             onDuplicateProduct={products.duplicateProduct}
 
             // Site Content Actions
-            onStartPreview={content.startPreview}
+            onStartPreview={(draft) => {
+                content.startPreview(draft);
+                onNavigate('home');
+            }}
             onUpdateSiteContent={content.updateSiteContent}
             onSaveChanges={content.saveChanges}
 

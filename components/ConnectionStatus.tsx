@@ -4,9 +4,12 @@ import { connectionManager, ConnectionState } from '../services/connectionManage
 import { useApp } from '../src/contexts/AppContext';
 
 export const ConnectionStatus: React.FC = () => {
-    const { refreshData } = useApp();
+    const { refreshData, auth } = useApp();
     const [state, setState] = useState<ConnectionState>(connectionManager.getState());
     const [isVisible, setIsVisible] = useState(false);
+
+    // Hide for non-admins to keep production UI subtle
+    if (auth.user?.role !== 'admin') return null;
 
     useEffect(() => {
         const unsubscribe = connectionManager.subscribe((newState) => {
