@@ -84,7 +84,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // --- Health Check / Heartbeat ---
     useEffect(() => {
-        const heartbeat = setInterval(async () => {
+        let timer: ReturnType<typeof setTimeout>;
+
+        const checkHealth = async () => {
             const currentStatus = connectionManager.getState().status;
             if (currentStatus === 'connected') {
                 const isHealthy = await dbService.testConnection();
@@ -95,15 +97,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     connectionManager.markFailed(new Error(diagnostic.errorMessage || "Connection lost."));
                 }
             } else if (currentStatus === 'offline') {
-                const isHealthy = await dbService.testConnection();
-                if (isHealthy) {
-                    console.log('[Heartbeat] Connection restored!');
-                    toast.success('Database connection restored');
-                    connectionManager.markConnected();
+                // Don't auto-retry if it's a known non-recoverable error type like Auth or Schema
+                const errorType = connectionManager.getState().errorType;
+                if (errorType !== 'auth' && errorType !== 'schema') {
+                    const isHealthy = await dbService.testConnection();
+                    if (isHealthy) {
+                        console.log('[Heartbeat] Connection restored!');
+                        toast.success('Database connection restored');
+                        connectionManager.markConnected();
+                    }
                 }
             }
-        }, 120000); // Check every 2 minutes instead of 1 minute
-        return () => clearInterval(heartbeat);
+
+            // Adaptive polling: 15s if offline trying to recover, 2m if healthy
+            const nextInterval = connectionManager.getState().status === 'offline' ? 15000 : 120000;
+            timer = setTimeout(checkHealth, nextInterval);
+        };
+
+        timer = setTimeout(checkHealth, 120000);
+        return () => clearTimeout(timer);
     }, []);
 
     // We initialize hooks with initial cached data so UI renders immediately
@@ -138,7 +150,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 clearTimeout(timeoutId);
 
                 if (dbProducts === null || dbPosts === null) {
-                    throw new Error("Failed to load data from database. Server might be down or credentials invalid.");
+                    const diagnostic = await dbService.testConnectionDetailed();
+                    if (!diagnostic.success) {
+                        throw new Error(diagnostic.errorMessage || "Failed to load data from database.");
+                    } else {
+                        throw new Error("Failed to load data from database. Network issue or server sleeping.");
+                    }
                 }
 
                 connectionManager.markConnected();
@@ -179,7 +196,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             ]);
 
             if (dbProducts === null || dbPosts === null) {
-                throw new Error("Database responded but failed to return core data.");
+                const diagnostic = await dbService.testConnectionDetailed();
+                if (!diagnostic.success) {
+                    throw new Error(diagnostic.errorMessage || "Failed to load core data.");
+                } else {
+                    throw new Error("Database responded but failed to return core data.");
+                }
             }
 
             products.setProducts(dbProducts);

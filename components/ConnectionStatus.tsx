@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Wifi, WifiOff, RefreshCw, CheckCircle2, Clock } from 'lucide-react';
 import { connectionManager, ConnectionState } from '../services/connectionManager';
+import { useApp } from '../src/contexts/AppContext';
 
 export const ConnectionStatus: React.FC = () => {
+    const { refreshData } = useApp();
     const [state, setState] = useState<ConnectionState>(connectionManager.getState());
     const [isVisible, setIsVisible] = useState(false);
 
@@ -67,7 +69,10 @@ export const ConnectionStatus: React.FC = () => {
 
                 {state.status === 'offline' && (
                     <button
-                        onClick={() => connectionManager.startBackgroundReconnection()}
+                        onClick={() => {
+                            connectionManager.markLoading();
+                            refreshData();
+                        }}
                         className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-indigo-500"
                         title="Retry Connection"
                     >

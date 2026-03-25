@@ -147,9 +147,8 @@ export const authStateChanged = (callback: (user: User | null, event?: string) =
 
     let refreshTimer: any = null;
 
-    const setupRefreshBuffer = async () => {
-        const { data: { session } } = await supabase!.auth.getSession();
-        if (session && session.expires_at) {
+    const setupRefreshBuffer = async (session: any) => {
+        if (session?.expires_at) {
             const expiresAt = session.expires_at * 1000;
             const now = Date.now();
             const buffer = 5 * 60 * 1000; // 5 minute buffer
@@ -160,42 +159,18 @@ export const authStateChanged = (callback: (user: User | null, event?: string) =
                 refreshTimer = setTimeout(async () => {
                     console.log("Supabase Auth: Proactive token refresh (5m buffer)");
                     await supabase!.auth.refreshSession();
-                    setupRefreshBuffer();
                 }, waitTime);
             }
         }
     };
 
-    // 1. Immediately check for existing session
-    const initSession = async () => {
-        try {
-            const { data: { session }, error: sessionError } = await supabase!.auth.getSession();
-            if (sessionError || !session?.user) {
-                callback(null, 'INITIAL_SESSION');
-                return;
-            }
-
-            setupRefreshBuffer();
-            const profile = await getUserProfile(session.user.id, session.user);
-            if (profile) {
-                callback(profile, 'INITIAL_SESSION');
-            } else if (session.user.email) {
-                const fallbackUser = mapUser(session.user, { role: 'user', wishlist: [], name: 'User' });
-                callback(fallbackUser, 'INITIAL_SESSION');
-            }
-        } catch (e: any) {
-            callback(null, 'INITIAL_SESSION');
-        }
-    };
-
-    initSession();
-
-    // 2. Set up listener for subsequent changes
+    // Single listener — Supabase fires INITIAL_SESSION automatically on mount,
+    // so we do NOT need a separate initSession() getSession() call.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         console.log(`Supabase Auth Event: ${event}`);
 
         if (session?.user) {
-            setupRefreshBuffer();
+            setupRefreshBuffer(session);
             try {
                 const profile = await getUserProfile(session.user.id, session.user);
                 if (!profile && session.user.email) {
@@ -205,6 +180,10 @@ export const authStateChanged = (callback: (user: User | null, event?: string) =
                     callback(newUser, event);
                 } else if (profile) {
                     callback(profile, event);
+                } else {
+                    // Profile fetch returned null but user exists — use fallback
+                    const fallbackUser = mapUser(session.user, { role: 'user', wishlist: [], name: session.user.user_metadata?.name || 'User' });
+                    callback(fallbackUser, event);
                 }
             } catch (e) {
                 const fallbackName = session.user.user_metadata?.name || 'User';
@@ -213,7 +192,9 @@ export const authStateChanged = (callback: (user: User | null, event?: string) =
             }
         } else {
             if (refreshTimer) clearTimeout(refreshTimer);
-            if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+            // INITIAL_SESSION with no session means logged-out state — always notify
+            const evtStr = event as string;
+            if (evtStr === 'INITIAL_SESSION' || evtStr === 'SIGNED_OUT' || evtStr === 'USER_DELETED') {
                 callback(null, event);
             }
         }
@@ -478,18 +459,17 @@ export const updateProduct = async (product: Product) => {
 
 export const deleteProduct = async (id: string) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('products').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+    const { error } = await supabase.from('products').delete().eq('id', id);
     if (error) {
-        console.error("Failed to SOFT DELETE product in DB:", error.message);
+        console.error("Failed to DELETE product in DB:", error.message);
         await handleDbError(error);
         throw error;
     }
 };
 
-export const restoreProduct = async (id: string) => {
-    if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('products').update({ deleted_at: null }).eq('id', id);
-    if (error) throw error;
+export const restoreProduct = async (_id: string) => {
+    // Hard delete is used — restore is not supported without a deleted_at column.
+    console.warn('restoreProduct: not supported (no soft-delete column in schema)');
 };
 
 export const duplicateProduct = async (id: string): Promise<string> => {
@@ -631,18 +611,17 @@ export const updateBlogPost = async (post: BlogPost) => {
 
 export const deleteBlogPost = async (id: string) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('posts').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+    const { error } = await supabase.from('posts').delete().eq('id', id);
     if (error) {
-        console.error(`Failed to SOFT DELETE blog post from DB:`, error.message);
+        console.error(`Failed to DELETE blog post from DB:`, error.message);
         await handleDbError(error);
         throw error;
     }
 };
 
-export const restoreBlogPost = async (id: string) => {
-    if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('posts').update({ deleted_at: null }).eq('id', id);
-    if (error) throw error;
+export const restoreBlogPost = async (_id: string) => {
+    // Hard delete is used — restore is not supported without a deleted_at column.
+    console.warn('restoreBlogPost: not supported (no soft-delete column in schema)');
 };
 
 export const duplicateBlogPost = async (id: string): Promise<string> => {
