@@ -47,7 +47,7 @@ const PageLoader: React.FC = () => (
 // AppLoadingSkeleton removed - using optimistic UI pattern instead
 
 const AppContent: React.FC = () => {
-  const { auth, products, blog, content, dbStatus, lastError, isUsingFallback, isDarkMode, toggleDarkMode, notifications, markNotificationRead, clearAllNotifications } = useApp();
+  const { auth, products, blog, content, dbStatus, lastError, isUsingFallback, isDbPaused, isDarkMode, toggleDarkMode, notifications, markNotificationRead, clearAllNotifications } = useApp();
   const { user, isLoginModalOpen, setIsLoginModalOpen, signOut, toggleWishlist } = auth;
   const { siteContent, siteLogoUrl } = content;
   const { trackProductClick } = products;
@@ -147,13 +147,40 @@ const AppContent: React.FC = () => {
   return (
     <div className={`min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 transition-all duration-300`}>
 
-      {/* Fallback/Offline Banner */}
+      {/* Fallback/Offline Banner — admin only */}
       {isUsingFallback && user?.role === 'admin' && (
-        <div className="bg-amber-500 text-white py-1.5 px-4 text-[11px] font-bold uppercase tracking-widest text-center flex items-center justify-center gap-2 shadow-sm z-50 cursor-pointer hover:bg-amber-600 transition-colors" onClick={() => window.location.reload()}>
-          <AlertTriangle size={12} /> {dbStatus === 'offline' ? 'Connection lost. Tap here to Refresh' : 'Local Catalogue active'}
-          <button onClick={(e) => { e.stopPropagation(); setCurrentView('dashboard'); }} className="ml-2 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded transition-colors flex items-center gap-1">
-            Sync to DB
-          </button>
+        <div
+          className={`py-1.5 px-4 text-[11px] font-bold uppercase tracking-widest text-center flex items-center justify-center gap-2 shadow-sm z-50 cursor-pointer transition-colors ${
+            isDbPaused
+              ? 'bg-orange-500 hover:bg-orange-600 text-white'
+              : 'bg-amber-500 hover:bg-amber-600 text-white'
+          }`}
+          onClick={() => window.location.reload()}
+        >
+          <AlertTriangle size={12} />
+          {isDbPaused
+            ? 'DB Paused (Free Tier) — Tap to refresh after restoring'
+            : dbStatus === 'offline'
+              ? 'Connection lost. Tap here to Refresh'
+              : 'Local Catalogue active'}
+          {isDbPaused ? (
+            <a
+              href="https://supabase.com/dashboard/projects"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="ml-2 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded transition-colors flex items-center gap-1"
+            >
+              Open Dashboard
+            </a>
+          ) : (
+            <button
+              onClick={(e) => { e.stopPropagation(); setCurrentView('dashboard'); }}
+              className="ml-2 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded transition-colors flex items-center gap-1"
+            >
+              Sync to DB
+            </button>
+          )}
         </div>
       )}
 
@@ -316,17 +343,46 @@ const AppContent: React.FC = () => {
       </nav>
 
       <main className="flex-grow">
-        {/* Error/Sync Banner */}
+        {/* Error/Sync Banner — admin only */}
         {lastError && user?.role === 'admin' && (
           <div className="max-w-7xl mx-auto px-4 mt-6">
-            <div className={`border px-4 py-3 rounded-xl text-sm flex items-center gap-3 shadow-sm ${dbStatus === 'offline' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-400' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-400'}`}>
-              <AlertTriangle size={18} className="shrink-0" />
+            <div className={`border px-4 py-3 rounded-xl text-sm flex items-start gap-3 shadow-sm ${
+              isDbPaused
+                ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 text-orange-800 dark:text-orange-400'
+                : dbStatus === 'offline'
+                  ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-400'
+                  : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-400'
+            }`}>
+              <AlertTriangle size={18} className="shrink-0 mt-0.5" />
               <div className="flex-grow">
-                <p className="font-bold">{dbStatus === 'offline' ? 'Connection lost' : 'Refresh required'}</p>
-                <p className="opacity-90 mt-1">{dbStatus === 'offline' ? 'Please check your internet or tap the banner to Refresh.' : 'A sync with the cloud database is recommended.'}</p>
-                <p className="text-xs mt-2 opacity-75">
-                  💡 Tip: Check your Supabase credentials in .env or use the Admin Dashboard to sync data.
-                </p>
+                {isDbPaused ? (
+                  <>
+                    <p className="font-bold">Supabase Project Paused (Free Tier)</p>
+                    <p className="opacity-90 mt-1">
+                      Your free-tier database has been paused due to inactivity. Visit the Supabase dashboard to restore it — takes about 30 seconds. Then tap "Sync to DB" above.
+                    </p>
+                    <a
+                      href="https://supabase.com/dashboard/projects"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-2 font-bold underline underline-offset-2"
+                    >
+                      → Open Supabase Dashboard
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-bold">{dbStatus === 'offline' ? 'Connection lost' : 'Refresh required'}</p>
+                    <p className="opacity-90 mt-1">
+                      {dbStatus === 'offline'
+                        ? 'Please check your internet connection or tap the banner above to refresh.'
+                        : 'A sync with the cloud database is recommended.'}
+                    </p>
+                    <p className="text-xs mt-2 opacity-75">
+                      💡 Tip: Check your Supabase credentials in .env or use the Admin Dashboard to sync data.
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>

@@ -26,8 +26,16 @@ export const useAuth = () => {
             setUser(userProfile);
             setIsLoading(false);
 
+            // Persist role so handleDbError can show role-appropriate messages
+            // without needing React context access
+            if (userProfile?.role) {
+                localStorage.setItem('gsl_user_role', userProfile.role);
+            } else {
+                localStorage.removeItem('gsl_user_role');
+            }
+
             if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-                // Force the UI back to the home page to avoid breaking in a protected view
+                localStorage.removeItem('gsl_user_role');
                 localStorage.setItem('gsl_current_view', 'home');
                 window.location.href = '/';
             }

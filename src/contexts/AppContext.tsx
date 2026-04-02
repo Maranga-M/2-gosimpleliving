@@ -24,6 +24,7 @@ interface AppContextType {
     dbStatus: ConnectionStatus;
     lastError: string | null;
     isUsingFallback: boolean;
+    isDbPaused: boolean; // True when Supabase free-tier project is paused
 
     // UI State
     isDarkMode: boolean;
@@ -66,10 +67,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const auth = useAuth();
     const content = useSiteContent(auth.user?.role, initialCachedContent);
 
-    // Database Status State - Driven by connectionManager
     const [dbStatus, setDbStatus] = useState<ConnectionStatus>(connectionManager.getState().status);
     const [lastError, setLastError] = useState<string | null>(connectionManager.getState().lastError);
     const [isUsingFallback, setIsUsingFallback] = useState(false);
+    const [isDbPaused, setIsDbPaused] = useState(false);
 
     // Sync state with connectionManager
     useEffect(() => {
@@ -77,7 +78,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setDbStatus(state.status);
             setLastError(state.lastError);
             if (state.status === 'offline') setIsUsingFallback(true);
-            if (state.status === 'connected') setIsUsingFallback(false);
+            if (state.status === 'connected') { setIsUsingFallback(false); setIsDbPaused(false); }
+
+            // Detect free-tier paused state.
+            // connectionManager.getErrorMessage() produces a human-readable message that
+            // contains 'paused' when the project is paused. We match on that.
+            const errLower = (state.lastError || '').toLowerCase();
+            const isPaused = errLower.includes('paused');
+            setIsDbPaused(isPaused);
         });
         return unsubscribe;
     }, []);
@@ -109,12 +117,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 }
             }
 
-            // Adaptive polling: 15s if offline trying to recover, 2m if healthy
-            const nextInterval = connectionManager.getState().status === 'offline' ? 15000 : 120000;
+            // Adaptive polling: 30s if offline/recovering, 5 min if healthy
+            // Slower intervals reduce false positives and unnecessary DB pings
+            const nextInterval = connectionManager.getState().status === 'offline' ? 30_000 : 300_000;
             timer = setTimeout(checkHealth, nextInterval);
         };
 
-        timer = setTimeout(checkHealth, 120000);
+        // First heartbeat after 5 minutes (give the app time to settle)
+        timer = setTimeout(checkHealth, 300_000);
         return () => clearTimeout(timer);
     }, []);
 
@@ -126,35 +136,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     useEffect(() => {
         let timeoutId: ReturnType<typeof setTimeout>;
         const loadData = async () => {
-            // 60s timeout to handle Supabase cold starts (Free Tier pauses)
-            const timeout = 60000;
+            // 60s outer timeout handles Supabase free-tier cold starts
+            const timeout = 60_000;
             const attemptTimeoutPromise = new Promise<never>((_, reject) => {
                 timeoutId = setTimeout(() => {
-                    reject(new Error(`Database wakeup timeout (${timeout / 1000}s). This is common for free-tier projects warming up.`));
+                    reject(new Error('timeout'));
                 }, timeout);
             });
 
-            try {
-                connectionManager.markLoading();
-
-                // 3 reads only — a null return signals a failed connection (no separate testConnection ping needed)
-                const [dbProducts, dbPosts, dbContent] = await Promise.race([
+            const attemptFetch = async () => {
+                return Promise.race([
                     Promise.all([
                         dbService.getProducts(),
                         dbService.getBlogPosts(),
                         dbService.getSiteContent()
                     ]),
                     attemptTimeoutPromise
-                ]) as [Product[] | null, BlogPost[] | null, SiteContent | null];
+                ]) as Promise<[Product[] | null, BlogPost[] | null, SiteContent | null]>;
+            };
+
+            try {
+                connectionManager.markLoading();
+
+                let dbProducts: Product[] | null = null;
+                let dbPosts: BlogPost[] | null = null;
+                let dbContent: SiteContent | null = null;
+
+                try {
+                    [dbProducts, dbPosts, dbContent] = await attemptFetch();
+                } catch (firstError: any) {
+                    // ── Grace period retry ──────────────────────────────────
+                    // One silent retry after 5s before declaring offline.
+                    // This hides brief cold-start delays from users entirely.
+                    console.warn('[Hydration] First attempt failed, retrying in 5s…', firstError.message);
+                    await new Promise(r => setTimeout(r, 5_000));
+                    // Reset timeout for the retry attempt
+                    clearTimeout(timeoutId);
+                    const retryTimeoutPromise = new Promise<never>((_, reject) => {
+                        timeoutId = setTimeout(() => reject(new Error('timeout')), timeout);
+                    });
+                    [dbProducts, dbPosts, dbContent] = await (Promise.race([
+                        Promise.all([
+                            dbService.getProducts(),
+                            dbService.getBlogPosts(),
+                            dbService.getSiteContent()
+                        ]),
+                        retryTimeoutPromise
+                    ]) as Promise<[Product[] | null, BlogPost[] | null, SiteContent | null]>);
+                }
 
                 clearTimeout(timeoutId);
 
                 if (dbProducts === null || dbPosts === null) {
                     const diagnostic = await dbService.testConnectionDetailed();
                     if (!diagnostic.success) {
-                        throw new Error(diagnostic.errorMessage || "Failed to load data from database.");
+                        throw new Error(diagnostic.errorMessage || 'Failed to load data from database.');
                     } else {
-                        throw new Error("Failed to load data from database. Network issue or server sleeping.");
+                        throw new Error('Failed to load data from database. Network issue or server sleeping.');
                     }
                 }
 
@@ -173,7 +211,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
             } catch (e: any) {
                 clearTimeout(timeoutId);
-                console.warn(`[Background Hydration] Failed:`, e.message);
+                console.warn(`[Background Hydration] Failed after retry:`, e.message);
                 connectionManager.markFailed(e);
             }
         };
@@ -188,7 +226,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const refreshData = async () => {
         try {
             connectionManager.markLoading();
-            // 3 reads only — null return signals failure, no separate ping needed
             const [dbProducts, dbPosts, dbContent] = await Promise.all([
                 dbService.getProducts(),
                 dbService.getBlogPosts(),
@@ -198,9 +235,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (dbProducts === null || dbPosts === null) {
                 const diagnostic = await dbService.testConnectionDetailed();
                 if (!diagnostic.success) {
-                    throw new Error(diagnostic.errorMessage || "Failed to load core data.");
+                    throw new Error(diagnostic.errorMessage || 'Failed to load core data.');
                 } else {
-                    throw new Error("Database responded but failed to return core data.");
+                    throw new Error('Database responded but failed to return core data.');
                 }
             }
 
@@ -216,11 +253,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
 
             connectionManager.markConnected();
-            toast.success("Successfully synced with Cloud Database!");
+            toast.success('Synced with database!');
         } catch (e: any) {
-            console.error("Manual refresh failed:", e);
+            console.error('[refreshData] Failed:', e);
             connectionManager.markFailed(e);
-            toast.error(e.message || "Cloud Refresh Failed. Using local fallback.");
+            // Don't dump raw error messages to regular users — just calm feedback
+            const isPaused = e.message?.toLowerCase().includes('paused');
+            if (isPaused) {
+                toast.error('Database is paused. Please visit the Supabase dashboard to restore it.', { duration: 8000 });
+            } else {
+                toast.error('Sync failed. Using local data — try again in a moment.', { duration: 5000 });
+            }
         }
     };
 
@@ -278,10 +321,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         products,
         blog,
         content,
-        users, // Expose user management
+        users,
         dbStatus,
         lastError,
         isUsingFallback,
+        isDbPaused,
         isDarkMode,
         toggleDarkMode,
         notifications,
