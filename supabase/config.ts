@@ -54,26 +54,60 @@ if (isDev) {
 }
 
 /**
- * Resilient fetch wrapper:
- * - 10s timeout per attempt (individual REST calls should be fast)
- * - Retries up to 3× with 1s/2s exponential backoff
- * - Retries on network errors AND 502/503 (free-tier cold start responses)
+ * Resilient fetch wrapper for Supabase DATA requests only:
+ * - 10s timeout per attempt (REST/storage calls should be fast)
+ * - Retries up to 3× with 1s/2s exponential backoff on network/gateway errors
+ * - Retries on 502/503 (free-tier cold-start responses)
+ *
+ * AUTH requests are passed through directly — Supabase manages its own
+ * timeouts and AbortSignals for auth flows, and login can legitimately
+ * take longer than 10s on a cold start. Intercepting them breaks login.
  */
 const PER_CALL_TIMEOUT_MS = 10_000;
 const MAX_RETRY_ATTEMPTS = 3;
 
+/** Returns true for Supabase auth endpoint URLs */
+const isAuthRequest = (input: RequestInfo | URL): boolean => {
+  try {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    return url.includes('/auth/v1/');
+  } catch {
+    return false;
+  }
+};
+
 const fetchWithRetry: typeof fetch = async (input, init) => {
+  // Auth requests bypass retry/timeout entirely — they use their own flow
+  if (isAuthRequest(input)) {
+    return fetch(input, init);
+  }
+
   let lastError: Error = new Error('Network request failed');
 
   for (let attempt = 0; attempt < MAX_RETRY_ATTEMPTS; attempt++) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), PER_CALL_TIMEOUT_MS);
 
+    // Compose our timeout signal with the caller's signal (if any)
+    // so both can abort the request independently
+    const callerSignal = init?.signal as AbortSignal | undefined;
+    const signal = callerSignal
+      ? (() => {
+          // If browser supports AbortSignal.any(), use it
+          if (typeof (AbortSignal as any).any === 'function') {
+            return (AbortSignal as any).any([controller.signal, callerSignal]);
+          }
+          // Fallback: chain manually
+          callerSignal.addEventListener('abort', () => controller.abort());
+          return controller.signal;
+        })()
+      : controller.signal;
+
     try {
-      const response = await fetch(input, { ...init, signal: controller.signal });
+      const response = await fetch(input, { ...init, signal });
       clearTimeout(timeoutId);
 
-      // Retry on gateway/wakeup errors if we have attempts left
+      // Retry on gateway/wakeup errors if attempts remain
       if ((response.status === 503 || response.status === 502) && attempt < MAX_RETRY_ATTEMPTS - 1) {
         const delay = 1000 * Math.pow(2, attempt); // 1s → 2s
         if (isDev) console.warn(`[Supabase] ${response.status} – retrying in ${delay}ms (attempt ${attempt + 1})`);
@@ -86,13 +120,16 @@ const fetchWithRetry: typeof fetch = async (input, init) => {
       clearTimeout(timeoutId);
       lastError = err;
 
+      // If the caller's signal caused the abort, propagate immediately
+      if (callerSignal?.aborted) throw err;
+
       const isRetryable =
         err.name === 'AbortError' ||
         err.message?.toLowerCase().includes('network') ||
         err.message?.toLowerCase().includes('fetch');
 
       if (isRetryable && attempt < MAX_RETRY_ATTEMPTS - 1) {
-        const delay = 1000 * Math.pow(2, attempt); // 1s → 2s
+        const delay = 1000 * Math.pow(2, attempt);
         if (isDev) console.warn(`[Supabase] Fetch error – retrying in ${delay}ms (attempt ${attempt + 1})`, err.message);
         await new Promise(r => setTimeout(r, delay));
         continue;
