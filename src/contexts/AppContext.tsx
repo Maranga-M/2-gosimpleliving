@@ -81,28 +81,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return unsubscribe;
     }, []);
 
-    // --- Health Check / Heartbeat ---
+    // Connection recovery toast — show when connectionManager detects restoration
     useEffect(() => {
-        const heartbeat = setInterval(async () => {
-            const currentStatus = connectionManager.getState().status;
-            if (currentStatus === 'connected') {
-                const isHealthy = await dbService.testConnection();
-                if (!isHealthy) {
-                    console.warn('[Heartbeat] Connection lost. Running detailed diagnostics...');
-                    const diagnostic = await dbService.testConnectionDetailed();
-                    console.error('[Heartbeat] Diagnostic Result:', diagnostic);
-                    connectionManager.markFailed(new Error(diagnostic.errorMessage || "Connection lost."));
-                }
-            } else if (currentStatus === 'offline') {
-                const isHealthy = await dbService.testConnection();
-                if (isHealthy) {
-                    console.log('[Heartbeat] Connection restored!');
-                    toast.success('Database connection restored');
-                    connectionManager.markConnected();
-                }
+        let prevStatus = connectionManager.getState().status;
+        const unsubscribe = connectionManager.subscribe((state) => {
+            if (prevStatus !== 'connected' && state.status === 'connected') {
+                toast.success('Database connection restored');
             }
-        }, 120000); // Check every 2 minutes instead of 1 minute
-        return () => clearInterval(heartbeat);
+            prevStatus = state.status;
+        });
+        return unsubscribe;
     }, []);
 
     // We initialize hooks with initial cached data so UI renders immediately
@@ -126,24 +114,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 // but we use connectionManager to track it.
                 connectionManager.markLoading();
 
-                const [isConnected, dbProducts, dbPosts, dbContent] = await Promise.race([
+                const [dbProducts, dbPosts, dbContent] = await Promise.race([
                     Promise.all([
-                        dbService.testConnection(),
                         dbService.getProducts(),
                         dbService.getBlogPosts(),
                         dbService.getSiteContent()
                     ]),
                     attemptTimeoutPromise
-                ]) as [boolean, Product[] | null, BlogPost[] | null, SiteContent | null];
+                ]) as [Product[] | null, BlogPost[] | null, SiteContent | null];
 
                 clearTimeout(timeoutId);
 
-                if (!isConnected) {
-                    throw new Error("Failed to connect to the database. Server might be down or credentials invalid.");
-                }
-
                 if (dbProducts === null || dbPosts === null) {
-                    throw new Error("Missing response from database (connection might be throttled or blocked).");
+                    throw new Error("Failed to connect to the database. Server might be down or credentials invalid.");
                 }
 
                 connectionManager.markConnected();
@@ -181,19 +164,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const refreshData = async () => {
         try {
             connectionManager.markLoading();
-            const [isConnected, dbProducts, dbPosts, dbContent] = await Promise.all([
-                dbService.testConnection(),
+            const [dbProducts, dbPosts, dbContent] = await Promise.all([
                 dbService.getProducts(),
                 dbService.getBlogPosts(),
                 dbService.getSiteContent()
             ]);
 
-            if (!isConnected) {
-                throw new Error("Cloud database is unreachable.");
-            }
-
             if (dbProducts === null || dbPosts === null) {
-                throw new Error("Database responded but failed to return core data.");
+                throw new Error("Cloud database is unreachable.");
             }
 
             if (dbProducts) {

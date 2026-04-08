@@ -351,9 +351,20 @@ class ConnectionManager {
 
         this.updateState({ isBackgroundReconnecting: true });
 
-        this.backgroundRetryTimer = setInterval(() => {
+        this.backgroundRetryTimer = setInterval(async () => {
             if (this.state.status === 'connected') {
                 this.stopBackgroundReconnection();
+                return;
+            }
+            if (this.healthCheckHandler) {
+                try {
+                    const isHealthy = await this.healthCheckHandler();
+                    if (isHealthy) {
+                        this.markConnected();
+                    }
+                } catch {
+                    // still offline, try again next interval
+                }
             }
         }, this.config.backgroundRetryInterval);
     }

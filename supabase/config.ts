@@ -34,9 +34,6 @@ const getProcessEnv = (key: string): string | undefined => {
   return undefined;
 };
 
-// Start detection
-console.log('🔧 Initializing Supabase Configuration...');
-
 // Try all possible prefixes for URL
 const supabaseUrl =
   getViteEnv('VITE_SUPABASE_URL') ||
@@ -64,18 +61,6 @@ const getEffectivePrefix = () => {
 }
 
 const usingPrefix = getEffectivePrefix();
-
-// Log configuration status (censored)
-const configStatus = {
-  hasUrl: !!supabaseUrl,
-  hasKey: !!supabaseKey,
-  urlValid: supabaseUrl ? supabaseUrl.startsWith('https://') : false,
-  endpoint: supabaseUrl ? new URL(supabaseUrl).hostname : 'MISSING',
-  prefix: usingPrefix,
-  mode: (typeof import.meta !== 'undefined' && (import.meta as any).env) ? (import.meta as any).env.MODE : 'unknown'
-};
-
-console.log('🔧 Supabase Config Status:', configStatus);
 
 let supabase: SupabaseClient | null = null;
 
@@ -113,16 +98,11 @@ if (supabaseUrl && supabaseKey) {
         heartbeatIntervalMs: 30000 // 30s heartbeat
       }
     });
-    console.log(`✅ Supabase client initialized successfully with timeout protection`);
   } catch (err) {
-    console.error('❌ Failed to initialize Supabase client:', err);
+    console.error('Failed to initialize Supabase client:', err);
   }
-} else {
-  console.error(
-    '❌ Supabase Configuration Error\n' +
-    'Missing environment variables. Please check your .env file or Vercel project settings.\n' +
-    'Required: VITE_SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) and VITE_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_ANON_KEY)'
-  );
+} else if (typeof import.meta !== 'undefined' && (import.meta as any).env?.DEV) {
+  console.warn('Supabase not configured: missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
 }
 
 export { supabase };

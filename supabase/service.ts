@@ -42,6 +42,20 @@ const getFromCache = (key: string) => {
 };
 
 // --- RETRY HELPER ---
+const isTransientError = (err: any): boolean => {
+    if (err?.name === 'AbortError') return true;
+    const msg = (err?.message || '').toLowerCase();
+    const status = err?.status ?? err?.statusCode ?? err?.code;
+    return (
+        msg.includes('fetch') ||
+        msg.includes('network') ||
+        msg.includes('failed to fetch') ||
+        msg.includes('networkerror') ||
+        msg.includes('load failed') ||
+        status === 502 || status === 503 || status === 504 || status === 429
+    );
+};
+
 const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> => {
     let lastError: any;
     for (let i = 0; i <= maxRetries; i++) {
@@ -49,8 +63,7 @@ const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> =>
             return await fn();
         } catch (err: any) {
             lastError = err;
-            const isTransient = err.message?.includes('fetch') || err.message?.includes('network') || err.status === 502 || err.status === 503 || err.status === 504;
-            if (!isTransient || i === maxRetries) throw err;
+            if (!isTransientError(err) || i === maxRetries) throw err;
             const delay = 1000 * Math.pow(2, i);
             await new Promise(resolve => setTimeout(resolve, delay));
         }
@@ -195,73 +208,31 @@ const mapUser = (sbUser: any, profile: any): User => ({
 export const authStateChanged = (callback: (user: User | null) => void) => {
     if (!supabase) {
         callback(null);
-        return () => { };
+        return () => {};
     }
 
-    let initialCheckDone = false;
-
-    // 1. Immediately check for existing session to prevent "guest flash" on refresh
-    const initSession = async () => {
-        try {
-            const { data: { session } } = await supabase!.auth.getSession();
-            if (session?.user) {
-                const profile = await getUserProfile(session.user.id, session.user);
-                if (profile) {
-                    initialCheckDone = true;
-                    callback(profile);
-                } else if (session.user.email) {
-                    initialCheckDone = true;
-                    callback(mapUser(session.user, { role: 'user', wishlist: [], name: 'User' }));
-                }
-            } else {
-                // Explicitly signal no session if we checked and found nothing
-                initialCheckDone = true;
-                callback(null);
-            }
-        } catch (e) {
-            console.warn("Initial session check failed:", e);
-            initialCheckDone = true;
-            callback(null);
-        }
-    };
-
-    initSession();
-
-    // 2. Set up listener for subsequent changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log(`Supabase Auth Event: ${event}`);
-
-        // If it's the initial check and we already handled it in initSession, skip redundant callback
-        // This prevents double updates on first load
-        if (event === 'INITIAL_SESSION' && initialCheckDone) {
+        if (!session?.user) {
+            callback(null);
             return;
         }
 
-        if (session?.user) {
-            // Background fetch for real profile/wishlist
-            try {
-                const profile = await getUserProfile(session.user.id, session.user);
-                if (!profile && session.user.email) {
-                    const initialName = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User';
-                    await createUserProfile(session.user.id, session.user.email, initialName);
-                    const newUser = mapUser(session.user, { role: 'user', wishlist: [], name: initialName });
-                    callback(newUser);
-                } else if (profile) {
-                    if (session.user.email === 'admin@demo.com' && profile.role !== 'admin') {
-                        try { await updateUserRole(profile.uid, 'admin'); } catch (e) { }
-                        profile.role = 'admin';
-                    }
-                    callback(profile);
-                }
-            } catch (e) {
-                console.warn("Auth listener profile fetch failed", e);
-                const fallbackName = session.user.user_metadata?.name || 'User';
-                callback(mapUser(session.user, { role: 'user', wishlist: [], name: fallbackName }));
+        try {
+            const profile = await getUserProfile(session.user.id, session.user);
+            if (!profile) {
+                const name = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User';
+                await createUserProfile(session.user.id, session.user.email!, name);
+                callback(mapUser(session.user, { role: 'user', wishlist: [], name }));
+            } else {
+                callback(profile);
             }
-        } else {
-            callback(null);
+        } catch (e) {
+            console.warn("Auth profile fetch failed", e);
+            const name = session.user.user_metadata?.name || 'User';
+            callback(mapUser(session.user, { role: 'user', wishlist: [], name }));
         }
     });
+
     return () => subscription.unsubscribe();
 };
 
@@ -326,17 +297,12 @@ const createUserProfile = async (uid: string, email: string, name: string) => {
     } catch (e) { }
 };
 
-export const getUserProfile = async (uid: string, authUser?: any): Promise<User | null> => {
+export const getUserProfile = async (uid: string, authUser: any): Promise<User | null> => {
     if (!supabase) return null;
     try {
         const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
-        if (error) return null;
-        let user = authUser;
-        if (!user) {
-            const { data } = await supabase.auth.getUser();
-            user = data.user;
-        }
-        return user ? mapUser(user, profile) : null;
+        if (error || !profile) return null;
+        return mapUser(authUser, profile);
     } catch (e) {
         return null;
     }
@@ -436,28 +402,22 @@ export const getProductById = async (id: string): Promise<Product | null> => {
 export const createProduct = async (product: Product) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
     const { error } = await supabase.from('products').insert(product);
-    if (error) {
-        console.error("Failed to CREATE product in DB:", error.message);
-        throw error;
-    }
+    if (error) throw error;
+    localStorage.removeItem(CACHE_KEYS.products);
 };
 
 export const updateProduct = async (product: Product) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
     const { error } = await supabase.from('products').update(product).eq('id', product.id);
-    if (error) {
-        console.error("Failed to UPDATE product in DB:", error.message);
-        throw error;
-    }
+    if (error) throw error;
+    localStorage.removeItem(CACHE_KEYS.products);
 };
 
 export const deleteProduct = async (id: string) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
     const { error } = await supabase.from('products').delete().eq('id', id);
-    if (error) {
-        console.error("Failed to DELETE product from DB:", error.message);
-        throw error;
-    }
+    if (error) throw error;
+    localStorage.removeItem(CACHE_KEYS.products);
 };
 
 export const getBlogPosts = async (): Promise<BlogPost[] | null> => {
@@ -526,49 +486,32 @@ export const getBlogPostBySlug = async (slug: string): Promise<BlogPost | null> 
     }
 };
 
+const toDbPost = (post: BlogPost) => {
+    const dbPost: any = { ...post, hero_image_url: post.heroImageUrl, comparison_tables: post.comparisonTables };
+    delete dbPost.heroImageUrl;
+    delete dbPost.comparisonTables;
+    return dbPost;
+};
+
 export const createBlogPost = async (post: BlogPost) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-
-    // Map internal camelCase to DB snake_case
-    const dbPost = {
-        ...post,
-        hero_image_url: post.heroImageUrl,
-        comparison_tables: post.comparisonTables
-    };
-    // Remove camelCase keys
-    delete (dbPost as any).heroImageUrl;
-    delete (dbPost as any).comparisonTables;
-
-    const { error } = await supabase.from('posts').insert(dbPost);
+    const { error } = await supabase.from('posts').insert(toDbPost(post));
     if (error) throw error;
+    localStorage.removeItem(CACHE_KEYS.posts);
 };
 
 export const updateBlogPost = async (post: BlogPost) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-
-    // Map internal camelCase to DB snake_case
-    const dbPost = {
-        ...post,
-        hero_image_url: post.heroImageUrl,
-        comparison_tables: post.comparisonTables
-    };
-    // Remove camelCase keys
-    delete (dbPost as any).heroImageUrl;
-    delete (dbPost as any).comparisonTables;
-
-    const { error } = await supabase.from('posts').update(dbPost).eq('id', post.id);
+    const { error } = await supabase.from('posts').update(toDbPost(post)).eq('id', post.id);
     if (error) throw error;
+    localStorage.removeItem(CACHE_KEYS.posts);
 };
 
 export const deleteBlogPost = async (id: string) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    console.log(`Attempting to delete blog post with ID: ${id}`);
-    const { error, data } = await supabase.from('posts').delete().eq('id', id);
-    if (error) {
-        console.error(`Failed to DELETE blog post from DB [${error.code}]:`, error.message);
-        throw error;
-    }
-    console.log(`Successfully deleted blog post with ID: ${id}`, data);
+    const { error } = await supabase.from('posts').delete().eq('id', id);
+    if (error) throw error;
+    localStorage.removeItem(CACHE_KEYS.posts);
 };
 
 export const getSiteContent = async (): Promise<SiteContent | null> => {
