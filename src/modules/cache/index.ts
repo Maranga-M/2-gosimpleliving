@@ -1,2 +1,2 @@
 export { ObjectCacheService as CacheService } from './useCases/cacheUseCases';
-export type { CacheKey, CacheItem } from './domain/entities';
+export type { CacheKey, CacheEntityPrefix, CacheItem } from './domain/entities';

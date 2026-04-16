@@ -1,39 +1,44 @@
 import { localStorageAdapter } from '../adapters/localStorageAdapter';
+import { CacheKey, CacheEntityPrefix } from '../domain/entities';
 import { Product, BlogPost, SiteContent } from '../../../../types';
 
 /**
- * Use Cases: What this module can DO.
- * We use an adapter so we can change where we save things later if we want!
+ * Unified cache service. All cache reads/writes go through here.
  */
 export const ObjectCacheService = {
 
-    // --- Save Use Cases ---
-    saveProducts(products: Product[]): void {
-        localStorageAdapter.save('products', products);
+    // --- Generic save/load (used by service layer) ---
+
+    save<T>(key: CacheKey, data: T): void {
+        localStorageAdapter.save(key, data);
     },
 
-    saveBlogs(blogs: BlogPost[]): void {
-        localStorageAdapter.save('blogs', blogs);
+    load<T>(key: CacheKey): T | null {
+        return localStorageAdapter.load<T>(key);
     },
 
-    saveContent(content: SiteContent): void {
-        localStorageAdapter.save('content', content);
-    },
+    // --- Initial hydration (ignores TTL for instant UI) ---
 
-    // --- Load Use Cases ---
     loadProducts(): Product[] | null {
-        return localStorageAdapter.load<Product[]>('products');
+        return localStorageAdapter.loadIgnoringTTL<Product[]>('products');
     },
 
     loadBlogs(): BlogPost[] | null {
-        return localStorageAdapter.load<BlogPost[]>('blogs');
+        return localStorageAdapter.loadIgnoringTTL<BlogPost[]>('blogs');
     },
 
     loadContent(): SiteContent | null {
-        return localStorageAdapter.load<SiteContent>('content');
+        return localStorageAdapter.loadIgnoringTTL<SiteContent>('content');
     },
 
-    // --- Clear Use Cases ---
+    // --- Entity-level clearing (after writes) ---
+
+    clearEntity(prefix: CacheEntityPrefix): void {
+        localStorageAdapter.clearByPrefix(prefix);
+    },
+
+    // --- Full clear (on signOut) ---
+
     clearAllMemory(): void {
         localStorageAdapter.clearAll();
     }

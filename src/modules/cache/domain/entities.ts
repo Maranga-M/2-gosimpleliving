@@ -1,7 +1,10 @@
-// The keys we use to save things in the safe browser memory
-export type CacheKey = 'products' | 'blogs' | 'content';
+/** Entity prefixes for cache keys */
+export type CacheEntityPrefix = 'products' | 'blogs' | 'content';
 
-// What the saved memory looks like
+/** Cache keys: either a base entity key or a paginated variant */
+export type CacheKey = CacheEntityPrefix | `${CacheEntityPrefix}_p${number}`;
+
+/** What a cached item looks like in storage */
 export interface CacheItem<T> {
     data: T;
     timestamp: number;
