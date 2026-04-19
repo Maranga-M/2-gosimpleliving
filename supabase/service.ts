@@ -87,16 +87,11 @@ export interface DetailedConnectionResult {
 export const testConnection = async (): Promise<boolean> => {
     if (!supabase) return false;
     try {
-        console.log("Supabase Service: testConnection START");
-        // Lightweight query to check if connection is alive and site_content table is reachable
-        // Using withRetry here to handle transient failures during the status check itself
         const result = await withRetry(async () => {
             const { error } = await supabase!.from('site_content').select('id').limit(1);
             if (error) throw error;
             return true;
-        }, 2); // 2 dedicated retries for health check
-
-        console.log("Supabase Service: testConnection END", { success: result });
+        }, 2);
         return result;
     } catch (e) {
         console.error("Supabase Service: testConnection EXCEPTION", e);
@@ -359,27 +354,30 @@ export const requestPasswordReset = async (email: string, redirectTo?: string) =
 
 // --- CRUD WITH ERROR LOGGING ---
 
-export const getProducts = async (): Promise<Product[] | null> => {
+const PAGE_SIZE = 50;
+
+export const getProducts = async (page = 0): Promise<Product[] | null> => {
     if (!supabase) return null;
 
-    const cached = getFromCache(CACHE_KEYS.products);
-    if (cached) {
-        console.log("Supabase Service: Returning cached products");
-        return cached;
-    }
+    const cacheKey = page === 0 ? CACHE_KEYS.products : `${CACHE_KEYS.products}_p${page}`;
+    const cached = getFromCache(cacheKey);
+    if (cached) return cached;
 
     try {
-        console.log("Supabase Service: getProducts START (Network)");
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
         const result = await withRetry(async () => {
-            const { data, error } = await supabase!.from('products').select('*');
+            const { data, error } = await supabase!
+                .from('products')
+                .select('*')
+                .order('status', { ascending: false })
+                .range(from, to);
             if (error) throw error;
             return data;
         });
 
         const data = result || [];
-        saveToCache(CACHE_KEYS.products, data);
-
-        console.log("Supabase Service: getProducts END", { count: data.length });
+        saveToCache(cacheKey, data);
         return data;
     } catch (e: any) {
         console.warn(`Supabase getProducts error:`, e.message);
@@ -420,18 +418,22 @@ export const deleteProduct = async (id: string) => {
     localStorage.removeItem(CACHE_KEYS.products);
 };
 
-export const getBlogPosts = async (): Promise<BlogPost[] | null> => {
+export const getBlogPosts = async (page = 0): Promise<BlogPost[] | null> => {
     if (!supabase) return null;
 
-    const cached = getFromCache(CACHE_KEYS.posts);
-    if (cached) {
-        console.log("Supabase Service: Returning cached posts");
-        return cached;
-    }
+    const cacheKey = page === 0 ? CACHE_KEYS.posts : `${CACHE_KEYS.posts}_p${page}`;
+    const cached = getFromCache(cacheKey);
+    if (cached) return cached as BlogPost[];
 
     try {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
         const result = await withRetry(async () => {
-            const { data, error } = await supabase!.from('posts').select('*');
+            const { data, error } = await supabase!
+                .from('posts')
+                .select('*')
+                .order('date', { ascending: false })
+                .range(from, to);
             if (error) throw error;
             return data;
         });
@@ -443,7 +445,7 @@ export const getBlogPosts = async (): Promise<BlogPost[] | null> => {
             linkedProductIds: p.linkedProductIds || p.linked_product_ids || []
         }));
 
-        saveToCache(CACHE_KEYS.posts, mappedPosts);
+        saveToCache(cacheKey, mappedPosts);
 
         return mappedPosts;
     } catch (e: any) {
@@ -518,10 +520,7 @@ export const getSiteContent = async (): Promise<SiteContent | null> => {
     if (!supabase) return null;
 
     const cached = getFromCache(CACHE_KEYS.siteContent);
-    if (cached) {
-        console.log("Supabase Service: Returning cached site content");
-        return cached;
-    }
+    if (cached) return cached as SiteContent;
 
     try {
         const result = await withRetry(async () => {

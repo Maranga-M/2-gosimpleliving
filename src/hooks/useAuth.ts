@@ -23,8 +23,12 @@ export const useAuth = () => {
     }, []);
 
     const signOut = async () => {
+        // Clear cached data so the next user on this device starts fresh
+        const keysToRemove = Object.keys(localStorage).filter(k =>
+            k.startsWith('cache_') || k === 'wishlist' || k === 'user_preferences'
+        );
+        keysToRemove.forEach(k => localStorage.removeItem(k));
         await dbService.signOut();
-        // Note: Caller might need to reset view state after sign out
     };
 
     const toggleWishlist = async (productId: string) => {
@@ -38,14 +42,14 @@ export const useAuth = () => {
             : [...user.wishlist, productId];
 
         // Optimistic update
-        const updatedUser = { ...user, wishlist: newWishlist };
-        setUser(updatedUser);
+        const previousWishlist = user.wishlist;
+        setUser({ ...user, wishlist: newWishlist });
 
         try {
             await dbService.updateWishlist(user.uid, newWishlist);
         } catch (e) {
-            console.warn("Wishlist sync failed", e);
-            // Revert on failure could be implemented here if strict consistency is needed
+            console.warn("Wishlist sync failed, reverting", e);
+            setUser({ ...user, wishlist: previousWishlist });
         }
     };
 

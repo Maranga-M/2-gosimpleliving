@@ -441,27 +441,22 @@ export const generateCustomPage = async (title: string, products: Product[], sou
   }
 };
 
-export const generateProductImage = async (prompt: string): Promise<string | null> => {
+export const generateProductImage = async (_prompt: string): Promise<string | null> => {
   try {
-    const keywords = prompt.split(' ').slice(0, 2).join(',');
-    return `https://source.unsplash.com/800x800/?product,${encodeURIComponent(keywords)}&t=${Date.now()}`;
+    // Picsum provides reliable placeholder images (Unsplash Source is deprecated)
+    const seed = Math.floor(Math.random() * 1000);
+    return `https://picsum.photos/seed/${seed}/800/800`;
   } catch (error) {
     console.error("Error generating product image:", error);
     return null;
   }
 };
 
-export const generateWebsiteImage = async (prompt: string): Promise<string | null> => {
+export const generateWebsiteImage = async (_prompt: string): Promise<string | null> => {
   try {
-    // Use Unsplash Source for reliable demo images based on keywords
-    // Extract keywords from prompt to make it relevant
-    const keywords = prompt.split(' ')
-      .filter(w => w.length > 3)
-      .slice(0, 3)
-      .join(',');
-
-    // Add a random timestamp to bypass cache
-    return `https://source.unsplash.com/1600x900/?${encodeURIComponent(keywords)}&t=${Date.now()}`;
+    // Picsum provides reliable placeholder images (Unsplash Source is deprecated)
+    const seed = Math.floor(Math.random() * 1000);
+    return `https://picsum.photos/seed/${seed}/1600/900`;
   } catch (error) {
     console.error("Error generating website image:", error);
     return null;

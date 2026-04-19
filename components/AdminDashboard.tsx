@@ -7,6 +7,7 @@ import { AFFILIATE_THEMES } from '../themeConfig';
 import { connectionManager, ConnectionStatus } from '../services/connectionManager';
 import { Button } from './Button';
 import { generateSiteContent, fetchProductFromWeb, generateBlogPost, generateCustomPage } from '../services/geminiService';
+import { validateProduct } from '../src/utils/validators';
 import { MediaManager } from './MediaManager';
 import { ComparisonTableBuilder } from './ComparisonTableBuilder';
 import { dbService } from '../services/database';
@@ -65,7 +66,7 @@ const ProductRow = React.memo(({ product, currentUserRole, onDuplicate, onEdit, 
             <td className="px-6 py-4">{getStatusBadge(product.status)}</td>
             <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
-                    <img src={product.image} className="w-10 h-10 rounded-md object-cover bg-white" />
+                    <img src={product.image} alt={product.title} loading="lazy" className="w-10 h-10 rounded-md object-cover bg-white" />
                     <span className="font-medium text-slate-900 dark:text-white truncate max-w-xs">{product.title}</span>
                 </div>
             </td>
@@ -144,7 +145,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     lastError
 }) => {
     const [activeTab, setActiveTab] = useState<'products' | 'content' | 'theme' | 'users' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config'>(initialTab as any);
-    console.log('AdminDashboard Rendered. activeTab:', activeTab);
 
     // Delete confirmation state
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'product' | 'post' | 'page' | 'all-products', title: string, message: string } | null>(null);
@@ -608,6 +608,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     const handleSaveProduct = async (targetStatus: Product['status']) => {
         const finalData = { ...formData, status: targetStatus };
+        const validationErrors = validateProduct(finalData);
+        if (validationErrors.length > 0) {
+            toast.error(validationErrors[0]);
+            return;
+        }
         if (isAdding) {
             onAddProduct(finalData);
             setIsAdding(false);
