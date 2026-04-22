@@ -6,11 +6,13 @@ import { dbService } from '../services/database';
 import { Button } from './Button';
 
 interface MediaManagerProps {
-  currentImageUrl: string;
-  onImageSelect: (url: string) => void;
+  currentImageUrl?: string;
+  onImageSelect?: (url: string) => void;
+  onSelect?: (url: string) => void;
+  onClose?: () => void;
 }
 
-export const MediaManager: React.FC<MediaManagerProps> = ({ currentImageUrl, onImageSelect }) => {
+export const MediaManager: React.FC<MediaManagerProps> = ({ currentImageUrl, onImageSelect, onSelect, onClose }) => {
   const [activeTab, setActiveTab] = useState<'library' | 'upload' | 'ai'>('library');
 
   // Library State
@@ -89,7 +91,7 @@ export const MediaManager: React.FC<MediaManagerProps> = ({ currentImageUrl, onI
       const url = await dbService.uploadImage(base64, fileName);
 
       if (url) {
-        onImageSelect(url);
+        onImageSelect?.(url);
         setActiveTab('library');
       } else {
         throw new Error('Upload returned no URL');
@@ -124,7 +126,7 @@ export const MediaManager: React.FC<MediaManagerProps> = ({ currentImageUrl, onI
       const fileName = `ai-${Date.now()}.png`;
       const publicUrl = await dbService.uploadImage(generatedImage, fileName);
       if (publicUrl) {
-        onImageSelect(publicUrl);
+        onImageSelect?.(publicUrl);
         setActiveTab('library');
         setGeneratedImage(null);
       }
@@ -198,7 +200,7 @@ export const MediaManager: React.FC<MediaManagerProps> = ({ currentImageUrl, onI
                 {images.map((img) => (
                   <div
                     key={img.name}
-                    onClick={() => onImageSelect(img.url)}
+                    onClick={() => onImageSelect?.(img.url)}
                     className={`group relative aspect-video rounded-lg overflow-hidden cursor-pointer border-2 ${currentImageUrl === img.url ? 'border-amber-500' : 'border-transparent hover:border-slate-300'}`}
                   >
                     <img src={img.url} alt={img.name} className="w-full h-full object-cover" />

@@ -25,6 +25,10 @@ export default function DebugPage() {
 
         // Test Connection
         async function testConn() {
+            if (!supabase) {
+                setStatus({ success: false, error: 'Supabase not configured' });
+                return;
+            }
             try {
                 const { data, error } = await supabase.from('site_content').select('id').limit(1);
                 setStatus({ success: !error, error: error?.message, data });

@@ -1,34 +1,11 @@
 
-import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { PRODUCTS } from '../constants';
 import { Product, SmartCollection, AppNotification, SiteContent, BlogPost } from '../types';
 
-// Try to get API key from localStorage first (admin configured), then fall back to environment variables
-const getApiKey = (): string | undefined => {
-  // Check localStorage first (admin settings)
-  const localStorageKey = typeof window !== 'undefined' ? localStorage.getItem('GEMINI_API_KEY') : null;
-  if (localStorageKey) return localStorageKey;
-
-  // Fall back to environment variables
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.GEMINI_API_KEY) {
-    return (import.meta as any).env.GEMINI_API_KEY;
-  }
-  if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
-    return process.env.GEMINI_API_KEY;
-  }
-
-  return undefined;
-};
-
-const apiKey = getApiKey();
-let ai: GoogleGenAI | null = null;
-try {
-  if (apiKey) {
-    ai = new GoogleGenAI({ apiKey: apiKey as string });
-  }
-} catch (e) {
-  ai = null;
-}
+// Supabase URL for Edge Functions
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const GEMINI_PROXY_URL = `${SUPABASE_URL}/functions/v1/gemini-proxy`;
 
 const SYSTEM_INSTRUCTION = `
 You are the AI Sales Associate for "GoSimpleLiving", a curated Amazon affiliate store.
@@ -53,84 +30,81 @@ RULES:
 7. Be aware that our main categories are Electronics, Home & Kitchen, Books, Fashion, Outdoors, and Fitness.
 `;
 
-/**
- * INTELLIGENT IMAGE COMPRESSION
- * resizing images on the client-side ensures they fit within Database text field limits (e.g. Firestore 1MB limit).
- */
-// compressBase64Image removed as it's currently unused.
+// Helper: Call the Gemini proxy function
+const callGeminiProxy = async (body: any) => {
+  const response = await fetch(GEMINI_PROXY_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to connect to AI proxy.');
+  }
+
+  return response;
+};
 
 export const streamShoppingAdvice = async (
   userMessage: string,
   history: { role: string; text: string }[]
 ): Promise<AsyncIterable<string>> => {
   try {
-    if (!ai) throw new Error("AI not configured.");
-    const chat = ai.chats.create({
-      model: 'gemini-3-flash-preview',
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.7,
-      },
+    const response = await callGeminiProxy({
+      message: userMessage,
       history: history.map(h => ({
         role: h.role,
         parts: [{ text: h.text }]
-      }))
+      })),
+      systemInstruction: SYSTEM_INSTRUCTION,
+      stream: true
     });
 
-    const result = await chat.sendMessageStream({ message: userMessage });
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("No response body");
 
-    // Return an async iterable that yields text chunks
     return {
       async *[Symbol.asyncIterator]() {
-        for await (const chunk of result) {
-          const c = chunk as GenerateContentResponse;
-          if (c.text) {
-            yield c.text;
-          }
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          yield decoder.decode(value, { stream: true });
         }
       }
     };
 
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("Gemini Proxy Error:", error);
     throw error;
   }
 };
 
 // Generate Smart Collections based on current inventory
-export const generateSmartCollections = async (products: Product[]): Promise<SmartCollection[]> => {
+export const generateSmartCollections = async (categoryContext: string[]): Promise<SmartCollection[]> => {
   try {
-    if (!ai) return [];
-    const simplifiedProducts = products.map(p => ({ id: p.id, title: p.title, desc: p.description }));
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Analyze these products and group them into 3-4 creative, thematic "Smart Collections" (e.g., "Work From Home Essentials", "Gift Ideas", "Adventure Gear"). 
-      Return valid JSON only.
+    const categories = categoryContext.join(", ");
+    const response = await callGeminiProxy({
+      message: `Review our inventory of products: ${JSON.stringify(PRODUCTS.map(p => ({ id: p.id, title: p.title, category: p.category })))}.
+      Create 3 creative "Smart Collections" (curated groups) that would appeal to shoppers.
+      Context: Our main categories are ${categories}.
       
-      Products: ${JSON.stringify(simplifiedProducts)}`,
+      Return JSON.`,
       config: {
         responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING, description: "Creative name for the collection" },
-              productIds: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description: "Array of product IDs belonging to this collection"
-              }
-            },
-            required: ["name", "productIds"]
-          }
-        }
+        // Note: Edge function uses simplified schema for standard calls
       }
     });
 
-    const jsonText = response.text || "[]";
-    const collections = JSON.parse(jsonText);
+    const result = await response.json();
+    const jsonText = result.text || "[]";
+    const collections = parseJsonFromText(jsonText);
+
+    if (!Array.isArray(collections)) return [];
 
     return collections.map((c: any, index: number) => ({
       id: `smart-${index}`,
@@ -147,16 +121,14 @@ export const generateSmartCollections = async (products: Product[]): Promise<Sma
 // Generate Personalized Alerts based on user wishlist
 export const generatePersonalizedAlerts = async (wishlistIds: string[], allProducts: Product[]): Promise<AppNotification[]> => {
   try {
-    if (!ai) return [];
     const wishlistItems = allProducts.filter(p => wishlistIds.includes(p.id));
     if (wishlistItems.length === 0) return [];
 
     const wishlistSummary = wishlistItems.map(p => p.title).join(", ");
     const otherProducts = allProducts.filter(p => !wishlistIds.includes(p.id)).map(p => ({ id: p.id, title: p.title }));
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `The user has these items in their wishlist: ${wishlistSummary}.
+    const response = await callGeminiProxy({
+      message: `The user has these items in their wishlist: ${wishlistSummary}.
       Generate 3 personalized notification alerts.
       1. One "Price Drop" alert for an item in their wishlist (simulate a discount).
       2. One "Recommendation" for a related product from the catalog: ${JSON.stringify(otherProducts)}.
@@ -164,25 +136,15 @@ export const generatePersonalizedAlerts = async (wishlistIds: string[], allProdu
       
       Return JSON.`,
       config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              message: { type: Type.STRING },
-              type: { type: Type.STRING, enum: ["deal", "recommendation", "alert"] },
-              relatedProductId: { type: Type.STRING, nullable: true }
-            },
-            required: ["title", "message", "type"]
-          }
-        }
+        responseMimeType: "application/json"
       }
     });
 
-    const jsonText = response.text || "[]";
-    const alerts = JSON.parse(jsonText);
+    const result = await response.json();
+    const jsonText = result.text || "[]";
+    const alerts = parseJsonFromText(jsonText);
+
+    if (!Array.isArray(alerts)) return [];
 
     return alerts.map((a: any, index: number) => ({
       id: `notif-${Date.now()}-${index}`,
@@ -203,15 +165,12 @@ export const generatePersonalizedAlerts = async (wishlistIds: string[], allProdu
 // Generate Landing Page Content
 export const generateSiteContent = async (currentContent: SiteContent, categoryContext: string[]): Promise<Partial<SiteContent>> => {
   try {
-    if (!ai) return {};
-    // Include seasonal context in the prompt for better results
     const seasonContext = currentContent.season && currentContent.season !== 'none'
       ? `The current seasonal theme is "${currentContent.season}".`
       : '';
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `You are a professional copywriter for an e-commerce store.
+    const response = await callGeminiProxy({
+      message: `You are a professional copywriter for an e-commerce store.
             
             Context:
             - Store Categories: ${categoryContext.join(', ')}
@@ -228,21 +187,13 @@ export const generateSiteContent = async (currentContent: SiteContent, categoryC
             
             Return JSON.`,
       config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            heroTitle: { type: Type.STRING, description: "Main H1 headline, catchy and short" },
-            heroSubtitle: { type: Type.STRING, description: "Compelling subtitle/description (15-20 words)" },
-            heroButtonText: { type: Type.STRING, description: "Call to action button text" }
-          },
-          required: ["heroTitle", "heroSubtitle", "heroButtonText"]
-        }
+        responseMimeType: "application/json"
       }
     });
 
-    const jsonText = response.text || "{}";
-    return JSON.parse(jsonText);
+    const result = await response.json();
+    const jsonText = result.text || "{}";
+    return parseJsonFromText(jsonText) || {};
   } catch (error) {
     console.error("Error generating site content:", error);
     return {};
@@ -285,13 +236,11 @@ const parseJsonFromText = (text: string) => {
 // Fetch Product Details from Amazon/Web via Grounding
 export const fetchProductFromWeb = async (query: string, categories: string[]): Promise<Partial<Product> | null> => {
   try {
-    if (!ai) return null;
     const asin = extractAsin(query);
     const effectiveQuery = asin ? `Amazon product ${asin}` : query;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Find detailed product information for: "${effectiveQuery}".
+    const response = await callGeminiProxy({
+      message: `Find detailed product information for: "${effectiveQuery}".
             
             1. If the input is a URL or ASIN, find that SPECIFIC product. 
             2. If the input is a category page (like Black Friday), pick the single most popular/featured item from that context to use as an example, or return null if ambiguous.
@@ -313,11 +262,11 @@ export const fetchProductFromWeb = async (query: string, categories: string[]): 
             }`,
       config: {
         tools: [{ googleSearch: {} }],
-        // Note: responseMimeType/responseSchema are NOT allowed with googleSearch tool
       }
     });
 
-    const jsonText = response.text || "[]";
+    const result = await response.json();
+    const jsonText = result.text || "[]";
     const data = parseJsonFromText(jsonText);
 
     if (!data || !data.title) return null;
@@ -344,17 +293,8 @@ export const generateBlogPost = async (title: string, products: Product[]): Prom
   try {
     const productsContext = products.slice(0, 10).map(p => `${p.title} (ID: ${p.id})`).join(', ');
 
-    if (!ai) {
-      return {
-        excerpt: "AI is not configured.",
-        content: "Add your GEMINI_API_KEY to enable AI content.",
-        linkedProductIds: [],
-        image: "https://via.placeholder.com/800x400"
-      };
-    }
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Write a helpful blog post based on this title: "${title}".
+    const response = await callGeminiProxy({
+      message: `Write a helpful blog post based on this title: "${title}".
       
       Available Products for referencing (link them by ID if relevant): ${productsContext}.
       
@@ -365,22 +305,18 @@ export const generateBlogPost = async (title: string, products: Product[]): Prom
       4. image: A relevant Unsplash image URL or placeholder.
       `,
       config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            excerpt: { type: Type.STRING },
-            content: { type: Type.STRING },
-            linkedProductIds: { type: Type.ARRAY, items: { type: Type.STRING } },
-            image: { type: Type.STRING }
-          },
-          required: ["excerpt", "content", "linkedProductIds", "image"]
-        }
+        responseMimeType: "application/json"
       }
     });
 
-    const jsonText = response.text || "{}";
-    return JSON.parse(jsonText);
+    const result = await response.json();
+    const jsonText = result.text || "{}";
+    return parseJsonFromText(jsonText) || {
+      excerpt: "Failed to generate content.",
+      content: "Please try again.",
+      linkedProductIds: [],
+      image: "https://via.placeholder.com/800x400"
+    };
 
   } catch (error) {
     console.error("Error generating blog post:", error);
@@ -395,14 +331,11 @@ export const generateBlogPost = async (title: string, products: Product[]): Prom
 
 export const generateCustomPage = async (title: string, products: Product[], sourceMaterial?: string): Promise<string> => {
   try {
-    if (!ai) return "AI not configured. Add your API key.";
-
     const productsContext = products.slice(0, 10).map(p => `- ${p.title} (ID: ${p.id}): ${p.description}`).join('\n');
     const materialContext = sourceMaterial ? `\nSOURCE MATERIAL TO OPTIMIZE:\n${sourceMaterial}\n` : '';
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Role: Ruthless SEO strategist and affiliate marketer.
+    const response = await callGeminiProxy({
+      message: `Role: Ruthless SEO strategist and affiliate marketer.
             Goal: Create a high-ranking SEO landing page for the keyword: "${title}".
             Target Audience: People looking for practical solutions.
             ${materialContext}
@@ -434,54 +367,49 @@ export const generateCustomPage = async (title: string, products: Product[], sou
             Return Markdown content ONLY.`,
     });
 
-    return response.text || "Failed to generate content.";
+    const result = await response.json();
+    return result.text || "Failed to generate content.";
   } catch (error) {
     console.error("Error generating custom page:", error);
     return "Failed to generate content.";
   }
 };
 
-export const generateProductImage = async (prompt: string): Promise<string | null> => {
+export const improveProductDescription = async (title: string, category: string, currentDesc: string): Promise<string> => {
   try {
-    const keywords = prompt.split(' ').slice(0, 2).join(',');
-    return `https://source.unsplash.com/800x800/?product,${encodeURIComponent(keywords)}&t=${Date.now()}`;
+    const response = await callGeminiProxy({
+      message: `Rewrite this product description to be more compelling, SEO-friendly, and sales-focused.
+            Product: ${title} (${category}).
+            Current Description: "${currentDesc}".
+            
+            Return ONLY the new description text (paragraph form), no JSON.`,
+    });
+    const result = await response.json();
+    return result.text || currentDesc;
+  } catch (error) {
+    console.error("Error improving description:", error);
+    return currentDesc;
+  }
+};
+
+export const generateProductImage = async (_prompt: string): Promise<string | null> => {
+  try {
+    // Picsum provides reliable placeholder images (Unsplash Source is deprecated)
+    const seed = Math.floor(Math.random() * 1000);
+    return `https://picsum.photos/seed/${seed}/800/800`;
   } catch (error) {
     console.error("Error generating product image:", error);
     return null;
   }
 };
 
-export const generateWebsiteImage = async (prompt: string): Promise<string | null> => {
+export const generateWebsiteImage = async (_prompt: string): Promise<string | null> => {
   try {
-    // Use Unsplash Source for reliable demo images based on keywords
-    // Extract keywords from prompt to make it relevant
-    const keywords = prompt.split(' ')
-      .filter(w => w.length > 3)
-      .slice(0, 3)
-      .join(',');
-
-    // Add a random timestamp to bypass cache
-    return `https://source.unsplash.com/1600x900/?${encodeURIComponent(keywords)}&t=${Date.now()}`;
+    // Picsum provides reliable placeholder images (Unsplash Source is deprecated)
+    const seed = Math.floor(Math.random() * 1000);
+    return `https://picsum.photos/seed/${seed}/1600/900`;
   } catch (error) {
     console.error("Error generating website image:", error);
     return null;
-  }
-};
-
-export const improveProductDescription = async (title: string, category: string, currentDesc: string): Promise<string> => {
-  try {
-    if (!ai) return currentDesc;
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Rewrite this product description to be more compelling, SEO-friendly, and sales-focused.
-            Product: ${title} (${category}).
-            Current Description: "${currentDesc}".
-            
-            Return ONLY the new description text (paragraph form), no JSON.`,
-    });
-    return response.text || currentDesc;
-  } catch (error) {
-    console.error("Error improving description:", error);
-    return currentDesc;
   }
 };

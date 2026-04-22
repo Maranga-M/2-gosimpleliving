@@ -1,5 +1,7 @@
 import { AffiliateTheme } from './themeConfig';
 
+export type { AffiliateTheme } from './themeConfig';
+
 export interface Review {
   id: string;
   userName: string;
@@ -186,7 +188,7 @@ export interface AffiliateConfig {
   affiliateNetworks?: AffiliateNetwork[];
 }
 
-export type ThemeColor = 'amber' | 'blue' | 'rose' | 'emerald' | 'indigo';
+export type ThemeColor = 'amber' | 'blue' | 'rose' | 'emerald' | 'indigo' | 'default' | 'orange' | 'red' | 'green' | 'purple';
 
 export type Season =
   | 'none'
@@ -201,9 +203,6 @@ export type Season =
   | 'aprilfools';
 
 export interface SiteContent {
-  // Contact Info
-  contactEmail: string;
-
   // Marketing Copy
   heroTitle: string;
   heroSubtitle: string;
@@ -236,6 +235,10 @@ export interface SiteContent {
   showCJProductsInNav?: boolean; // Toggle to show/hide CJ Products navigation tab
   affiliateConfig?: AffiliateConfig; // Affiliate marketing configuration
   categories?: string[]; // Master list of categories
+
+  // AdSense
+  adSenseEnabled?: boolean;
+  adSenseClientId?: string;
 
   // UI Text (CMS)
   uiText: {

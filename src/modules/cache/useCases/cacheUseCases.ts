@@ -41,5 +41,19 @@ export const ObjectCacheService = {
 
     clearAllMemory(): void {
         localStorageAdapter.clearAll();
+    },
+
+    // --- Entity-specific save (for data persistence) ---
+
+    saveProducts(products: Product[]): void {
+        localStorageAdapter.save('products', products);
+    },
+
+    saveBlogs(blogs: BlogPost[]): void {
+        localStorageAdapter.save('blogs', blogs);
+    },
+
+    saveContent(content: SiteContent): void {
+        localStorageAdapter.save('content', content);
     }
 };

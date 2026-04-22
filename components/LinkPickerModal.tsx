@@ -8,7 +8,7 @@ interface LinkPickerModalProps {
     onSelectLink: (url: string, text: string) => void;
     products: Product[];
     blogPosts: BlogPost[];
-    customPages: CustomPage[];
+    customPages?: CustomPage[];
 }
 
 type LinkType = 'product' | 'blog' | 'page';
@@ -41,8 +41,9 @@ export const LinkPickerModal: React.FC<LinkPickerModalProps> = ({
     }, [blogPosts, searchQuery]);
 
     const filteredPages = useMemo(() => {
-        if (!searchQuery) return customPages.filter(p => p.status === 'published').slice(0, 10);
-        return customPages.filter(p =>
+        const pages = customPages || [];
+        if (!searchQuery) return pages.filter(p => p.status === 'published').slice(0, 10);
+        return pages.filter(p =>
             p.status === 'published' &&
             p.title.toLowerCase().includes(searchQuery.toLowerCase())
         ).slice(0, 10);

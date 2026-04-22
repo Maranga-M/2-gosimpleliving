@@ -26,7 +26,12 @@ export const Button: React.FC<ButtonProps> = ({
       blue: "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-600",
       rose: "bg-rose-500 hover:bg-rose-600 text-white focus:ring-rose-500",
       emerald: "bg-emerald-500 hover:bg-emerald-600 text-white focus:ring-emerald-500",
-      indigo: "bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-600"
+      indigo: "bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-600",
+      default: "bg-slate-600 hover:bg-slate-700 text-white focus:ring-slate-600",
+      orange: "bg-orange-500 hover:bg-orange-600 text-white focus:ring-orange-500",
+      red: "bg-red-600 hover:bg-red-700 text-white focus:ring-red-600",
+      green: "bg-green-600 hover:bg-green-700 text-white focus:ring-green-600",
+      purple: "bg-purple-600 hover:bg-purple-700 text-white focus:ring-purple-600"
   };
 
   const variants = {

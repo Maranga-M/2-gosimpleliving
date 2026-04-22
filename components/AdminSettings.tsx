@@ -8,16 +8,10 @@ import { useApp } from '../src/contexts/AppContext';
 
 export const AdminSettings: React.FC<{
     dbStatus: string;
-    lastError: string | null;
-    onRefresh: () => Promise<void>;
+    lastError?: string | null;
+    onRefresh?: () => Promise<void>;
 }> = ({ dbStatus, lastError, onRefresh }) => {
     const { content: { liveSiteContent, saveChanges, startPreview, exitPreview, isPreviewing } } = useApp();
-
-    // API Configuration
-    const [geminiApiKey, setGeminiApiKey] = useState('');
-    const [showApiKey, setShowApiKey] = useState(false);
-    const [apiKeyStatus, setApiKeyStatus] = useState<'idle' | 'success' | 'error'>('idle');
-    const [apiKeyMessage, setApiKeyMessage] = useState('');
 
     // Hero Image Configuration
     const [heroImageUrl, setHeroImageUrl] = useState('');
@@ -37,9 +31,6 @@ export const AdminSettings: React.FC<{
     const [saveMessage, setSaveMessage] = useState('');
 
     useEffect(() => {
-        // Load settings from global state (DB)
-        setGeminiApiKey(localStorage.getItem('GEMINI_API_KEY') || '');
-
         if (liveSiteContent) {
             setHeroImageUrl(liveSiteContent.heroImageUrl || '');
             setSiteName(liveSiteContent.logoText || 'GoSimpleLiving');
@@ -49,23 +40,6 @@ export const AdminSettings: React.FC<{
             setDraftSeason(liveSiteContent.season || 'none');
         }
     }, [liveSiteContent]);
-
-    const handleSaveApiKey = () => {
-        if (!geminiApiKey.trim()) {
-            setApiKeyStatus('error');
-            setApiKeyMessage('Please enter a valid API key');
-            return;
-        }
-
-        try {
-            localStorage.setItem('GEMINI_API_KEY', geminiApiKey.trim());
-            setApiKeyStatus('success');
-            setApiKeyMessage('API key saved! Please refresh the page for changes to take effect.');
-        } catch (e) {
-            setApiKeyStatus('error');
-            setApiKeyMessage('Failed to save API key');
-        }
-    };
 
     const handleSaveHeroImage = async () => {
         if (!heroImageUrl.trim()) {
@@ -252,66 +226,24 @@ export const AdminSettings: React.FC<{
                 </div>
             )}
 
-            {/* Gemini API Configuration */}
+            {/* Gemini API Configuration - Now Server-Side */}
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
                     <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                        <Sparkles size={18} className="text-purple-500" />
-                        Google Gemini AI Configuration
+                        <Shield size={18} className="text-purple-500" />
+                        AI Security & Infrastructure
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Required for AI content generation, product recommendations, and chat features</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">AI processing is now handled securely via Supabase Edge Functions</p>
                 </div>
-                <div className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            API Key
-                            <span className="ml-2 text-xs text-slate-500">(Stored in browser localStorage)</span>
-                        </label>
-                        <div className="flex gap-2">
-                            <div className="relative flex-1">
-                                <Key className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                <input
-                                    type={showApiKey ? "text" : "password"}
-                                    value={geminiApiKey}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeminiApiKey(e.target.value)}
-                                    placeholder="AIzaSy..."
-                                    className="w-full pl-10 pr-12 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white focus:ring-2 focus:ring-purple-500"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowApiKey(!showApiKey)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                                >
-                                    {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
-                            </div>
-                            <Button onClick={handleSaveApiKey} className="gap-2">
-                                <Save size={16} />
-                                Save Key
-                            </Button>
-                        </div>
-                    </div>
-
-                    {apiKeyStatus !== 'idle' && (
-                        <div className={`p-3 rounded-lg border flex items-start gap-2 text-sm ${apiKeyStatus === 'success' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300' :
-                            'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
-                            }`}>
-                            {apiKeyStatus === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
-                            <p>{apiKeyMessage}</p>
-                        </div>
-                    )}
-
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                        <div className="flex items-start gap-3">
-                            <AlertCircle size={18} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                            <div className="text-sm text-blue-900 dark:text-blue-200">
-                                <p className="font-bold mb-1">How to get your API key:</p>
-                                <ol className="list-decimal list-inside space-y-1 ml-2">
-                                    <li>Visit <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="underline font-medium">Google AI Studio</a></li>
-                                    <li>Sign in with your Google account</li>
-                                    <li>Click "Get API Key" and create a new API key</li>
-                                    <li>Copy the key and paste it above</li>
-                                </ol>
+                <div className="p-6">
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 flex items-start gap-3">
+                        <CheckCircle size={20} className="text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+                        <div className="text-sm text-green-900 dark:text-green-200">
+                            <p className="font-bold mb-1">Server-Side Proxy Active</p>
+                            <p>For enhanced security, your Gemini API key is no longer stored in the browser. It is now managed as a secure environment variable within your Supabase project.</p>
+                            <div className="mt-3 flex items-center gap-2 text-xs font-medium text-green-700 dark:text-green-400">
+                                <span className="flex h-2 w-2 rounded-full bg-green-500"></span>
+                                Connection: Encrypted & Verified
                             </div>
                         </div>
                     </div>
@@ -435,13 +367,18 @@ export const AdminSettings: React.FC<{
                             Theme Color
                         </label>
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                            {(['amber', 'blue', 'rose', 'emerald', 'indigo'] as ThemeColor[]).map((color) => {
+                            {(['amber', 'blue', 'rose', 'emerald', 'indigo', 'default', 'orange', 'red', 'green', 'purple'] as ThemeColor[]).map((color) => {
                                 const colorStyles = {
                                     amber: { bg: 'bg-amber-500', border: 'border-amber-500', label: 'Amber' },
                                     blue: { bg: 'bg-blue-500', border: 'border-blue-500', label: 'Blue' },
                                     rose: { bg: 'bg-rose-500', border: 'border-rose-500', label: 'Rose' },
                                     emerald: { bg: 'bg-emerald-500', border: 'border-emerald-500', label: 'Emerald' },
-                                    indigo: { bg: 'bg-indigo-500', border: 'border-indigo-500', label: 'Indigo' }
+                                    indigo: { bg: 'bg-indigo-500', border: 'border-indigo-500', label: 'Indigo' },
+                                    default: { bg: 'bg-slate-500', border: 'border-slate-500', label: 'Default' },
+                                    orange: { bg: 'bg-orange-500', border: 'border-orange-500', label: 'Orange' },
+                                    red: { bg: 'bg-red-500', border: 'border-red-500', label: 'Red' },
+                                    green: { bg: 'bg-green-500', border: 'border-green-500', label: 'Green' },
+                                    purple: { bg: 'bg-purple-500', border: 'border-purple-500', label: 'Purple' }
                                 };
                                 const style = colorStyles[color];
                                 return (

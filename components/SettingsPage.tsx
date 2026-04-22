@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { Save, Database, AlertCircle, CheckCircle, Key, FileCode, Lock, Globe, Info, Sparkles, ShieldCheck, Image, Wifi, WifiOff, Loader2, FileText, User } from 'lucide-react';
+import { Save, Database, AlertCircle, CheckCircle, Key, FileCode, Lock, Globe, Info, Sparkles, ShieldCheck, Image, Wifi, WifiOff, Loader2, FileText, User as UserIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from './Button';
 import { dbService } from '../services/database';
@@ -32,7 +32,7 @@ export const SettingsPage: React.FC<{ currentUser?: { uid: string; name: string;
   const [connectionMessage, setConnectionMessage] = useState('');
   const [blogStatus, setBlogStatus] = useState<'idle' | 'testing' | 'valid' | 'invalid'>('idle');
   const [blogMessage, setBlogMessage] = useState('');
-  const [userList, setUserList] = useState<User[]>([]);
+  const [userList, setUserList] = useState<UserType[]>([]);
   const [usersStatus, setUsersStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [usersMessage, setUsersMessage] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
@@ -43,7 +43,6 @@ export const SettingsPage: React.FC<{ currentUser?: { uid: string; name: string;
   useEffect(() => {
     const url = getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL');
     const key = getEnv('SUPABASE_ANON_KEY') || getEnv('VITE_SUPABASE_ANON_KEY');
-    console.log('SettingsPage env check:', { url: !!url, key: !!key, urlValue: url, keyValue: key?.substring(0, 20) + '...' });
     setAreKeysSet(!!(url && key));
 
     setSiteName(localStorage.getItem('site_name') || '');
@@ -204,7 +203,7 @@ export const SettingsPage: React.FC<{ currentUser?: { uid: string; name: string;
         <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden mb-8">
           <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
             <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-              <User size={20} className="text-amber-500" /> Profile Settings
+              <UserIcon size={20} className="text-amber-500" /> Profile Settings
             </h3>
           </div>
           <div className="p-6 space-y-4">

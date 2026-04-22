@@ -5,6 +5,7 @@ interface StarRatingProps {
   rating: number;
   maxStars?: number;
   size?: number;
+  color?: string;
   interactive?: boolean;
   onChange?: (rating: number) => void;
   className?: string;

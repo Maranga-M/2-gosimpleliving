@@ -7,22 +7,25 @@ export const usePasswordReset = () => {
   const [isDone, setIsDone] = useState(false);
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    if (!supabase) return;
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, _session) => {
       if (event === 'PASSWORD_RECOVERY') {
-        // This event is triggered when the user clicks the password recovery link.
-        // The session is not yet available, so we don't need to do anything here.
-        // The user will be redirected to the password reset page.
       }
     });
 
     return () => {
-      authListener.subscription.unsubscribe();
+      authListener?.subscription?.unsubscribe();
     };
   }, []);
 
   const handlePasswordReset = async (password: string) => {
     setLoading(true);
     setError(null);
+    if (!supabase) {
+      setError('Database not configured');
+      setLoading(false);
+      return;
+    }
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;

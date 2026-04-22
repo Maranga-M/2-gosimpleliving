@@ -31,17 +31,49 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
         }
     }, [posts]);
 
-    // Update URL when active post changes
+    // Update URL and SEO when active post changes
     useEffect(() => {
         const url = new URL(window.location.href);
         if (activePost) {
             url.searchParams.set('article', activePost.id);
             window.history.pushState({}, '', url.toString());
+
+            // SEO Metadata
+            if (activePost.metaTitle) {
+                document.title = `${activePost.metaTitle} | GoSimpleLiving`;
+            } else {
+                document.title = `${activePost.title} | GoSimpleLiving Blog`;
+            }
+
+            // Description meta tag
+            let metaDesc = document.querySelector('meta[name="description"]');
+            if (!metaDesc) {
+                metaDesc = document.createElement('meta');
+                metaDesc.setAttribute('name', 'description');
+                document.head.appendChild(metaDesc);
+            }
+            metaDesc.setAttribute('content', activePost.metaDescription || activePost.excerpt);
+
+            // Keywords meta tag
+            if (activePost.metaKeywords) {
+                let metaKeywords = document.querySelector('meta[name="keywords"]');
+                if (!metaKeywords) {
+                    metaKeywords = document.createElement('meta');
+                    metaKeywords.setAttribute('name', 'keywords');
+                    document.head.appendChild(metaKeywords);
+                }
+                metaKeywords.setAttribute('content', activePost.metaKeywords);
+            }
         } else {
             url.searchParams.delete('article');
             if (window.location.search.includes('article')) {
                 window.history.pushState({}, '', url.toString());
             }
+
+            // Reset SEO
+            document.title = 'Blog | GoSimpleLiving';
+            const metaDesc = document.querySelector('meta[name="description"]');
+            if (metaDesc) metaDesc.setAttribute('content', 'Expert reviews, curated lists, and helpful articles to help you make the best choice.');
         }
     }, [activePost]);
 
@@ -178,6 +210,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
                             <img
                                 src={post.image}
                                 alt={post.title}
+                                loading="lazy"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">

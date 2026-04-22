@@ -16,14 +16,14 @@ export interface DatabaseService {
     seedDatabase: (products: Product[], posts: BlogPost[], content: SiteContent) => Promise<void>;
 
     // Products (Return null if connection failed/fallback needed)
-    getProducts: () => Promise<Product[] | null>;
+    getProducts: (page?: number) => Promise<Product[] | null>;
     getProductById: (id: string) => Promise<Product | null>;
     createProduct: (product: Product) => Promise<void>;
     updateProduct: (product: Product) => Promise<void>;
     deleteProduct: (id: string) => Promise<void>;
 
     // Blog Posts
-    getBlogPosts: () => Promise<BlogPost[] | null>;
+    getBlogPosts: (page?: number) => Promise<BlogPost[] | null>;
     getBlogPostById: (id: string) => Promise<BlogPost | null>;
     getBlogPostBySlug: (slug: string) => Promise<BlogPost | null>;
     createBlogPost: (post: BlogPost) => Promise<void>;
@@ -42,6 +42,7 @@ export interface DatabaseService {
 
     // Analytics
     logAnalyticsEvent: (event: AnalyticsEvent) => Promise<void>;
+    getAnalyticsEvents: (limit?: number) => Promise<AnalyticsEvent[]>;
     testConnection: () => Promise<boolean>;
     testConnectionDetailed: () => Promise<supabaseService.DetailedConnectionResult>;
 }
@@ -95,6 +96,7 @@ export const dbService: DatabaseService = {
 
     // Analytics
     logAnalyticsEvent: supabaseService.logAnalyticsEvent,
+    getAnalyticsEvents: supabaseService.getAnalyticsEvents,
 
     testConnection: supabaseService.testConnection,
     testConnectionDetailed: supabaseService.testConnectionDetailed,

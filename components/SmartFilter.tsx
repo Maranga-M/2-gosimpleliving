@@ -21,7 +21,8 @@ export const SmartFilter: React.FC<SmartFilterProps> = ({
 
   const handleGenerate = async () => {
     setIsLoading(true);
-    const results = await generateSmartCollections(products);
+    const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
+    const results = await generateSmartCollections(categories);
     setCollections(results);
     setIsLoading(false);
     setHasGenerated(true);

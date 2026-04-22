@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Edit3, Trash2, ExternalLink, Save, X, ChevronDown, ChevronUp, Image as ImageIcon, Star, HelpCircle } from 'lucide-react';
-import { ClickBankOffer, SiteContent, AffiliateTheme, Testimonial } from '../types';
+import { ClickBankOffer, SiteContent, ThemeColor, AffiliateTheme, Testimonial } from '../types';
 import { Button } from './Button';
 import { v4 as uuidv4 } from 'uuid';
 import { MediaManager } from './MediaManager';
@@ -10,7 +10,7 @@ interface AdminOffersProps {
     siteContent: SiteContent;
     onUpdateSiteContent: (field: keyof SiteContent, value: any) => void;
     onSaveChanges: () => Promise<void>;
-    themeColor: AffiliateTheme;
+    themeColor: ThemeColor | AffiliateTheme;
 }
 
 export const AdminOffers: React.FC<AdminOffersProps> = ({ siteContent, onUpdateSiteContent, onSaveChanges, themeColor }) => {
