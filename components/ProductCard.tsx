@@ -205,23 +205,18 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
 
           {/* Region Selector */}
           {product.regionalPricing && Object.keys(product.regionalPricing).length > 0 && (
-            <div className="relative group/region z-30">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Logic to toggle dropdown could go here, or simple hover
-                }}
-                className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors uppercase"
-              >
-                {selectedRegion}
-              </button>
-              <div className="absolute right-0 top-full mt-1 w-20 bg-white dark:bg-slate-800 rounded shadow-lg border border-slate-100 dark:border-slate-700 overflow-hidden hidden group-hover/region:block">
-                <button onClick={(e) => { e.stopPropagation(); setSelectedRegion('US'); }} className="block w-full text-left px-2 py-1 text-[10px] hover:bg-slate-50 dark:hover:bg-slate-700">US ($)</button>
-                {Object.keys(product.regionalPricing).map(region => (
-                  <button key={region} onClick={(e) => { e.stopPropagation(); setSelectedRegion(region); }} className="block w-full text-left px-2 py-1 text-[10px] hover:bg-slate-50 dark:hover:bg-slate-700">{region}</button>
-                ))}
-              </div>
-            </div>
+            <select
+              value={selectedRegion}
+              onChange={(e) => setSelectedRegion(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              aria-label="Select region/currency"
+              className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors uppercase cursor-pointer focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-600"
+            >
+              <option value="US">US ($)</option>
+              {Object.keys(product.regionalPricing).map(region => (
+                <option key={region} value={region}>{region}</option>
+              ))}
+            </select>
           )}
         </div>
 
@@ -261,17 +256,17 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
         {/* Price & Amazon Button */}
         <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800">
           <div className="flex flex-col gap-3">
-            <div className="flex items-baseline justify-between">
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{currencySymbol}{displayPrice.toFixed(2)}</span>
+            <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 sm:gap-0">
+              <div className="flex items-baseline gap-1 sm:gap-2">
+                <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{currencySymbol}{displayPrice.toFixed(2)}</span>
                 {product.originalPrice && selectedRegion === 'US' && (
-                  <span className="text-sm text-slate-400 dark:text-slate-600 line-through font-medium">
+                  <span className="text-xs sm:text-sm text-slate-400 dark:text-slate-600 line-through font-medium">
                     ${product.originalPrice.toFixed(2)}
                   </span>
                 )}
               </div>
               {discount > 0 && selectedRegion === 'US' && (
-                <span className={`text-xs font-bold px-2 py-1 rounded-md border ${getPromoStyle()}`}>
+                <span className={`text-xs font-bold px-2 py-1 rounded-md border whitespace-nowrap ${getPromoStyle()}`}>
                   Save {discount}%
                 </span>
               )}
@@ -285,9 +280,9 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
               onClick={handleBuyClick}
             >
               <button
-                className={`w-full font-bold py-3 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 text-sm border ${getAffiliateButtonStyle(product.affiliateLinkTheme || 'orange')}`}
+                className={`w-full font-bold py-2 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 text-xs sm:text-sm border ${getAffiliateButtonStyle(product.affiliateLinkTheme || 'orange')}`}
               >
-                {product.affiliateLinkLabel || "Buy on Amazon"} <ExternalLink size={16} className="transition-transform group-hover/btn:translate-x-1" />
+                <span className="truncate">{product.affiliateLinkLabel || "Buy on Amazon"}</span> <ExternalLink size={14} className="transition-transform group-hover/btn:translate-x-1 flex-shrink-0" />
               </button>
             </a>
 

@@ -65,8 +65,8 @@ export const Footer: React.FC = () => {
     const { siteContent } = content;
 
     return (
-        <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 mt-20">
-            <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 mt-16 sm:mt-20">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
 
                 <TrustedPartners />
 
@@ -94,25 +94,25 @@ export const Footer: React.FC = () => {
                     )}
 
                     {siteContent.footerLinks && siteContent.footerLinks.length > 0 && (
-                        <div className="flex flex-wrap justify-center gap-6">
+                        <div className="flex flex-wrap justify-center gap-3 sm:gap-6">
                             {siteContent.footerLinks.map((link, index) => (
                                 <a
                                     key={index}
                                     href={link.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors"
+                                    className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors"
                                 >
                                     {link.label}
                                 </a>
                             ))}
                         </div>
                     )}
-                    <div className="flex gap-4">
-                        <Link to="/privacy-policy" className="text-sm text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4">
+                    <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
+                        <Link to="/privacy-policy" className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors underline decoration-slate-300 dark:decoration-slate-700 underline-offset-2 sm:underline-offset-4">
                             Privacy Policy
                         </Link>
-                        <Link to="/sitemap" className="text-sm text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors underline decoration-slate-300 dark:decoration-slate-700 underline-offset-4">
+                        <Link to="/sitemap" className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors underline decoration-slate-300 dark:decoration-slate-700 underline-offset-2 sm:underline-offset-4">
                             Sitemap
                         </Link>
                     </div>

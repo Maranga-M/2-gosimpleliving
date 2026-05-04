@@ -80,7 +80,7 @@ export const PrivacyPolicyPage: React.FC = () => {
                     <div className="mt-12 p-6 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-600">
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Contact Us</h3>
                         <p className="text-slate-600 dark:text-slate-400 m-0">
-                            If you have any questions about this Privacy Policy, please contact us at <a href={`mailto:support@${siteContent.logoText.toLowerCase().replace(/\s/g, '')}.com`} className="text-amber-600 hover:text-amber-700 dark:text-amber-500 font-medium">support@gosimpleliving.com</a>.
+                            If you have any questions about this Privacy Policy, please contact us at <a href={`mailto:support@${siteContent.logoText.toLowerCase().replace(/\s/g, '')}.com`} className="text-amber-600 hover:text-amber-700 dark:text-amber-500 font-medium">{`support@${siteContent.logoText.toLowerCase().replace(/\s/g, '')}.com`}</a>.
                         </p>
                     </div>
                 </div>

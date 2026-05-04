@@ -43,7 +43,7 @@ interface AdminDashboardProps {
     onUpdateBlogPost: (post: BlogPost) => void;
     onDeleteBlogPost: (id: string) => void;
     onDuplicateBlogPost: (id: string) => void;
-    initialTab?: 'products' | 'content' | 'theme' | 'users' | 'config';
+    initialTab?: 'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config';
     dbStatus: ConnectionStatus;
     isUsingFallback: boolean;
     onRefresh?: () => Promise<void>;
@@ -144,7 +144,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onSeed,
     lastError
 }) => {
-    const [activeTab, setActiveTab] = useState<'products' | 'content' | 'theme' | 'users' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config'>(initialTab as any);
+    const [activeTab, setActiveTab] = useState<'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config'>(initialTab ?? 'products');
 
     // Delete confirmation state
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'product' | 'post' | 'page' | 'all-products', title: string, message: string } | null>(null);

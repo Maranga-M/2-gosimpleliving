@@ -221,13 +221,13 @@ const AppContent: React.FC = () => {
                 <button onClick={() => setCurrentView('pages')} className={`text-sm font-medium transition-colors ${currentView === 'pages' ? getThemeTextClass() : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>{siteContent.uiText?.pagesNav || 'Pages'}</button>
               )}
 
-              <div className="relative group">
+              <div className="relative group hidden sm:block">
                 <input
                   type="text"
                   placeholder={siteContent.uiText.searchPlaceholder}
                   value={products.searchQuery} // Use search query from products hook context
                   onChange={(e) => products.setSearchQuery(e.target.value)}
-                  className="w-48 lg:w-64 pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border border-transparent rounded-full text-sm focus:outline-none focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-600 transition-all dark:text-white"
+                  className="w-40 sm:w-48 md:w-56 lg:w-64 pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border border-transparent rounded-full text-sm focus:outline-none focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-600 transition-all dark:text-white"
                 />
                 <Search className="absolute left-3 top-2.5 text-slate-400 group-focus-within:text-slate-600 dark:group-focus-within:text-slate-300" size={16} />
               </div>

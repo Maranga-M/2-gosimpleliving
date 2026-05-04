@@ -45,20 +45,21 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 <GoogleAd className="my-8" />
             </div>
 
-            <div id="products-grid" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <div id="products-grid" className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-12">
+                <div className="flex flex-col gap-4 mb-8">
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide flex-shrink-0">
                         {categories.map((cat) => (
-                            <button key={cat} onClick={() => { setSelectedCategory(cat); setSmartCollectionFilter(null); setActiveCollectionId(null); }} className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${selectedCategory === cat && !activeCollectionId ? `bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-md` : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}>
+                            <button key={cat} onClick={() => { setSelectedCategory(cat); setSmartCollectionFilter(null); setActiveCollectionId(null); }} className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${selectedCategory === cat && !activeCollectionId ? `bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-md` : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}>
                                 {cat}
                             </button>
                         ))}
                     </div>
-                    <div className="flex items-center gap-4">
-                        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700 cursor-pointer">
+                    <div className="flex items-center gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
+                        <label className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 hidden sm:inline">Sort by:</label>
+                        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs sm:text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700 cursor-pointer">
                             <option value="featured">Featured</option>
-                            <option value="price-low">Price: Low to High</option>
-                            <option value="price-high">Price: High to Low</option>
+                            <option value="price-low">Low to High</option>
+                            <option value="price-high">High to Low</option>
                             <option value="rating">Top Rated</option>
                         </select>
                     </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useApp } from '../contexts/AppContext';
 import { AdminDashboard } from '../../components/AdminDashboard';
 import { Button } from '../../components/Button';
@@ -7,9 +7,6 @@ import toast from 'react-hot-toast';
 export const DashboardPage: React.FC = () => {
     const { auth, products, blog, content, dbStatus, lastError, isUsingFallback, refreshData } = useApp();
     const { user } = auth;
-
-    // Local state for dashboard tab since it's UI state specific to this page
-    const [activeTab] = useState<'products' | 'content' | 'theme' | 'users' | 'config'>('products');
 
     const handleAddCategory = async (name: string) => {
         const categories = content.liveSiteContent.categories || [];
@@ -85,7 +82,6 @@ export const DashboardPage: React.FC = () => {
             onDeleteBlogPost={blog.deleteBlogPost}
             onDuplicateBlogPost={blog.duplicateBlogPost}
 
-            initialTab={activeTab}
             dbStatus={dbStatus}
             isUsingFallback={isUsingFallback}
             lastError={lastError}
