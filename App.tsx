@@ -101,6 +101,13 @@ const AppContent: React.FC = () => {
 
   }, [location.pathname, currentView]); // Re-run when route or view state changes
 
+  // Update document title dynamically for the home page
+  React.useEffect(() => {
+    if (currentView === 'home' && siteContent?.pageTitle) {
+      document.title = siteContent.pageTitle;
+    }
+  }, [currentView, siteContent?.pageTitle]);
+
 
   const getThemeTextClass = () => {
     switch (siteContent.themeColor) {

@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import metaInjectPlugin from './plugins/vite-meta-inject';
 
 export default defineConfig({
   server: {
@@ -9,7 +10,7 @@ export default defineConfig({
   },
   // Expose both VITE_ (local dev) and NEXT_PUBLIC_ (Vercel compatibility)
   envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
-  plugins: [react()],
+  plugins: [react(), metaInjectPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),

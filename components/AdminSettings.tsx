@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Key, Image, Sparkles, AlertCircle, CheckCircle, Eye, EyeOff, RefreshCw, Globe, Palette, Shield, MessageSquare, Monitor, X, Database } from 'lucide-react';
+import { Save, Key, Image, Sparkles, AlertCircle, CheckCircle, Eye, EyeOff, RefreshCw, Globe, Palette, Shield, MessageSquare, Monitor, X, Database, Check, AlertTriangle, HelpCircle, ExternalLink, Loader2 } from 'lucide-react';
 import { ThemeColor, Season } from '../types';
 import toast from 'react-hot-toast';
 import { Button } from './Button';
@@ -25,6 +25,96 @@ export const AdminSettings: React.FC<{
     const [draftThemeColor, setDraftThemeColor] = useState<ThemeColor>('amber');
     const [draftSeason, setDraftSeason] = useState<Season>('none');
     const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [pageTitle, setPageTitle] = useState('');
+
+    // Meta Injection Verification State
+    const [metaVerification, setMetaVerification] = useState<{
+        p_domain_verify: { name: string; label: string; dynamic: boolean; static: boolean; value: string };
+        google_site_verification: { name: string; label: string; dynamic: boolean; static: boolean; value: string };
+        msvalidate_01: { name: string; label: string; dynamic: boolean; static: boolean; value: string };
+        facebook_domain_verification: { name: string; label: string; dynamic: boolean; static: boolean; value: string };
+        isChecking: boolean;
+    }>({
+        p_domain_verify: { name: 'p:domain_verify', label: 'Pinterest Claim Verification', dynamic: false, static: false, value: '' },
+        google_site_verification: { name: 'google-site-verification', label: 'Google Search Console', dynamic: false, static: false, value: '' },
+        msvalidate_01: { name: 'msvalidate.01', label: 'Bing Webmaster Tools', dynamic: false, static: false, value: '' },
+        facebook_domain_verification: { name: 'facebook-domain-verification', label: 'Facebook Domain Verification', dynamic: false, static: false, value: '' },
+        isChecking: true
+    });
+
+    const checkMetaInjection = async () => {
+        setMetaVerification(prev => ({ ...prev, isChecking: true }));
+        try {
+            // Fetch raw HTML from server to check for static (build-time) injection
+            const response = await fetch('/', { cache: 'no-store' });
+            const html = await response.text();
+
+            const checkStatic = (name: string) => {
+                const regex = new RegExp(`<meta\\s+name=["']${name}["']\\s+content=["']([^"']+)["']`, 'i');
+                const match = html.match(regex);
+                return {
+                    injected: !!match,
+                    value: match ? match[1] : ''
+                };
+            };
+
+            const checkDynamic = (name: string) => {
+                const meta = document.querySelector(`meta[name="${name}"]`);
+                return {
+                    injected: !!meta,
+                    value: meta ? meta.getAttribute('content') || '' : ''
+                };
+            };
+
+            const tagsToCheck = [
+                { key: 'p_domain_verify', name: 'p:domain_verify', label: 'Pinterest Claim Verification' },
+                { key: 'google_site_verification', name: 'google-site-verification', label: 'Google Search Console' },
+                { key: 'msvalidate_01', name: 'msvalidate.01', label: 'Bing Webmaster Tools' },
+                { key: 'facebook_domain_verification', name: 'facebook-domain-verification', label: 'Facebook Domain Verification' }
+            ];
+
+            const results: any = {};
+            tagsToCheck.forEach(({ key, name, label }) => {
+                const s = checkStatic(name);
+                const d = checkDynamic(name);
+                results[key] = {
+                    name,
+                    label,
+                    dynamic: d.injected,
+                    static: s.injected,
+                    value: s.value || d.value
+                };
+            });
+
+            setMetaVerification({
+                ...results,
+                isChecking: false
+            });
+        } catch (error) {
+            console.error('Failed to verify static meta injection:', error);
+            const checkDynamicOnly = (name: string, label: string) => {
+                const meta = document.querySelector(`meta[name="${name}"]`);
+                return {
+                    name,
+                    label,
+                    dynamic: !!meta,
+                    static: false,
+                    value: meta ? meta.getAttribute('content') || '' : ''
+                };
+            };
+            setMetaVerification({
+                p_domain_verify: checkDynamicOnly('p:domain_verify', 'Pinterest Claim Verification'),
+                google_site_verification: checkDynamicOnly('google-site-verification', 'Google Search Console'),
+                msvalidate_01: checkDynamicOnly('msvalidate.01', 'Bing Webmaster Tools'),
+                facebook_domain_verification: checkDynamicOnly('facebook-domain-verification', 'Facebook Domain Verification'),
+                isChecking: false
+            });
+        }
+    };
+
+    useEffect(() => {
+        checkMetaInjection();
+    }, [liveSiteContent]);
 
     // General Settings
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -38,6 +128,7 @@ export const AdminSettings: React.FC<{
             setLogoUrl(liveSiteContent.logoUrl || '');
             setDraftThemeColor(liveSiteContent.themeColor || 'amber');
             setDraftSeason(liveSiteContent.season || 'none');
+            setPageTitle(liveSiteContent.pageTitle || 'GoSimpleLiving');
         }
     }, [liveSiteContent]);
 
@@ -66,7 +157,8 @@ export const AdminSettings: React.FC<{
                 ...liveSiteContent,
                 logoText: siteName.trim(),
                 heroSubtitle: siteDescription.trim(),
-                logoUrl: logoUrl.trim()
+                logoUrl: logoUrl.trim(),
+                pageTitle: pageTitle.trim()
             };
 
             await saveChanges(updated);
@@ -318,6 +410,19 @@ export const AdminSettings: React.FC<{
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Browser Tab Title
+                        </label>
+                        <input
+                            type="text"
+                            value={pageTitle}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPageTitle(e.target.value)}
+                            placeholder="GoSimpleLiving - AI Curated Shopping"
+                            className="w-full px-3 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                             Site Description
                         </label>
                         <input
@@ -351,8 +456,159 @@ export const AdminSettings: React.FC<{
                 </div>
             </div>
 
-            {/* Theme & Visual Appearance */}
+            {/* SEO & Search Engine Verification Status */}
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 flex items-center justify-between">
+                    <div>
+                        <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                            <Shield size={18} className="text-emerald-500" />
+                            SEO & Verification Meta Injection Status
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Verify that your site search verification codes are properly injected for crawlers</p>
+                    </div>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={checkMetaInjection}
+                        disabled={metaVerification.isChecking}
+                        className="text-xs gap-1.5"
+                    >
+                        <RefreshCw size={14} className={metaVerification.isChecking ? 'animate-spin' : ''} />
+                        Run Check
+                    </Button>
+                </div>
+                <div className="p-6 space-y-6">
+                    <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 rounded-xl p-4 text-xs text-slate-600 dark:text-slate-400 leading-relaxed space-y-2">
+                        <p>
+                            <strong>Why this matters:</strong> Search crawlers like Google, Pinterest, and Bing verification bots do not execute JavaScript. Therefore, verification meta tags injected dynamically by React are completely invisible to them.
+                        </p>
+                        <p>
+                            To successfully verify your site, the tags must be baked directly into the static HTML at build time (<strong>Static Injection</strong>). This is managed by the Vite plugin via <code className="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">meta-tags.json</code>.
+                        </p>
+                    </div>
+
+                    {metaVerification.isChecking ? (
+                        <div className="flex flex-col items-center justify-center py-8 gap-3">
+                            <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+                            <p className="text-sm text-slate-500">Checking injection status...</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {(['p_domain_verify', 'google_site_verification', 'msvalidate_01', 'facebook_domain_verification'] as const).map((key) => {
+                                const tag = metaVerification[key];
+                                const isConfigured = !!tag.value;
+
+                                return (
+                                    <div key={key} className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200/60 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold text-sm text-slate-800 dark:text-slate-200">{tag.label}</span>
+                                                <code className="text-[10px] font-mono bg-slate-200/60 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-400">{tag.name}</code>
+                                            </div>
+                                            <div className="text-xs text-slate-500 truncate max-w-md">
+                                                {isConfigured ? (
+                                                    <span className="font-mono text-slate-600 dark:text-slate-300">
+                                                        Value: {tag.value.length > 20 ? `${tag.value.slice(0, 10)}...${tag.value.slice(-10)}` : tag.value}
+                                                    </span>
+                                                ) : (
+                                                    <span className="italic text-slate-400">Not configured in affiliate settings or metadata</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                            {/* Static Injection Status */}
+                                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                                tag.static
+                                                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200/40 dark:border-green-800/30'
+                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-transparent'
+                                            }`}>
+                                                {tag.static ? (
+                                                    <>
+                                                        <CheckCircle size={12} className="text-green-500" />
+                                                        Static Bake Complete
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <AlertCircle size={12} className="text-slate-400" />
+                                                        No Static Injection
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            {/* Dynamic Injection Status */}
+                                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                                tag.dynamic
+                                                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200/40 dark:border-blue-800/30'
+                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-transparent'
+                                            }`}>
+                                                {tag.dynamic ? (
+                                                    <>
+                                                        <CheckCircle size={12} className="text-blue-500" />
+                                                        Dynamic Active
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <AlertCircle size={12} className="text-slate-400" />
+                                                        Dynamic Inactive
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* Warnings/Reminders Block */}
+                    {!metaVerification.isChecking && (
+                        <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                            {(['p_domain_verify', 'google_site_verification', 'msvalidate_01', 'facebook_domain_verification'] as const).some(key => {
+                                const tag = metaVerification[key];
+                                return tag.dynamic && !tag.static;
+                            }) && (
+                                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-xl flex items-start gap-3">
+                                    <AlertTriangle className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" size={18} />
+                                    <div className="text-xs text-amber-800 dark:text-amber-300 space-y-1">
+                                        <p className="font-bold">Static Verification Injection Incomplete!</p>
+                                        <p>
+                                            One or more meta codes are active in your settings (Dynamic) but are not baked into the static HTML page (Static). Crawlers will NOT be able to see them!
+                                        </p>
+                                        <p className="font-semibold mt-2">To complete static verification:</p>
+                                        <ol className="list-decimal pl-4 space-y-1 mt-1 font-mono text-[10px] bg-white/40 dark:bg-slate-900/30 p-2 rounded border border-amber-200/50">
+                                            <li>Open the file <code className="bg-amber-100 dark:bg-amber-900/40 px-1 rounded font-bold">meta-tags.json</code> in your project root.</li>
+                                            <li>Paste the corresponding verification keys and code values into it.</li>
+                                            <li>Re-build and re-deploy your project.</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            )}
+
+                            {!(['p_domain_verify', 'google_site_verification', 'msvalidate_01', 'facebook_domain_verification'] as const).some(key => {
+                                const tag = metaVerification[key];
+                                return tag.value && !tag.static;
+                            }) && (['p_domain_verify', 'google_site_verification', 'msvalidate_01', 'facebook_domain_verification'] as const).some(key => {
+                                const tag = metaVerification[key];
+                                return tag.static;
+                            }) && (
+                                <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 rounded-xl flex items-start gap-3">
+                                    <CheckCircle className="text-green-600 dark:text-green-400 shrink-0 mt-0.5" size={18} />
+                                    <div className="text-xs text-green-800 dark:text-green-300">
+                                        <p className="font-bold">All active search verifications are fully complete!</p>
+                                        <p className="mt-1">
+                                            All verification codes are correctly baked into the static HTML. Crawlers from Pinterest, Google, and Bing can read them perfectly without JavaScript execution.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Theme & Visual Appearance */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
                 <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20">
                     <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <Palette size={18} className="text-violet-500" />

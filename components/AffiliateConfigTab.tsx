@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Plus, Trash2, Code, CheckCircle, Eye, EyeOff, Copy, ExternalLink, TrendingUp } from 'lucide-react';
+import { Save, Plus, Trash2, Code, CheckCircle, Eye, EyeOff, Copy, ExternalLink, TrendingUp, AlertTriangle } from 'lucide-react';
 import { AffiliateConfig, TrackingCode } from '../types';
 import { Button } from './Button';
 import { AffiliateNetworkManager } from './AffiliateNetworkManager';
@@ -141,22 +141,32 @@ export const AffiliateConfigTab: React.FC<AffiliateConfigTabProps> = ({ config, 
                         </label>
                     </div>
 
+
                     <div className="space-y-3">
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                                Verification Meta Tag
+                                Verification Code
                             </label>
-                            <textarea
+                            <input
+                                type="text"
                                 value={localConfig.pinterestVerificationCode || ''}
                                 onChange={(e) => setLocalConfig({ ...localConfig, pinterestVerificationCode: e.target.value })}
-                                placeholder='<meta name="p:domain_verify" content="your-code-here"/>'
-                                className="w-full h-24 p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono resize-none focus:ring-2 focus:ring-amber-500 dark:text-white"
+                                placeholder='Paste just the code value, e.g. abc123def456'
+                                className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono focus:ring-2 focus:ring-amber-500 dark:text-white"
                             />
+                            <p className="text-[10px] text-slate-400 mt-1">From Pinterest: Settings → Claim → Get the code value only (not the full meta tag)</p>
                         </div>
                         {localConfig.pinterestVerificationCode && (
-                            <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                                <CheckCircle size={16} className="text-amber-600 dark:text-amber-400" />
-                                <span className="text-xs text-amber-700 dark:text-amber-400">Code will be injected into &lt;head&gt;</span>
+                            <div className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg space-y-2">
+                                <div className="flex items-start gap-2">
+                                    <AlertTriangle size={16} className="text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
+                                    <div>
+                                        <span className="text-xs font-bold text-orange-700 dark:text-orange-400 block">Important: Also add to meta-tags.json</span>
+                                        <span className="text-[11px] text-orange-600 dark:text-orange-400 block mt-1">
+                                            Pinterest's crawler does NOT run JavaScript. You must also paste this code into <code className="bg-orange-100 dark:bg-orange-900/40 px-1 rounded">meta-tags.json</code> in your project root, then re-deploy.
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

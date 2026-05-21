@@ -21,6 +21,12 @@ export const AffiliateScripts: React.FC = () => {
             'facebook-domain-verification': config.facebookDomainVerification
         };
 
+        // Helper: extract just the content value if user pasted a full <meta> tag
+        const extractContentValue = (raw: string): string => {
+            const match = raw.match(/content=["']([^"']+)["']/);
+            return match ? match[1] : raw.trim();
+        };
+
         Object.entries(metaTags).forEach(([name, content]) => {
             if (!content) {
                 // Remove if exists and should be disabled
@@ -29,13 +35,15 @@ export const AffiliateScripts: React.FC = () => {
                 return;
             }
 
+            const cleanContent = extractContentValue(content);
+
             let meta = document.querySelector(`meta[name="${name}"]`);
             if (!meta) {
                 meta = document.createElement('meta');
                 meta.setAttribute('name', name);
                 document.head.appendChild(meta);
             }
-            meta.setAttribute('content', content);
+            meta.setAttribute('content', cleanContent);
         });
 
         // --- 2. Tracking Codes ---
