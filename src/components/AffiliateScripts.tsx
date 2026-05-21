@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useLayoutEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 
 /**
@@ -10,7 +10,7 @@ export const AffiliateScripts: React.FC = () => {
     const { siteContent } = content;
     const config = siteContent.affiliateConfig;
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!config || config.globalEnabled === false) return;
 
         // --- 1. Meta Tags (Pinterest, Google, Bing) ---

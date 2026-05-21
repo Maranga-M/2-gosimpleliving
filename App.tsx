@@ -11,7 +11,7 @@ import { Wishlist } from './components/Wishlist';
 import { NotificationBell } from './components/NotificationBell';
 import { AnalyticsService } from './services/analytics'; // Import Analytics Service
 import { Toaster } from 'react-hot-toast';
-import { lazyWithRetry } from './src/utils/lazyWithRetry';
+import { AffiliateScripts } from './src/components/AffiliateScripts';
 import { Analytics } from '@vercel/analytics/react';
 
 // Context & Pages
@@ -187,6 +187,7 @@ const AppContent: React.FC = () => {
       )}
 
       <AdSenseScript />
+        <AffiliateScripts />
 
       {/* Navigation */}
       <nav className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm transition-colors duration-300">
