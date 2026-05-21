@@ -69,6 +69,24 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
     const [searchQuery, setSearchQuery] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const handleAddCategory = () => {
+        if (!newCategoryName.trim()) return;
+        if (categories.includes(newCategoryName)) {
+            toast.error("Category already exists.");
+            return;
+        }
+        onAddCategory(newCategoryName);
+        setNewCategoryName('');
+    };
+
+    // Delete all products handler (Danger Zone)
+    const handleDeleteAllProducts = () => {
+        if (confirm('Delete all products? This cannot be undone.')) {
+            products.forEach(p => onDeleteProduct(p.id));
+            toast.success('Full catalogue deleted.');
+        }
+    };
+
     const handleExportCSV = () => {
         if (products.length === 0) {
             toast.error("No products to export");
@@ -545,6 +563,49 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                         </div>
                     </div>
                 </div>
+            {/* Category Management UI */}
+            <div className="flex items-center gap-4 mb-4">
+              <input
+                type="text"
+                placeholder="New category"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded"
+              />
+              <button
+                onClick={handleAddCategory}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded"
+              >
+                Add Category
+              </button>
+              <select
+                value=""
+                onChange={(e) => {
+                  const cat = e.target.value;
+                  if (cat) {
+                    onDeleteCategory(cat);
+                    e.target.value = '';
+                  }
+                }}
+                className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded"
+              >
+                <option value="">Delete Category</option>
+                {categories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Danger Zone */}
+            <div className="mt-4">
+              <button
+                onClick={handleDeleteAllProducts}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
+              >
+                Delete Full Catalogue
+              </button>
+            </div>
             )}
         </div>
     );
