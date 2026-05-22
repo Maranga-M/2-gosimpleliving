@@ -4,7 +4,9 @@
       "Bash(npm run *)",
       "Bash(npx vite *)",
       "Bash(npm install *)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(npx tsc *)",
+      "Bash(node -e \"console.log\\('js ok'\\)\")"
     ]
   }
 }

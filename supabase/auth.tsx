@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
-import { authStateChanged, signOut as sbSignOut, signInWithProvider, sendMagicLink } from './service';
+import { authStateChanged, signOut as sbSignOut } from './service';
 
 interface AuthContextType {
     user: User | null;
@@ -32,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoading(false);
     };
 
-    const handleInvite = async (provider: 'google' | 'github') => {
+    const signInWithProvider = async (provider: 'google' | 'github') => {
         try {
             await signInWithProvider(provider);
         } catch (e) {
@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const handleMagicLink = async (email: string) => {
+    const sendMagicLink = async (email: string) => {
         try {
             await sendMagicLink(email);
         } catch (e) {
@@ -53,9 +53,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         <AuthContext.Provider value={{
             user,
             isLoading,
-            signInWithGoogle: () => handleInvite('google'),
-            signInWithGitHub: () => handleInvite('github'),
-            signInWithMagicLink: handleMagicLink,
+            signInWithGoogle: () => signInWithProvider('google'),
+            signInWithGitHub: () => signInWithProvider('github'),
+            signInWithMagicLink: sendMagicLink,
             signOut
         }}>
             {children}

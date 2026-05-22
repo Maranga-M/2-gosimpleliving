@@ -19,6 +19,8 @@ interface AdminProductsProps {
     onDuplicateProduct: (id: string) => void;
     currentUserRole: Role;
     initialFormState: Product;
+    onAddCategory?: (category: string) => void;
+    onDeleteCategory?: (category: string) => void;
 }
 
 const ProductRow = React.memo(({ product, currentUserRole, onDuplicate, onEdit, onDelete, getStatusBadge }: any) => {
@@ -58,8 +60,11 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
     onDeleteProduct,
     onDuplicateProduct,
     currentUserRole,
-    initialFormState
+    initialFormState,
+    onAddCategory,
+    onDeleteCategory
 }) => {
+    const [newCategoryName, setNewCategoryName] = useState('');
     const [isBulkImporting, setIsBulkImporting] = useState(false);
     const [bulkInput, setBulkInput] = useState('');
     const [isImporting, setIsImporting] = useState(false);
@@ -75,7 +80,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
             toast.error("Category already exists.");
             return;
         }
-        onAddCategory(newCategoryName);
+        if (onAddCategory) onAddCategory(newCategoryName);
         setNewCategoryName('');
     };
 
@@ -562,50 +567,53 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                             </table>
                         </div>
                     </div>
+                    {/* Category Management UI */}
+                    {onAddCategory && onDeleteCategory && (
+                        <div className="flex items-center gap-4 mt-6 p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-800">
+                          <input
+                            type="text"
+                            placeholder="New category"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-sm dark:text-white"
+                          />
+                          <button
+                            onClick={handleAddCategory}
+                            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded text-sm font-semibold"
+                          >
+                            Add Category
+                          </button>
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              const cat = e.target.value;
+                              if (cat && onDeleteCategory) {
+                                onDeleteCategory(cat);
+                                e.target.value = '';
+                              }
+                            }}
+                            className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-sm dark:text-white"
+                          >
+                            <option value="">Delete Category</option>
+                            {categories.map((c) => (
+                              <option key={c} value={c}>
+                                {c}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                    )}
+                    {/* Danger Zone */}
+                    <div className="mt-6 p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-xl">
+                      <h4 className="text-red-800 dark:text-red-400 font-bold text-sm mb-2">Danger Zone</h4>
+                      <button
+                        onClick={handleDeleteAllProducts}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-semibold transition-colors"
+                      >
+                        Delete Full Catalogue
+                      </button>
+                    </div>
                 </div>
-            {/* Category Management UI */}
-            <div className="flex items-center gap-4 mb-4">
-              <input
-                type="text"
-                placeholder="New category"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded"
-              />
-              <button
-                onClick={handleAddCategory}
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded"
-              >
-                Add Category
-              </button>
-              <select
-                value=""
-                onChange={(e) => {
-                  const cat = e.target.value;
-                  if (cat) {
-                    onDeleteCategory(cat);
-                    e.target.value = '';
-                  }
-                }}
-                className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded"
-              >
-                <option value="">Delete Category</option>
-                {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {/* Danger Zone */}
-            <div className="mt-4">
-              <button
-                onClick={handleDeleteAllProducts}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
-              >
-                Delete Full Catalogue
-              </button>
-            </div>
             )}
         </div>
     );

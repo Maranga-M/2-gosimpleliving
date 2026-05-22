@@ -13,6 +13,7 @@ import { AnalyticsService } from './services/analytics'; // Import Analytics Ser
 import { Toaster } from 'react-hot-toast';
 import { AffiliateScripts } from './src/components/AffiliateScripts';
 import { Analytics } from '@vercel/analytics/react';
+import { lazyWithRetry } from './src/utils/lazyWithRetry';
 
 // Context & Pages
 import { AppProvider, useApp } from './src/contexts/AppContext';

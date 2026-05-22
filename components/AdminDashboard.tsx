@@ -136,7 +136,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onDeleteBlogPost,
     onDuplicateBlogPost,
     initialTab = 'products',
-    onUpdateSiteContent: _onUpdateSiteContent,
+    onUpdateSiteContent: onUpdateSiteContent,
     onSaveChanges,
     dbStatus,
     isUsingFallback,
@@ -308,7 +308,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             const updatedContent = { ...liveSiteContent, customPages: newPages };
 
             // Update local state first
-            _onUpdateSiteContent?.(updatedContent);
+            onUpdateSiteContent?.(updatedContent);
 
             // Then persist to database
             if (onSaveChanges) {
@@ -485,7 +485,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         }
 
         const updatedContent = { ...liveSiteContent, customPages: newPages };
-        _onUpdateSiteContent?.(updatedContent);
+        onUpdateSiteContent?.(updatedContent);
 
         const save = onSaveChanges;
         if (save) {
@@ -513,7 +513,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         const pages = liveSiteContent.customPages || [];
         const newPages = [duplicated, ...pages];
         const updatedContent = { ...liveSiteContent, customPages: newPages };
-        _onUpdateSiteContent?.(updatedContent);
+        onUpdateSiteContent?.(updatedContent);
         onSaveChanges?.(updatedContent);
         toast.success('Page duplicated successfully!');
     };
@@ -684,7 +684,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     const handleSaveAffiliateConfig = async (config: any) => {
         const updatedContent = { ...liveSiteContent, affiliateConfig: config };
-        _onUpdateSiteContent?.(updatedContent);
+        onUpdateSiteContent?.(updatedContent);
         if (onSaveChanges) {
             await onSaveChanges(updatedContent);
         }

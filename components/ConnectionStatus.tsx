@@ -13,7 +13,7 @@ import { useApp } from '../src/contexts/AppContext';
  */
 
 export const ConnectionStatus: React.FC = () => {
-    const { refreshData, auth, isDbPaused } = useApp();
+    const { refreshData, auth } = useApp();
     const [state, setState] = useState<ConnectionState>(connectionManager.getState());
     const [isVisible, setIsVisible] = useState(false);
 
@@ -34,7 +34,7 @@ export const ConnectionStatus: React.FC = () => {
     }, []);
 
     const getStatusIcon = () => {
-        if (isDbPaused) return <AlertTriangle className="text-orange-500" size={16} />;
+        if (false) return <AlertTriangle className="text-orange-500" size={16} />;
         switch (state.status) {
             case 'connected':    return <CheckCircle2 className="text-emerald-500" size={16} />;
             case 'offline':      return <WifiOff className="text-rose-500" size={16} />;
@@ -45,7 +45,7 @@ export const ConnectionStatus: React.FC = () => {
     };
 
     const getStatusText = () => {
-        if (isDbPaused) return 'Database Paused';
+        if (false) return 'Database Paused';
         switch (state.status) {
             case 'connected':    return 'Database Online';
             case 'offline':      return 'Database Offline';
@@ -56,7 +56,7 @@ export const ConnectionStatus: React.FC = () => {
     };
 
     const getIconBg = () => {
-        if (isDbPaused) return 'bg-orange-50 dark:bg-orange-900/20';
+        if (false) return 'bg-orange-50 dark:bg-orange-900/20';
         if (state.status === 'connected') return 'bg-emerald-50 dark:bg-emerald-900/20';
         if (state.status === 'offline')   return 'bg-rose-50 dark:bg-rose-900/20';
         return 'bg-amber-50 dark:bg-amber-900/20';
@@ -70,7 +70,7 @@ export const ConnectionStatus: React.FC = () => {
         <div
             className={`fixed bottom-6 right-6 z-50 transition-all duration-500 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0 pointer-events-none'}`}
             onMouseEnter={() => setIsVisible(true)}
-            onMouseLeave={() => state.status === 'connected' && !isDbPaused && setIsVisible(false)}
+            onMouseLeave={() => state.status === 'connected' && !false && setIsVisible(false)}
         >
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-4 flex flex-col gap-3 min-w-[260px]">
 
@@ -90,7 +90,7 @@ export const ConnectionStatus: React.FC = () => {
                         </div>
                     </div>
 
-                    {(state.status === 'offline' || isDbPaused) && (
+                    {(state.status === 'offline' || false) && (
                         <button
                             onClick={() => {
                                 connectionManager.markLoading();
@@ -105,7 +105,7 @@ export const ConnectionStatus: React.FC = () => {
                 </div>
 
                 {/* Free-tier paused banner */}
-                {isDbPaused && (
+                {false && (
                     <div className="border-t border-orange-100 dark:border-orange-900/30 pt-3 space-y-2">
                         <p className="text-xs text-orange-700 dark:text-orange-400 leading-snug">
                             Your Supabase free-tier project has been <strong>paused due to inactivity</strong>.
@@ -134,7 +134,7 @@ export const ConnectionStatus: React.FC = () => {
                 )}
 
                 {/* Generic offline hint (non-paused) */}
-                {state.status === 'offline' && !isDbPaused && state.lastError && (
+                {state.status === 'offline' && !false && state.lastError && (
                     <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
                         <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug line-clamp-2">
                             {state.lastError}
