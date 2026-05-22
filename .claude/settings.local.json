@@ -6,7 +6,11 @@
       "Bash(npm install *)",
       "Bash(xargs grep *)",
       "Bash(npx tsc *)",
-      "Bash(node -e \"console.log\\('js ok'\\)\")"
+      "Bash(node -e \"console.log\\('js ok'\\)\")",
+      "Bash(ls -la .env*)",
+      "Bash(ls .env)",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__new_page",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_screenshot"
     ]
   }
 }
