@@ -8,6 +8,7 @@ interface TrafficSource {
   campaign: string;
   referrer: string;
   landingPage: string;
+  keyword: string | null;
 }
 
 const STORAGE_KEY = 'gsl_traffic_source';
@@ -31,6 +32,7 @@ export const AnalyticsService = {
       campaign: urlParams.get('utm_campaign') || 'none',
       referrer: referrer || 'direct',
       landingPage: window.location.pathname,
+      keyword: urlParams.get('keyword') ?? null
     };
 
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sourceData));
@@ -41,14 +43,14 @@ export const AnalyticsService = {
    * Retrieves the current session's traffic source data.
    */
   getSource: (): TrafficSource => {
-    try {
-      const stored = sessionStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : {
-        source: 'direct', medium: 'none', campaign: 'none', referrer: 'direct', landingPage: '/'
-      };
-    } catch (e) {
-      return { source: 'direct', medium: 'none', campaign: 'none', referrer: 'direct', landingPage: '/' };
-    }
+     try {
+       const stored = sessionStorage.getItem(STORAGE_KEY);
+       return stored ? JSON.parse(stored) : {
+         source: 'direct', medium: 'none', campaign: 'none', referrer: 'direct', landingPage: '/', keyword: null
+       };
+     } catch (e) {
+       return { source: 'direct', medium: 'none', campaign: 'none', referrer: 'direct', landingPage: '/', keyword: null };
+     }
   },
 
   /**
@@ -68,6 +70,7 @@ export const AnalyticsService = {
       medium: source.medium,
       campaign: source.campaign,
       referrer: source.referrer,
+      keyword: source.keyword,
       user_agent: navigator.userAgent,
       timestamp: now
     };
@@ -109,6 +112,7 @@ export const AnalyticsService = {
       medium: source.medium,
       campaign: source.campaign,
       referrer: source.referrer,
+      keyword: source.keyword,
       user_agent: navigator.userAgent,
       timestamp: now,
       // We can use the 'product_title' field to store the Path for PageViews 
@@ -142,6 +146,7 @@ export const AnalyticsService = {
       medium: eventData.medium || source.medium,
       campaign: eventData.campaign || source.campaign,
       referrer: eventData.referrer || source.referrer,
+      keyword: eventData.keyword ?? source.keyword,
       user_agent: navigator.userAgent,
       timestamp: now,
       ...eventData

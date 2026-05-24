@@ -325,6 +325,7 @@ export interface AnalyticsEvent {
   medium: string;
   campaign: string;
   referrer: string;
+  keyword: string | null;
   user_agent: string;
   timestamp: string;
 }

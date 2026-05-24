@@ -21,8 +21,7 @@ export const SmartFilter: React.FC<SmartFilterProps> = ({
 
   const handleGenerate = async () => {
     setIsLoading(true);
-    const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
-    const results = await generateSmartCollections(categories);
+    const results = await generateSmartCollections(products);
     setCollections(results);
     setIsLoading(false);
     setHasGenerated(true);
@@ -62,7 +61,7 @@ export const SmartFilter: React.FC<SmartFilterProps> = ({
       {collections.map(col => (
         <button
           key={col.id}
-          onClick={() => onSelectCollection(activeCollectionId === col.id ? null : col.productIds.map((id) => products.find((product) => product.id === id) ?? '').filter((product): product is Product => product !== undefined).map((product) => product.id ?? ''))}
+          onClick={() => onSelectCollection(activeCollectionId === col.id ? null : col.productIds)}
           className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium transition-all border ${
             activeCollectionId === col.id
               ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
