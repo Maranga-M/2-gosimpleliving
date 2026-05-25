@@ -1662,7 +1662,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{(editingPost.id && blogPosts.some(p => p.id === editingPost.id)) ? 'Edit Post' : 'Create New Post'}</h2>
                                         <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Title</label><input type="text" value={editingPost.title} onChange={e => handlePostFormChange('title', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" /></div>
                                         <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Author</label><input type="text" value={editingPost.author} onChange={e => handlePostFormChange('author', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" /></div>
-                                        <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Publish Date</label><input type="date" value={editingPost.date} onChange={e => handlePostFormChange('date', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" /></div>
+                                        <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Publish Date</label><input type="date" value={editingPost.date ? editingPost.date.split('T')[0] : ''} onChange={e => handlePostFormChange('date', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" /></div>
                                         <div className="space-y-4">
                                             <label className="block text-xs font-bold text-slate-500 uppercase">Featured Image</label>
                                             <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
@@ -1916,7 +1916,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                         <tr key={post.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                                             <td className="px-6 py-4">{getStatusBadge(post.status)}</td>
                                                             <td className="px-6 py-4"><div className="font-bold text-slate-900 dark:text-white">{post.title}</div><div className="text-xs text-slate-500">{post.author}</div></td>
-                                                            <td className="px-6 py-4">{post.date}</td>
+                                                            <td className="px-6 py-4">{post.date ? post.date.split('T')[0] : ''}</td>
                                                             <td className="px-6 py-4 text-right">
                                                                 <div className="flex justify-end gap-2">
                                                                     {post.status === 'draft' && currentUserRole === 'admin' && (

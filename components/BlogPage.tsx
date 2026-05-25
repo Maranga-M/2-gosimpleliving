@@ -138,7 +138,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-300 mb-6">
-                        <div className="flex items-center gap-1"><Calendar size={14} /> {activePost.date}</div>
+                        <div className="flex items-center gap-1"><Calendar size={14} /> {activePost.date.split('T')[0]}</div>
                         <div className="flex items-center gap-1"><User size={14} /> {activePost.author}</div>
                     </div>
 
@@ -223,7 +223,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
                             <p className="text-slate-500 dark:text-slate-300 mb-4 line-clamp-3 text-sm flex-1">{post.excerpt}</p>
 
                             <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-300 mt-auto pt-4 border-t border-slate-100 dark:border-slate-800">
-                                <span className="flex items-center gap-1"><Calendar size={12} /> {post.date}</span>
+                                <span className="flex items-center gap-1"><Calendar size={12} /> {post.date.split('T')[0]}</span>
                                 <span className="flex items-center gap-1"><User size={12} /> {post.author}</span>
                             </div>
                         </div>
