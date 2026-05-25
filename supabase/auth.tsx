@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
-import { authStateChanged, signOut as sbSignOut } from './service';
+import { authStateChanged, signOut as sbSignOut, signInWithGoogle, signInWithGitHub, sendMagicLink as sbSendMagicLink } from './service';
 
 interface AuthContextType {
     user: User | null;
@@ -32,17 +32,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoading(false);
     };
 
-    const signInWithProvider = async (provider: 'google' | 'github') => {
+    const handleGoogleSignIn = async () => {
         try {
-            await signInWithProvider(provider);
+            await signInWithGoogle();
         } catch (e) {
-            console.error(`Failed to sign in with ${provider}`, e);
+            console.error("Failed to sign in with Google", e);
         }
     };
 
-    const sendMagicLink = async (email: string) => {
+    const handleGitHubSignIn = async () => {
         try {
-            await sendMagicLink(email);
+            await signInWithGitHub();
+        } catch (e) {
+            console.error("Failed to sign in with GitHub", e);
+        }
+    };
+
+    const handleMagicLinkSignIn = async (email: string) => {
+        try {
+            await sbSendMagicLink(email);
         } catch (e) {
             console.error("Failed to send magic link", e);
             throw e;
@@ -53,9 +61,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         <AuthContext.Provider value={{
             user,
             isLoading,
-            signInWithGoogle: () => signInWithProvider('google'),
-            signInWithGitHub: () => signInWithProvider('github'),
-            signInWithMagicLink: sendMagicLink,
+            signInWithGoogle: handleGoogleSignIn,
+            signInWithGitHub: handleGitHubSignIn,
+            signInWithMagicLink: handleMagicLinkSignIn,
             signOut
         }}>
             {children}
