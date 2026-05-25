@@ -129,14 +129,32 @@ export const MediaManager: React.FC<MediaManagerProps> = ({ currentImageUrl, onI
     if (!generatedImage) return;
     setIsUploading(true);
     try {
+      // Fetch the image and convert to base64 to ensure it uploads correctly 
+      // just like a normal file upload
+      const response = await fetch(generatedImage);
+      const blob = await response.blob();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (reader.result) {
+            resolve(reader.result as string);
+          } else {
+            reject(new Error('Failed to read blob'));
+          }
+        };
+        reader.onerror = () => reject(new Error('File reading failed'));
+        reader.readAsDataURL(blob);
+      });
+
       const fileName = `ai-${Date.now()}.png`;
-      const publicUrl = await dbService.uploadImage(generatedImage, fileName);
+      const publicUrl = await dbService.uploadImage(base64, fileName);
       if (publicUrl) {
         selectImage(publicUrl);
         setActiveTab('library');
         setGeneratedImage(null);
       }
     } catch (error) {
+      console.error('AI image save error:', error);
       toast.error('Failed to save AI image');
     } finally {
       setIsUploading(false);
