@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Image as ImageIcon, Sparkles, Loader2, CheckCircle, UploadCloud, Trash2, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { generateWebsiteImage } from '../services/geminiService';
+import { generateWebsiteImage } from '../services/geminiService.proxy';
 import { dbService } from '../services/database';
 import { Button } from './Button';
 

@@ -210,7 +210,6 @@ export const AdminSettings: React.FC<{
             return;
         }
 
-        localStorage.removeItem('GEMINI_API_KEY');
         localStorage.removeItem('hero_image_url');
         localStorage.removeItem('site_name');
         localStorage.removeItem('site_description');
@@ -227,7 +226,7 @@ export const AdminSettings: React.FC<{
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Admin Settings</h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Configure API keys, branding, and site settings</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Configure branding and site settings</p>
                 </div>
                 <Button onClick={handleResetSettings} variant="ghost" className="gap-2 text-red-600 hover:text-red-700">
                     <RefreshCw size={16} />

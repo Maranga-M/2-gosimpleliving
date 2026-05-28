@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, Loader2, X } from 'lucide-react';
 import { Product, SmartCollection } from '../types';
-import { generateSmartCollections } from '../services/geminiService';
+import { generateSmartCollections } from '../services/geminiService.proxy';
 import { Button } from './Button';
 
 interface SmartFilterProps {

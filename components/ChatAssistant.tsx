@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Sparkles, ShoppingBag } from 'lucide-react';
 import { ChatMessage } from '../types';
-import { streamShoppingAdvice } from '../services/geminiService';
+import { streamShoppingAdvice } from '../services/geminiService.proxy';
 import { useApp } from '../src/contexts/AppContext';
 
 export const ChatAssistant: React.FC = () => {

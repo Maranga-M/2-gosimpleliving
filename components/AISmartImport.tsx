@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Wand2, Loader2, Check, X, ExternalLink, RefreshCw, Link as LinkIcon, Sparkles } from 'lucide-react';
 import { Button } from './Button';
 import { Product } from '../types';
-import { fetchProductFromWeb, improveProductDescription } from '../services/geminiService';
+import { fetchProductFromWeb, improveProductDescription } from '../services/geminiService.proxy';
 import toast from 'react-hot-toast';
 
 interface AISmartImportProps {
