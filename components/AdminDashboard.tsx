@@ -19,6 +19,7 @@ import { LinkPickerModal } from './LinkPickerModal';
 import { TipTapEditor } from './TipTapEditor';
 import { AdminOffers } from './AdminOffers';
 import { AffiliateConfigTab } from './AffiliateConfigTab';
+import { AdminResearch } from './admin/AdminResearch';
 
 
 
@@ -43,7 +44,7 @@ interface AdminDashboardProps {
     onUpdateBlogPost: (post: BlogPost) => void;
     onDeleteBlogPost: (id: string) => void;
     onDuplicateBlogPost: (id: string) => void;
-    initialTab?: 'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config';
+    initialTab?: 'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config' | 'research';
     dbStatus: ConnectionStatus;
     isUsingFallback: boolean;
     onRefresh?: () => Promise<void>;
@@ -144,7 +145,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onSeed,
     lastError
 }) => {
-    const [activeTab, setActiveTab] = useState<'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config'>(initialTab ?? 'products');
+    const [activeTab, setActiveTab] = useState<'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config' | 'research'>(initialTab ?? 'products');
 
     // Delete confirmation state
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'product' | 'post' | 'page' | 'all-products', title: string, message: string } | null>(null);
@@ -801,6 +802,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <button onClick={() => handleTabChange('pages')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'pages' ? 'text-amber-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><Globe size={16} /> Pages</span>{activeTab === 'pages' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-600"></div>}</button>
                 <button onClick={() => handleTabChange('offers')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'offers' ? 'text-amber-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><div className="w-4 h-4 flex items-center justify-center font-bold text-xs">$</div> Offers</span>{activeTab === 'offers' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-600"></div>}</button>
                 <button onClick={() => handleTabChange('affiliate-config')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'affiliate-config' ? 'text-amber-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><LinkIcon size={16} /> Affiliate Config</span>{activeTab === 'affiliate-config' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-600"></div>}</button>
+                <button onClick={() => handleTabChange('research')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'research' ? 'text-purple-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><TrendingUp size={16} /> Research</span>{activeTab === 'research' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600"></div>}</button>
                 {currentUserRole === 'admin' && (
                     <>
                         <button onClick={() => handleTabChange('config')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'config' ? 'text-amber-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><UsersIcon size={16} /> Users</span>{activeTab === 'config' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-600"></div>}</button>
@@ -1965,6 +1967,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 )
             }
 
+            {activeTab === 'research' && (
+                <AdminResearch
+                    categories={categories}
+                    onAddProductFromResearch={(item) => {
+                        const newProduct: Product = {
+                            id: `p-${Date.now()}`,
+                            title: item.name,
+                            category: item.category,
+                            price: item.price,
+                            rating: 0,
+                            reviews: 0,
+                            image: '',
+                            description: '',
+                            features: [],
+                            affiliateLink: `https://www.amazon.com/s?k=${encodeURIComponent(item.searchQuery)}`,
+                            localReviews: [],
+                            clicks: 0,
+                            status: 'draft',
+                            isBestSeller: false,
+                            additionalAffiliateLinks: []
+                        };
+                        onAddProduct(newProduct);
+                    }}
+                />
+            )}
 
             {/* Connection Diagnostics Modal */}
             {
