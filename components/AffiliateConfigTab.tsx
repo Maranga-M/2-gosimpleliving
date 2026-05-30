@@ -315,6 +315,81 @@ export const AffiliateConfigTab: React.FC<AffiliateConfigTabProps> = ({ config, 
                 </div>
             </div>
 
+            {/* AI & Crawler Settings */}
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-xl"><Code size={24} /></div>
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-white">AI & Crawler Settings</h3>
+                            <p className="text-xs text-slate-500">Configure Gemini API key and crawler detection</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Gemini API Key</label>
+                        <input
+                            type="text"
+                            value={localConfig.geminiApiKey || ''}
+                            onChange={(e) => setLocalConfig({ ...localConfig, geminiApiKey: e.target.value })}
+                            placeholder="GEMINI_API_KEY (optional)"
+                            className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                        />
+                        <p className="text-[10px] text-slate-400 mt-1">Warning: storing API keys in site content exposes them to clients. Prefer server-side secrets (Supabase / environment variables).</p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-slate-700 dark:text-slate-300">Enable Site Crawler Detection</p>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={localConfig.enableSiteCrawlerDetection || false}
+                                onChange={(e) => setLocalConfig({ ...localConfig, enableSiteCrawlerDetection: e.target.checked })}
+                                className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Crawler User Agents (one per line)</label>
+                        <textarea
+                            value={(localConfig.crawlerUserAgents || []).join('\n')}
+                            onChange={(e) => setLocalConfig({ ...localConfig, crawlerUserAgents: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })}
+                            placeholder="e.g. googlebot\nbingbot\nfacebookexternalhit"
+                            className="w-full h-24 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono resize-none dark:text-white"
+                        />
+                        <p className="text-[10px] text-slate-400 mt-1">Optional: list of substrings to match against User-Agent headers. Leave empty to use built-in common crawler list.</p>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Crawler IP Ranges (CIDR, one per line)</label>
+                        <textarea
+                            value={(localConfig.crawlerIpRanges || []).join('\n')}
+                            onChange={(e) => setLocalConfig({ ...localConfig, crawlerIpRanges: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })}
+                            placeholder="e.g. 66.249.64.0/19\n13.32.0.0/15"
+                            className="w-full h-20 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono resize-none dark:text-white"
+                        />
+                        <p className="text-[10px] text-slate-400 mt-1">Optional: server-side detection using IP ranges. Requires backend support to validate.</p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-slate-700 dark:text-slate-300">Log Crawler Detections</p>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={localConfig.logCrawlerTraffic || false}
+                                onChange={(e) => setLocalConfig({ ...localConfig, logCrawlerTraffic: e.target.checked })}
+                                className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             {/* Tracking Codes Section */}
             <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center justify-between mb-6">

@@ -163,6 +163,9 @@ export interface AffiliateConfig {
   // Global Toggle
   globalEnabled?: boolean; // Master switch for all affiliate features (defaults to true if undefined)
 
+  // Gemini / AI (optional - storing API keys in site content may expose them to clients)
+  geminiApiKey?: string;
+
   // Pinterest
   pinterestVerificationCode?: string;
   pinterestEnabled?: boolean;
@@ -183,6 +186,12 @@ export interface AffiliateConfig {
   googleSiteVerification?: string;
   bingSiteVerification?: string;
   facebookDomainVerification?: string;
+
+  // Site crawler detection (optional)
+  enableSiteCrawlerDetection?: boolean; // Toggle site crawler detection
+  crawlerUserAgents?: string[]; // List of substrings to match against user-agent
+  crawlerIpRanges?: string[]; // Optional IP/CIDR ranges for server-side detection
+  logCrawlerTraffic?: boolean; // Whether to log crawler detections
 
   // Affiliate Networks (for multiple provider support)
   affiliateNetworks?: AffiliateNetwork[];

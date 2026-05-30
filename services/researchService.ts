@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+/* lazy import @google/genai at runtime to avoid SSR/bundling issues */
 
 // Reuse the same API key logic from geminiService
 const getApiKey = (): string | undefined => {
@@ -14,12 +14,16 @@ const getApiKey = (): string | undefined => {
   return undefined;
 };
 
-const getAI = (): GoogleGenAI | null => {
+const getAI = async (): Promise<any | null> => {
   const key = getApiKey();
   if (!key) return null;
   try {
+    const mod = await import('@google/genai');
+    const GoogleGenAI = (mod as any).GoogleGenAI || (mod as any).default;
     return new GoogleGenAI({ apiKey: key });
-  } catch {
+  } catch (err) {
+    // Fail gracefully in SSR or when package can't be loaded
+    console.warn('Failed to load @google/genai:', err);
     return null;
   }
 };
@@ -104,7 +108,7 @@ export const researchTrendingProducts = async (
   categories: string[],
   count: number = 8
 ): Promise<TrendingProduct[]> => {
-  const ai = getAI();
+  const ai = await getAI();
   if (!ai) throw new Error("AI not configured. Add your GEMINI_API_KEY in Settings.");
 
   const response = await ai.models.generateContent({
@@ -162,7 +166,7 @@ Return valid JSON array of objects.`,
  * Deep-dive niche analysis
  */
 export const analyzeNiche = async (niche: string): Promise<NicheInsight> => {
-  const ai = getAI();
+  const ai = await getAI();
   if (!ai) throw new Error("AI not configured. Add your GEMINI_API_KEY in Settings.");
 
   const response = await ai.models.generateContent({
