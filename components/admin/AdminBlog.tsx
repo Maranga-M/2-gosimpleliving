@@ -1,21 +1,23 @@
 
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, X, Save, Copy, FileText, Sparkles, Loader2, Wand2, Search, ArrowLeft, Image as ImageIcon, Link as LinkIcon, List, TrendingUp } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Copy, FileText, Sparkles, Loader2, Wand2, Search, ArrowLeft, Image as ImageIcon, Link as LinkIcon, List, TrendingUp, Globe, ShoppingCart, ChevronDown, ChevronUp, DollarSign, ExternalLink } from 'lucide-react';
 import { BlogPost, Product, Role } from '../../types';
 import { Button } from '../Button';
 import { MediaManager } from '../MediaManager';
 import { TipTapEditor } from '../TipTapEditor';
 import { ComparisonTableBuilder } from '../ComparisonTableBuilder';
-import { generateBlogPost } from '../../services/geminiService.proxy';
+import { generateBlogPost, generateBlogFromUrl, UrlBlogResult } from '../../services/geminiService.proxy';
 import toast from 'react-hot-toast';
 
 interface AdminBlogProps {
     blogPosts: BlogPost[];
     products: Product[];
+    categories: string[];
     onAddBlogPost: (post: BlogPost) => void;
     onUpdateBlogPost: (post: BlogPost) => void;
     onDeleteBlogPost: (id: string) => void;
     onDuplicateBlogPost: (id: string) => void;
+    onAddProduct?: (product: Partial<Product>) => void;
     currentUserRole: Role;
     currentUserName?: string;
     initialPostState: BlogPost;
@@ -25,10 +27,12 @@ interface AdminBlogProps {
 export const AdminBlog: React.FC<AdminBlogProps> = ({
     blogPosts,
     products,
+    categories,
     onAddBlogPost,
     onUpdateBlogPost,
     onDeleteBlogPost,
     onDuplicateBlogPost,
+    onAddProduct,
     currentUserRole,
     currentUserName,
     initialPostState,
@@ -37,6 +41,13 @@ export const AdminBlog: React.FC<AdminBlogProps> = ({
     const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
     const [isGeneratingPost, setIsGeneratingPost] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+
+    // URL-to-Blog state
+    const [sourceUrl, setSourceUrl] = useState('');
+    const [isGeneratingFromUrl, setIsGeneratingFromUrl] = useState(false);
+    const [shoppingList, setShoppingList] = useState<UrlBlogResult['shoppingList']>([]);
+    const [showShoppingList, setShowShoppingList] = useState(true);
+    const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
 
     const startAddPost = () => {
         setEditingPost({ ...initialPostState, id: `b-${Date.now()}` });
@@ -96,6 +107,63 @@ export const AdminBlog: React.FC<AdminBlogProps> = ({
         }
     };
 
+    const handleGenerateFromUrl = async () => {
+        if (!sourceUrl.trim()) {
+            toast.error("Please enter a URL.");
+            return;
+        }
+        setIsGeneratingFromUrl(true);
+        setShoppingList([]);
+        setAddedItems(new Set());
+        try {
+            const result = await generateBlogFromUrl(sourceUrl, categories);
+            if (result) {
+                // Populate the blog post form with the generated content
+                setEditingPost(prev => prev ? ({
+                    ...prev,
+                    title: result.title,
+                    excerpt: result.excerpt,
+                    content: result.content,
+                    image: result.image,
+                }) : null);
+                // Store the shopping list separately for display
+                setShoppingList(result.shoppingList);
+                setShowShoppingList(true);
+                toast.success(`Blog generated! ${result.shoppingList.length} items found.`);
+            } else {
+                toast.error("Could not read the page. Try a different URL.");
+            }
+        } catch (e: any) {
+            console.error('URL generation error:', e);
+            toast.error(e.message || "Failed to generate from URL.");
+        } finally {
+            setIsGeneratingFromUrl(false);
+        }
+    };
+
+    const handleAddShoppingItem = (item: UrlBlogResult['shoppingList'][0], index: number) => {
+        if (!onAddProduct) {
+            toast.error("Product import not available.");
+            return;
+        }
+        const newProduct: Partial<Product> = {
+            id: `p-${Date.now()}-${index}`,
+            title: item.name,
+            description: item.description,
+            price: item.estimatedPrice,
+            category: item.category,
+            features: [],
+            image: 'https://via.placeholder.com/400',
+            rating: 0,
+            reviews: 0,
+            affiliateLink: `https://www.amazon.com/s?k=${encodeURIComponent(item.searchQuery)}`,
+            status: 'draft',
+        };
+        onAddProduct(newProduct);
+        setAddedItems(prev => new Set(prev).add(index));
+        toast.success(`"${item.name}" added as draft product!`);
+    };
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'published': return <span className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 font-bold">Published</span>;
@@ -120,7 +188,7 @@ export const AdminBlog: React.FC<AdminBlogProps> = ({
                             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{(editingPost.id && blogPosts.some(p => p.id === editingPost.id)) ? 'Edit Post' : 'Create New Post'}</h2>
                             <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Title</label><input type="text" value={editingPost.title} onChange={e => handlePostFormChange('title', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" /></div>
                             <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Author</label><input type="text" value={editingPost.author} onChange={e => handlePostFormChange('author', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" /></div>
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Publish Date</label><input type="date" value={editingPost.date} onChange={e => handlePostFormChange('date', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" /></div>
+                            <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Publish Date</label><input type="date" value={editingPost.date ? editingPost.date.split('T')[0] : ''} onChange={e => handlePostFormChange('date', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" /></div>
                             
                             <div className="space-y-4">
                                 <label className="block text-xs font-bold text-slate-500 uppercase">Featured Image</label>
@@ -223,12 +291,108 @@ export const AdminBlog: React.FC<AdminBlogProps> = ({
                                 <p className="mt-2 text-[10px] text-slate-400 italic">Optional large banner image (displays above regular image).</p>
                             </div>
 
-                            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><Sparkles size={18} className="text-purple-500" /> AI Tools</h3>
-                                <Button onClick={handleGeneratePostContent} disabled={isGeneratingPost} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                                <h3 className="text-lg font-bold flex items-center gap-2"><Sparkles size={18} className="text-purple-500" /> AI Tools</h3>
+                                
+                                {/* Generate from Title */}
+                                <Button onClick={handleGeneratePostContent} disabled={isGeneratingPost || isGeneratingFromUrl} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
                                     {isGeneratingPost ? <Loader2 size={16} className="animate-spin mr-2" /> : <Wand2 size={16} className="mr-2" />}
-                                    {isGeneratingPost ? 'Generating...' : 'AI Generate Content'}
+                                    {isGeneratingPost ? 'Generating...' : 'AI Generate from Title'}
                                 </Button>
+
+                                {/* Divider */}
+                                <div className="flex items-center gap-2">
+                                    <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">or</span>
+                                    <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
+                                </div>
+
+                                {/* Generate from URL */}
+                                <div className="space-y-3">
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                        <Globe size={12} /> Generate from URL
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={sourceUrl}
+                                            onChange={(e) => setSourceUrl(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleGenerateFromUrl()}
+                                            placeholder="Paste article, recipe, or guide URL..."
+                                            className="w-full pl-3 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white focus:ring-2 focus:ring-purple-500 outline-none"
+                                            disabled={isGeneratingFromUrl}
+                                        />
+                                    </div>
+                                    <Button
+                                        onClick={handleGenerateFromUrl}
+                                        disabled={isGeneratingFromUrl || isGeneratingPost || !sourceUrl.trim()}
+                                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
+                                    >
+                                        {isGeneratingFromUrl ? <Loader2 size={16} className="animate-spin mr-2" /> : <Globe size={16} className="mr-2" />}
+                                        {isGeneratingFromUrl ? 'Reading & Writing...' : 'Generate Blog from URL'}
+                                    </Button>
+                                    <p className="text-[10px] text-slate-400">AI reads the page, writes a blog post, and lists items needed.</p>
+                                </div>
+
+                                {/* Shopping List Results */}
+                                {shoppingList.length > 0 && (
+                                    <div className="mt-2 border border-emerald-200 dark:border-emerald-800 rounded-xl overflow-hidden">
+                                        <button
+                                            onClick={() => setShowShoppingList(!showShoppingList)}
+                                            className="w-full flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                                        >
+                                            <span className="flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                                                <ShoppingCart size={16} />
+                                                Shopping List ({shoppingList.length} items)
+                                            </span>
+                                            {showShoppingList ? <ChevronUp size={16} className="text-emerald-500" /> : <ChevronDown size={16} className="text-emerald-500" />}
+                                        </button>
+                                        {showShoppingList && (
+                                            <div className="divide-y divide-emerald-100 dark:divide-emerald-800/50">
+                                                {shoppingList.map((item, idx) => (
+                                                    <div key={idx} className="p-3 bg-white dark:bg-slate-900 space-y-1.5">
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{item.name}</p>
+                                                                <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">{item.description}</p>
+                                                            </div>
+                                                            <span className="flex items-center gap-0.5 text-sm font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                                                                <DollarSign size={12} />{item.estimatedPrice.toFixed(0)}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded text-[9px] font-bold uppercase tracking-wider">
+                                                                {item.category}
+                                                            </span>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <a
+                                                                    href={`https://www.amazon.com/s?k=${encodeURIComponent(item.searchQuery)}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-[10px] text-blue-500 hover:text-blue-600 flex items-center gap-0.5"
+                                                                >
+                                                                    <ExternalLink size={10} /> Amazon
+                                                                </a>
+                                                                {addedItems.has(idx) ? (
+                                                                    <span className="text-[10px] text-green-600 font-bold flex items-center gap-0.5">
+                                                                        ✓ Added
+                                                                    </span>
+                                                                ) : (
+                                                                    <button
+                                                                        onClick={() => handleAddShoppingItem(item, idx)}
+                                                                        className="text-[10px] font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400 flex items-center gap-0.5"
+                                                                    >
+                                                                        <Plus size={10} /> Add as Product
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                                 <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><LinkIcon size={18} className="text-blue-500" /> Link Products</h3>
@@ -290,7 +454,7 @@ export const AdminBlog: React.FC<AdminBlogProps> = ({
                                         <tr key={post.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                             <td className="px-6 py-4">{getStatusBadge(post.status)}</td>
                                             <td className="px-6 py-4"><div className="font-bold text-slate-900 dark:text-white">{post.title}</div><div className="text-xs text-slate-500">{post.author}</div></td>
-                                            <td className="px-6 py-4">{post.date}</td>
+                                            <td className="px-6 py-4">{post.date ? post.date.split('T')[0] : ''}</td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-2">
                                                     {post.status === 'draft' && currentUserRole === 'admin' && (

@@ -5,6 +5,7 @@ import { BlogPost, Product, ThemeColor, AffiliateConfig } from '../types';
 import { ProductCard } from './ProductCard';
 import { Button } from './Button';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { GoogleAd } from '../src/components/GoogleAd';
 
 interface BlogPageProps {
     posts: BlogPost[];
@@ -14,9 +15,10 @@ interface BlogPageProps {
     onRecordClick?: (productId: string) => void;
     themeColor?: ThemeColor;
     affiliateConfig?: AffiliateConfig;
+    amazonAssociatesId?: string;
 }
 
-export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProduct, onGoHome, onRecordClick, themeColor, affiliateConfig }) => {
+export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProduct, onGoHome, onRecordClick, themeColor, affiliateConfig, amazonAssociatesId }) => {
     const [activePost, setActivePost] = useState<BlogPost | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [copied, setCopied] = useState(false);
@@ -138,7 +140,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-300 mb-6">
-                        <div className="flex items-center gap-1"><Calendar size={14} /> {activePost.date}</div>
+                        <div className="flex items-center gap-1"><Calendar size={14} /> {activePost.date.split('T')[0]}</div>
                         <div className="flex items-center gap-1"><User size={14} /> {activePost.author}</div>
                     </div>
 
@@ -146,6 +148,8 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
 
                     <MarkdownRenderer content={activePost.content} tables={activePost.comparisonTables} />
                 </article>
+
+                <GoogleAd className="my-10" format="horizontal" />
 
                 {linkedProducts.length > 0 && (
                     <div className="border-t border-slate-200 dark:border-slate-800 pt-12 mt-12">
@@ -159,6 +163,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
                                     onRecordClick={onRecordClick}
                                     themeColor={themeColor}
                                     affiliateConfig={affiliateConfig}
+                                    amazonAssociatesId={amazonAssociatesId}
                                 />
                             ))}
                         </div>
@@ -199,6 +204,8 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
                 </div>
             </div>
 
+            <GoogleAd className="mb-8" format="horizontal" />
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredPosts.map(post => (
                     <div
@@ -223,7 +230,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
                             <p className="text-slate-500 dark:text-slate-300 mb-4 line-clamp-3 text-sm flex-1">{post.excerpt}</p>
 
                             <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-300 mt-auto pt-4 border-t border-slate-100 dark:border-slate-800">
-                                <span className="flex items-center gap-1"><Calendar size={12} /> {post.date}</span>
+                                <span className="flex items-center gap-1"><Calendar size={12} /> {post.date.split('T')[0]}</span>
                                 <span className="flex items-center gap-1"><User size={12} /> {post.author}</span>
                             </div>
                         </div>
@@ -233,7 +240,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ posts, products, onOpenProdu
 
             {filteredPosts.length === 0 && (
                 <div className="text-center py-20 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
                         <Search size={32} />
                     </div>
                     <p className="text-slate-600 dark:text-slate-300 font-medium">

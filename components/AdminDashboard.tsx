@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit2, Trash2, X, Save, Image as ImageIcon, TrendingUp, Sparkles, Loader2, List, Globe, Palette, Calendar, RefreshCw, Users as UsersIcon, Settings, Database, Shield, Wand2, Megaphone, Trash, Tag, Search, Copy, ArrowLeft, Wifi, WifiOff, PackagePlus, Eye, LinkIcon, CloudUpload, FileText, AlertTriangle, Package, ExternalLink, Activity } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Image as ImageIcon, TrendingUp, Sparkles, Loader2, List, Globe, Palette, Calendar, RefreshCw, Users as UsersIcon, Settings, Database, Shield, Wand2, Megaphone, Trash, Tag, Search, Copy, ArrowLeft, Wifi, WifiOff, PackagePlus, Eye, LinkIcon, CloudUpload, FileText, AlertTriangle, Package, ExternalLink, Activity, ShoppingCart, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Product, SiteContent, BlogPost, CustomPage, Role, ThemeColor, Season, SocialPlatform } from '../types';
 import { AFFILIATE_THEMES } from '../themeConfig';
 import { connectionManager, ConnectionStatus } from '../services/connectionManager';
 import { Button } from './Button';
-import { generateSiteContent, fetchProductFromWeb, generateBlogPost, generateCustomPage } from '../services/geminiService.proxy';
+import { generateSiteContent, fetchProductFromWeb, generateBlogPost, generateCustomPage, generateBlogFromUrl, UrlBlogResult } from '../services/geminiService.proxy';
 import { validateProduct } from '../src/utils/validators';
 import { MediaManager } from './MediaManager';
 import { ComparisonTableBuilder } from './ComparisonTableBuilder';
@@ -19,6 +19,7 @@ import { LinkPickerModal } from './LinkPickerModal';
 import { TipTapEditor } from './TipTapEditor';
 import { AdminOffers } from './AdminOffers';
 import { AffiliateConfigTab } from './AffiliateConfigTab';
+import { AdminResearch } from './admin/AdminResearch';
 
 
 
@@ -43,7 +44,7 @@ interface AdminDashboardProps {
     onUpdateBlogPost: (post: BlogPost) => void;
     onDeleteBlogPost: (id: string) => void;
     onDuplicateBlogPost: (id: string) => void;
-    initialTab?: 'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config';
+    initialTab?: 'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config' | 'research';
     dbStatus: ConnectionStatus;
     isUsingFallback: boolean;
     onRefresh?: () => Promise<void>;
@@ -144,7 +145,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onSeed,
     lastError
 }) => {
-    const [activeTab, setActiveTab] = useState<'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config'>(initialTab ?? 'products');
+    const [activeTab, setActiveTab] = useState<'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config' | 'research'>(initialTab ?? 'products');
 
     // Delete confirmation state
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'product' | 'post' | 'page' | 'all-products', title: string, message: string } | null>(null);
@@ -206,6 +207,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const [showDiagnostics, setShowDiagnostics] = useState(false);
     const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
     const [diagnosticsResult, setDiagnosticsResult] = useState<any>(null);
+
+    // --- URL-to-Blog State ---
+    const [blogSourceUrl, setBlogSourceUrl] = useState('');
+    const [isGeneratingFromUrl, setIsGeneratingFromUrl] = useState(false);
+    const [blogShoppingList, setBlogShoppingList] = useState<UrlBlogResult['shoppingList']>([]);
+    const [showBlogShoppingList, setShowBlogShoppingList] = useState(true);
+    const [addedShoppingItems, setAddedShoppingItems] = useState<Set<number>>(new Set());
 
     const handleTestConnection = async () => {
         setDiagnosticsLoading(true);
@@ -360,6 +368,56 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         } finally {
             setIsGeneratingPost(false);
         }
+    };
+
+    const handleGenerateFromUrl = async () => {
+        if (!blogSourceUrl.trim()) {
+            toast.error("Please enter a URL.");
+            return;
+        }
+        setIsGeneratingFromUrl(true);
+        setBlogShoppingList([]);
+        setAddedShoppingItems(new Set());
+        try {
+            const result = await generateBlogFromUrl(blogSourceUrl, categories);
+            if (result) {
+                setEditingPost(prev => prev ? ({
+                    ...prev,
+                    title: result.title,
+                    excerpt: result.excerpt,
+                    content: result.content,
+                    image: result.image,
+                }) : null);
+                setBlogShoppingList(result.shoppingList);
+                setShowBlogShoppingList(true);
+                toast.success(`Blog generated! ${result.shoppingList.length} items found.`);
+            } else {
+                toast.error("Could not read the page. Try a different URL.");
+            }
+        } catch (e: any) {
+            console.error('URL generation error:', e);
+            toast.error(e.message || "Failed to generate from URL.");
+        } finally {
+            setIsGeneratingFromUrl(false);
+        }
+    };
+
+    const handleAddShoppingItemAsProduct = (item: UrlBlogResult['shoppingList'][0], index: number) => {
+        const newProduct: Product = {
+            ...initialFormState,
+            id: `p-${Date.now()}-${index}`,
+            title: item.name,
+            description: item.description,
+            price: item.estimatedPrice,
+            category: item.category,
+            features: [],
+            image: 'https://via.placeholder.com/400',
+            affiliateLink: `https://www.amazon.com/s?k=${encodeURIComponent(item.searchQuery)}`,
+            status: 'draft',
+        };
+        onAddProduct(newProduct);
+        setAddedShoppingItems(prev => new Set(prev).add(index));
+        toast.success(`"${item.name}" added as draft product!`);
     };
 
     const handleGeneratePageContent = async () => {
@@ -744,6 +802,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <button onClick={() => handleTabChange('pages')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'pages' ? 'text-amber-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><Globe size={16} /> Pages</span>{activeTab === 'pages' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-600"></div>}</button>
                 <button onClick={() => handleTabChange('offers')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'offers' ? 'text-amber-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><div className="w-4 h-4 flex items-center justify-center font-bold text-xs">$</div> Offers</span>{activeTab === 'offers' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-600"></div>}</button>
                 <button onClick={() => handleTabChange('affiliate-config')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'affiliate-config' ? 'text-amber-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><LinkIcon size={16} /> Affiliate Config</span>{activeTab === 'affiliate-config' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-600"></div>}</button>
+                <button onClick={() => handleTabChange('research')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'research' ? 'text-purple-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><TrendingUp size={16} /> Research</span>{activeTab === 'research' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600"></div>}</button>
                 {currentUserRole === 'admin' && (
                     <>
                         <button onClick={() => handleTabChange('config')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'config' ? 'text-amber-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><UsersIcon size={16} /> Users</span>{activeTab === 'config' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-600"></div>}</button>
@@ -1605,7 +1664,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{(editingPost.id && blogPosts.some(p => p.id === editingPost.id)) ? 'Edit Post' : 'Create New Post'}</h2>
                                         <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Title</label><input type="text" value={editingPost.title} onChange={e => handlePostFormChange('title', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" /></div>
                                         <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Author</label><input type="text" value={editingPost.author} onChange={e => handlePostFormChange('author', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" /></div>
-                                        <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Publish Date</label><input type="date" value={editingPost.date} onChange={e => handlePostFormChange('date', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" /></div>
+                                        <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Publish Date</label><input type="date" value={editingPost.date ? editingPost.date.split('T')[0] : ''} onChange={e => handlePostFormChange('date', e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white" /></div>
                                         <div className="space-y-4">
                                             <label className="block text-xs font-bold text-slate-500 uppercase">Featured Image</label>
                                             <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
@@ -1706,12 +1765,106 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             <p className="mt-2 text-[10px] text-slate-400 italic">Optional large banner image (displays above regular image).</p>
                                         </div>
 
-                                        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                            <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><Sparkles size={18} className="text-purple-500" /> AI Tools</h3>
-                                            <Button onClick={handleGeneratePostContent} disabled={isGeneratingPost} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                                        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                                            <h3 className="text-lg font-bold flex items-center gap-2"><Sparkles size={18} className="text-purple-500" /> AI Tools</h3>
+                                            
+                                            {/* Generate from Title */}
+                                            <Button onClick={handleGeneratePostContent} disabled={isGeneratingPost || isGeneratingFromUrl} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
                                                 {isGeneratingPost ? <Loader2 size={16} className="animate-spin mr-2" /> : <Wand2 size={16} className="mr-2" />}
-                                                {isGeneratingPost ? 'Generating...' : 'AI Generate Content'}
+                                                {isGeneratingPost ? 'Generating...' : 'AI Generate from Title'}
                                             </Button>
+
+                                            {/* Divider */}
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">or</span>
+                                                <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
+                                            </div>
+
+                                            {/* Generate from URL */}
+                                            <div className="space-y-3">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                                    <Globe size={12} /> Generate from URL
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={blogSourceUrl}
+                                                    onChange={(e) => setBlogSourceUrl(e.target.value)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleGenerateFromUrl()}
+                                                    placeholder="Paste article, recipe, or guide URL..."
+                                                    className="w-full pl-3 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white focus:ring-2 focus:ring-purple-500 outline-none"
+                                                    disabled={isGeneratingFromUrl}
+                                                />
+                                                <Button
+                                                    onClick={handleGenerateFromUrl}
+                                                    disabled={isGeneratingFromUrl || isGeneratingPost || !blogSourceUrl.trim()}
+                                                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
+                                                >
+                                                    {isGeneratingFromUrl ? <Loader2 size={16} className="animate-spin mr-2" /> : <Globe size={16} className="mr-2" />}
+                                                    {isGeneratingFromUrl ? 'Reading & Writing...' : 'Generate Blog from URL'}
+                                                </Button>
+                                                <p className="text-[10px] text-slate-400">AI reads the page, writes a blog post, and lists items needed.</p>
+                                            </div>
+
+                                            {/* Shopping List Results */}
+                                            {blogShoppingList.length > 0 && (
+                                                <div className="mt-2 border border-emerald-200 dark:border-emerald-800 rounded-xl overflow-hidden">
+                                                    <button
+                                                        onClick={() => setShowBlogShoppingList(!showBlogShoppingList)}
+                                                        className="w-full flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                                                    >
+                                                        <span className="flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                                                            <ShoppingCart size={16} />
+                                                            Shopping List ({blogShoppingList.length} items)
+                                                        </span>
+                                                        {showBlogShoppingList ? <ChevronUp size={16} className="text-emerald-500" /> : <ChevronDown size={16} className="text-emerald-500" />}
+                                                    </button>
+                                                    {showBlogShoppingList && (
+                                                        <div className="divide-y divide-emerald-100 dark:divide-emerald-800/50">
+                                                            {blogShoppingList.map((item, idx) => (
+                                                                <div key={idx} className="p-3 bg-white dark:bg-slate-900 space-y-1.5">
+                                                                    <div className="flex items-start justify-between gap-2">
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{item.name}</p>
+                                                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">{item.description}</p>
+                                                                        </div>
+                                                                        <span className="flex items-center gap-0.5 text-sm font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                                                                            <DollarSign size={12} />{item.estimatedPrice.toFixed(0)}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex items-center justify-between gap-2">
+                                                                        <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded text-[9px] font-bold uppercase tracking-wider">
+                                                                            {item.category}
+                                                                        </span>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <a
+                                                                                href={`https://www.amazon.com/s?k=${encodeURIComponent(item.searchQuery)}`}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="text-[10px] text-blue-500 hover:text-blue-600 flex items-center gap-0.5"
+                                                                            >
+                                                                                <ExternalLink size={10} /> Amazon
+                                                                            </a>
+                                                                            {addedShoppingItems.has(idx) ? (
+                                                                                <span className="text-[10px] text-green-600 font-bold flex items-center gap-0.5">
+                                                                                    ✓ Added
+                                                                                </span>
+                                                                            ) : (
+                                                                                <button
+                                                                                    onClick={() => handleAddShoppingItemAsProduct(item, idx)}
+                                                                                    className="text-[10px] font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400 flex items-center gap-0.5"
+                                                                                >
+                                                                                    <Plus size={10} /> Add as Product
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                                             <h3 className="text-lg font-bold flex items-center gap-2 mb-4"><LinkIcon size={18} className="text-blue-500" /> Link Products</h3>
@@ -1765,7 +1918,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                         <tr key={post.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                                             <td className="px-6 py-4">{getStatusBadge(post.status)}</td>
                                                             <td className="px-6 py-4"><div className="font-bold text-slate-900 dark:text-white">{post.title}</div><div className="text-xs text-slate-500">{post.author}</div></td>
-                                                            <td className="px-6 py-4">{post.date}</td>
+                                                            <td className="px-6 py-4">{post.date ? post.date.split('T')[0] : ''}</td>
                                                             <td className="px-6 py-4 text-right">
                                                                 <div className="flex justify-end gap-2">
                                                                     {post.status === 'draft' && currentUserRole === 'admin' && (
@@ -1814,6 +1967,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 )
             }
 
+            {activeTab === 'research' && (
+                <AdminResearch
+                    categories={categories}
+                    onAddProductFromResearch={(item) => {
+                        const newProduct: Product = {
+                            id: `p-${Date.now()}`,
+                            title: item.name,
+                            category: item.category,
+                            price: item.price,
+                            rating: 0,
+                            reviews: 0,
+                            image: '',
+                            description: '',
+                            features: [],
+                            affiliateLink: `https://www.amazon.com/s?k=${encodeURIComponent(item.searchQuery)}`,
+                            localReviews: [],
+                            clicks: 0,
+                            status: 'draft',
+                            isBestSeller: false,
+                            additionalAffiliateLinks: []
+                        };
+                        onAddProduct(newProduct);
+                    }}
+                />
+            )}
 
             {/* Connection Diagnostics Modal */}
             {

@@ -26,6 +26,7 @@ export const AdminSettings: React.FC<{
     const [draftSeason, setDraftSeason] = useState<Season>('none');
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [pageTitle, setPageTitle] = useState('');
+    const [amazonTag, setAmazonTag] = useState('');
 
     // Meta Injection Verification State
     const [metaVerification, setMetaVerification] = useState<{
@@ -129,6 +130,7 @@ export const AdminSettings: React.FC<{
             setDraftThemeColor(liveSiteContent.themeColor || 'amber');
             setDraftSeason(liveSiteContent.season || 'none');
             setPageTitle(liveSiteContent.pageTitle || 'GoSimpleLiving');
+            setAmazonTag(liveSiteContent.amazonAssociatesId || '');
         }
     }, [liveSiteContent]);
 
@@ -158,7 +160,8 @@ export const AdminSettings: React.FC<{
                 logoText: siteName.trim(),
                 heroSubtitle: siteDescription.trim(),
                 logoUrl: logoUrl.trim(),
-                pageTitle: pageTitle.trim()
+                pageTitle: pageTitle.trim(),
+                amazonAssociatesId: amazonTag.trim() || undefined
             };
 
             await saveChanges(updated);
@@ -444,6 +447,20 @@ export const AdminSettings: React.FC<{
                             placeholder="https://..."
                             className="w-full px-3 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white focus:ring-2 focus:ring-blue-500"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Amazon Associates Tag
+                        </label>
+                        <input
+                            type="text"
+                            value={amazonTag}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmazonTag(e.target.value)}
+                            placeholder="gosimpleliving-20"
+                            className="w-full px-3 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p className="text-xs text-slate-400 mt-1">Your Amazon Associates tracking ID. Applied to all Amazon product links.</p>
                     </div>
 
                     <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">

@@ -37,8 +37,8 @@ export const Button: React.FC<ButtonProps> = ({
   const variants = {
     primary: `${primaryColors[themeColor]} shadow-md hover:shadow-lg border border-transparent`,
     secondary: "bg-slate-900 hover:bg-slate-800 text-white shadow-md focus:ring-slate-900 border border-transparent",
-    outline: "border-2 border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50",
-    ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+    outline: "border-2 border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:hover:border-slate-500 dark:text-slate-300 dark:hover:bg-slate-800",
+    ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
   };
 
   const sizes = {

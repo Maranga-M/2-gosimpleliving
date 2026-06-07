@@ -273,6 +273,24 @@ export const signInWithGoogle = async () => {
     return data;
 };
 
+export const signInWithGitHub = async () => {
+    if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+            redirectTo: window.location.origin
+        }
+    });
+    if (error) throw error;
+    return data;
+};
+
+export const sendMagicLink = async (email: string) => {
+    if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
+    const { error } = await supabase.auth.signInWithOtp({ email });
+    if (error) throw error;
+};
+
 export const signUp = async (email: string, pass: string, name: string) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
     const { data, error } = await supabase.auth.signUp({

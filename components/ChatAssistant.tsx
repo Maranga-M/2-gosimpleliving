@@ -90,7 +90,7 @@ export const ChatAssistant: React.FC = () => {
       </button>
 
       {/* Chat Window */}
-      <div className={`fixed bottom-6 right-6 z-50 w-full max-w-[360px] bg-white rounded-2xl shadow-2xl border border-slate-200 transition-all duration-300 origin-bottom-right flex flex-col ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-90 opacity-0 translate-y-8 pointer-events-none'}`} style={{ height: '500px' }}>
+      <div className={`fixed bottom-6 right-6 z-50 w-full max-w-[360px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 transition-all duration-300 origin-bottom-right flex flex-col ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-90 opacity-0 translate-y-8 pointer-events-none'}`} style={{ height: '500px' }}>
 
         {/* Header */}
         <div className="bg-slate-900 p-4 rounded-t-2xl flex items-center justify-between">
@@ -112,7 +112,7 @@ export const ChatAssistant: React.FC = () => {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950 scrollbar-hide">
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -121,7 +121,7 @@ export const ChatAssistant: React.FC = () => {
               <div
                 className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed ${msg.role === 'user'
                   ? 'bg-amber-500 text-slate-900 rounded-tr-none font-medium'
-                  : 'bg-white text-slate-700 shadow-sm border border-slate-100 rounded-tl-none'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-sm border border-slate-100 dark:border-slate-700 rounded-tl-none'
                   }`}
               >
                 {msg.text || (msg.isThinking && <span className="animate-pulse">Thinking...</span>)}
@@ -132,14 +132,14 @@ export const ChatAssistant: React.FC = () => {
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className="p-3 border-t border-slate-100 bg-white rounded-b-2xl">
+        <form onSubmit={handleSubmit} className="p-3 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-b-2xl">
           <div className="relative flex items-center">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about products..."
-              className="w-full bg-slate-100 text-slate-900 placeholder-slate-500 rounded-xl py-3 pl-4 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+              className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 rounded-xl py-3 pl-4 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
             />
             <button
               type="submit"

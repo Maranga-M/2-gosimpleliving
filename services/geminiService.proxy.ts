@@ -132,6 +132,66 @@ export const improveProductDescription = async (title: string, category: string,
   return response?.text || response || currentDesc;
 };
 
+export interface UrlBlogResult {
+  title: string;
+  excerpt: string;
+  content: string;
+  image: string;
+  shoppingList: {
+    name: string;
+    description: string;
+    estimatedPrice: number;
+    category: string;
+    searchQuery: string;
+  }[];
+}
+
+export const generateBlogFromUrl = async (url: string, categories: string[]): Promise<UrlBlogResult | null> => {
+  try {
+    const prompt = `You are a professional content writer for "GoSimpleLiving", an affiliate e-commerce blog.
+
+Read and analyze this webpage: "${url}"
+
+Based on the content, return valid JSON:
+{
+  "title": "SEO-friendly blog post title",
+  "excerpt": "20-30 word summary",
+  "content": "Full Markdown blog post (800-1500 words) with ### headings, bullet points, bold text",
+  "image": "relevant image search term",
+  "shoppingList": [
+    { "name": "string", "description": "why it's needed", "estimatedPrice": number, "category": "one of: ${categories.join(', ')}", "searchQuery": "Amazon search query" }
+  ]
+}
+
+Write a natural, helpful blog post (NOT a product listing). Include 3-8 practical products in the shopping list.`;
+
+    const response = await callProxy('generateBlogFromUrl', { model: 'gemini-3o', contents: prompt, config: { responseMimeType: 'application/json' } });
+    const jsonText = (response && (response.text || response)) || '{}';
+    const data = typeof jsonText === 'string' ? parseJsonFromText(jsonText) : jsonText;
+
+    if (!data || !data.title) return null;
+
+    const seed = Math.floor(Math.random() * 1000);
+
+    return {
+      title: data.title || 'Untitled Post',
+      excerpt: data.excerpt || '',
+      content: data.content || '',
+      image: `https://picsum.photos/seed/${seed}/800/400`,
+      shoppingList: Array.isArray(data.shoppingList) ? data.shoppingList.map((item: any) => ({
+        name: item.name || 'Unknown Item',
+        description: item.description || '',
+        estimatedPrice: typeof item.estimatedPrice === 'number' ? item.estimatedPrice : 0,
+        category: item.category || categories[0] || 'General',
+        searchQuery: item.searchQuery || item.name || ''
+      })) : []
+    };
+  } catch (error) {
+    console.error("Error generating blog from URL:", error);
+    throw error;
+  }
+};
+
 // Helpers reused from original
 const extractAsin = (text: string): string | null => {
   const urlMatch = text.match(/(?:\/dp\/|\/gp\/product\/)(B[0-9A-Z]{9}|[0-9]{9}(?:X|[0-9]))/);

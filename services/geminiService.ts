@@ -187,6 +187,103 @@ export const generateWebsiteImage = async (_prompt: string): Promise<string | nu
   }
 };
 
+// Generate a Blog Post from a URL — reads the page via grounding and creates content + shopping list
+export interface UrlBlogResult {
+  title: string;
+  excerpt: string;
+  content: string;
+  image: string;
+  shoppingList: {
+    name: string;
+    description: string;
+    estimatedPrice: number;
+    category: string;
+    searchQuery: string; // useful for finding the product on Amazon
+  }[];
+}
+
+export const generateBlogFromUrl = async (url: string, categories: string[]): Promise<UrlBlogResult | null> => {
+  try {
+    if (!ai) throw new Error("AI not configured. Add your GEMINI_API_KEY.");
+
+    // Step 1: Use Google Search grounding to read and understand the URL content
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `You are a professional content writer for an affiliate e-commerce blog called "GoSimpleLiving".
+
+I need you to read and analyze this webpage: "${url}"
+
+Based on the content of that page, do the following:
+
+1. **title**: Create a catchy, SEO-friendly blog post title based on the page content.
+2. **excerpt**: Write a compelling 20-30 word excerpt/summary.
+3. **content**: Write a full, helpful blog post in Markdown format (800-1500 words). Structure it with:
+   - An engaging introduction explaining the topic
+   - Practical tips, steps, or insights from the source content
+   - A "What You'll Need" or "Recommended Items" section that lists products/tools/items mentioned or implied
+   - A conclusion with a call-to-action
+   - Use ### for headings, bullet points, and bold text for emphasis
+4. **image**: Suggest a relevant image search term (we'll use a placeholder).
+5. **shoppingList**: Extract or infer a list of 3-8 products/items/tools that someone would need based on the content. For each item provide:
+   - name: Product name
+   - description: Brief 1-2 sentence description of why it's needed
+   - estimatedPrice: Approximate price in USD
+   - category: Map to one of these categories: ${categories.join(', ')}
+   - searchQuery: A good Amazon search query to find this product
+
+IMPORTANT: The blog should feel natural and helpful, NOT like a product listing. The shopping list should be practical items that genuinely help with the topic discussed.
+
+Return valid JSON matching this exact structure:
+{
+  "title": "string",
+  "excerpt": "string",
+  "content": "string (markdown)",
+  "image": "string",
+  "shoppingList": [
+    {
+      "name": "string",
+      "description": "string",
+      "estimatedPrice": number,
+      "category": "string",
+      "searchQuery": "string"
+    }
+  ]
+}`,
+      config: {
+        tools: [{ googleSearch: {} }],
+        // Note: responseMimeType/responseSchema are NOT allowed with googleSearch tool
+      }
+    });
+
+    const jsonText = response.text || "{}";
+    const data = parseJsonFromText(jsonText);
+
+    if (!data || !data.title) return null;
+
+    // Generate a placeholder image
+    const seed = Math.floor(Math.random() * 1000);
+    const imageUrl = `https://picsum.photos/seed/${seed}/800/400`;
+
+    return {
+      title: data.title || 'Untitled Post',
+      excerpt: data.excerpt || '',
+      content: data.content || '',
+      image: imageUrl,
+      shoppingList: Array.isArray(data.shoppingList) ? data.shoppingList.map((item: any) => ({
+        name: item.name || 'Unknown Item',
+        description: item.description || '',
+        estimatedPrice: typeof item.estimatedPrice === 'number' ? item.estimatedPrice : 0,
+        category: item.category || categories[0] || 'General',
+        searchQuery: item.searchQuery || item.name || ''
+      })) : []
+    };
+
+  } catch (error) {
+    console.error("Error generating blog from URL:", error);
+    throw error;
+  }
+};
+
 export const improveProductDescription = async (title: string, category: string, currentDesc: string): Promise<string> => {
   try {
     if (!ai) return currentDesc;

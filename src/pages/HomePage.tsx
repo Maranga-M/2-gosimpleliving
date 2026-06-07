@@ -78,12 +78,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                         <ProductCard
                             key={product.id}
                             product={product}
-                            onOpenDetails={(p) => onNavigate({ type: 'open_product', product: p })} // We'll need to handle this in App or pass setter
+                            onOpenDetails={(p) => onNavigate({ type: 'open_product', product: p })}
                             isWishlisted={user?.wishlist?.includes(product.id) || false}
                             onToggleWishlist={toggleWishlist}
                             onRecordClick={trackProductClick}
                             themeColor={siteContent.themeColor}
                             affiliateConfig={siteContent.affiliateConfig}
+                            amazonAssociatesId={siteContent.amazonAssociatesId}
                         />
                     ))}
                 </div>
