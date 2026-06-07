@@ -9,7 +9,7 @@ import {
   researchTrendingProducts,
   analyzeNiche,
   generateMarketingStrategies,
-} from '../../services/researchService';
+} from '../../services/researchService.proxy';
 
 interface AdminResearchProps {
   categories: string[];
