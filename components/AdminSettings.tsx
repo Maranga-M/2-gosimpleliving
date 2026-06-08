@@ -28,6 +28,12 @@ export const AdminSettings: React.FC<{
     const [pageTitle, setPageTitle] = useState('');
     const [amazonTag, setAmazonTag] = useState('');
 
+    // Site Verification Codes
+    const [verifyGoogle, setVerifyGoogle] = useState('');
+    const [verifyBing, setVerifyBing] = useState('');
+    const [verifyPinterest, setVerifyPinterest] = useState('');
+    const [verifyFacebook, setVerifyFacebook] = useState('');
+
     // Meta Injection Verification State
     const [metaVerification, setMetaVerification] = useState<{
         p_domain_verify: { name: string; label: string; dynamic: boolean; static: boolean; value: string };
@@ -131,6 +137,11 @@ export const AdminSettings: React.FC<{
             setDraftSeason(liveSiteContent.season || 'none');
             setPageTitle(liveSiteContent.pageTitle || 'GoSimpleLiving');
             setAmazonTag(liveSiteContent.amazonAssociatesId || '');
+            const sv = liveSiteContent.siteVerification || {};
+            setVerifyGoogle(sv.google || '');
+            setVerifyBing(sv.bing || '');
+            setVerifyPinterest(sv.pinterest || '');
+            setVerifyFacebook(sv.facebook || '');
         }
     }, [liveSiteContent]);
 
@@ -172,6 +183,44 @@ export const AdminSettings: React.FC<{
             setSaveStatus('error');
             setSaveMessage('Failed to save settings');
         }
+    };
+
+    const handleSaveVerification = async () => {
+        try {
+            const updated = {
+                ...liveSiteContent,
+                siteVerification: {
+                    google: verifyGoogle.trim() || undefined,
+                    bing: verifyBing.trim() || undefined,
+                    pinterest: verifyPinterest.trim() || undefined,
+                    facebook: verifyFacebook.trim() || undefined,
+                }
+            };
+            await saveChanges(updated);
+            setSaveStatus('success');
+            setSaveMessage('Verification codes saved to database!');
+        } catch (e) {
+            setSaveStatus('error');
+            setSaveMessage('Failed to save verification codes');
+        }
+    };
+
+    const handleDownloadMetaTags = () => {
+        const metaTags: Record<string, string> = {};
+        if (verifyGoogle.trim()) metaTags['google-site-verification'] = verifyGoogle.trim();
+        if (verifyBing.trim()) metaTags['msvalidate.01'] = verifyBing.trim();
+        if (verifyPinterest.trim()) metaTags['p:domain_verify'] = verifyPinterest.trim();
+        if (verifyFacebook.trim()) metaTags['facebook-domain-verification'] = verifyFacebook.trim();
+
+        const json = JSON.stringify(metaTags, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'meta-tags.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success('meta-tags.json downloaded! Replace the file in your project root and redeploy.');
     };
 
     const handleThemePreview = () => {
@@ -500,6 +549,78 @@ export const AdminSettings: React.FC<{
                         </p>
                         <p>
                             To successfully verify your site, the tags must be baked directly into the static HTML at build time (<strong>Static Injection</strong>). This is managed by the Vite plugin via <code className="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">meta-tags.json</code>.
+                        </p>
+                    </div>
+
+                    {/* Verification Code Input Fields */}
+                    <div className="space-y-4">
+                        <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Enter Verification Codes</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                                    Google Search Console
+                                </label>
+                                <input
+                                    type="text"
+                                    value={verifyGoogle}
+                                    onChange={(e) => setVerifyGoogle(e.target.value)}
+                                    placeholder="e.g. abc123def456"
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white font-mono focus:ring-2 focus:ring-emerald-500"
+                                />
+                                <p className="text-[10px] text-slate-400 mt-0.5">meta name="google-site-verification"</p>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                                    Bing Webmaster Tools
+                                </label>
+                                <input
+                                    type="text"
+                                    value={verifyBing}
+                                    onChange={(e) => setVerifyBing(e.target.value)}
+                                    placeholder="e.g. ABC123DEF456"
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white font-mono focus:ring-2 focus:ring-emerald-500"
+                                />
+                                <p className="text-[10px] text-slate-400 mt-0.5">meta name="msvalidate.01"</p>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                                    Pinterest Claim
+                                </label>
+                                <input
+                                    type="text"
+                                    value={verifyPinterest}
+                                    onChange={(e) => setVerifyPinterest(e.target.value)}
+                                    placeholder="e.g. 1234567890abcdef"
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white font-mono focus:ring-2 focus:ring-emerald-500"
+                                />
+                                <p className="text-[10px] text-slate-400 mt-0.5">meta name="p:domain_verify"</p>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                                    Facebook Domain Verification
+                                </label>
+                                <input
+                                    type="text"
+                                    value={verifyFacebook}
+                                    onChange={(e) => setVerifyFacebook(e.target.value)}
+                                    placeholder="e.g. abc123def456"
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white font-mono focus:ring-2 focus:ring-emerald-500"
+                                />
+                                <p className="text-[10px] text-slate-400 mt-0.5">meta name="facebook-domain-verification"</p>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-3 pt-2">
+                            <Button onClick={handleSaveVerification} className="gap-2">
+                                <Save size={16} />
+                                Save Codes to Database
+                            </Button>
+                            <Button onClick={handleDownloadMetaTags} variant="outline" className="gap-2">
+                                <Key size={16} />
+                                Download meta-tags.json
+                            </Button>
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-relaxed">
+                            After downloading, replace the <code className="bg-slate-200 dark:bg-slate-800 px-1 rounded">meta-tags.json</code> file in your project root and redeploy. This bakes the codes into the static HTML so crawlers can read them.
                         </p>
                     </div>
 

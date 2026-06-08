@@ -236,6 +236,14 @@ export interface SiteContent {
   affiliateConfig?: AffiliateConfig; // Affiliate marketing configuration
   categories?: string[]; // Master list of categories
 
+  // Site Verification Meta Tags
+  siteVerification?: {
+    google?: string;
+    bing?: string;
+    pinterest?: string;
+    facebook?: string;
+  };
+
   // AdSense
   adSenseEnabled?: boolean;
   adSenseClientId?: string;
