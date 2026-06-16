@@ -81,7 +81,7 @@ Focus on products that:
 Return valid JSON array.`;
 
   const response = await callProxy('researchTrendingProducts', {
-    model: 'gemini-1.5-pro',
+    model: 'gemini-3o',
     contents: prompt,
     config: { responseMimeType: 'application/json', tools: [{ googleSearch: {} }] }
   });
@@ -125,7 +125,7 @@ Use current, real data. Be specific and actionable.
 Return valid JSON object.`;
 
   const response = await callProxy('analyzeNiche', {
-    model: 'gemini-1.5-pro',
+    model: 'gemini-3o',
     contents: prompt,
     config: { responseMimeType: 'application/json', tools: [{ googleSearch: {} }] }
   });
@@ -179,7 +179,7 @@ Focus on strategies that:
 Return valid JSON array.`;
 
   const response = await callProxy('generateMarketingStrategies', {
-    model: 'gemini-1.5-pro',
+    model: 'gemini-3o',
     contents: prompt,
     config: { responseMimeType: 'application/json', tools: [{ googleSearch: {} }] }
   });
@@ -225,4 +225,136 @@ export const generateFullResearchReport = async (
       `${strategies.filter(s => s.difficulty === 'Easy').length} easy-to-implement strategies available`,
     ],
   };
+};
+
+export interface CompetitorAnalysis {
+  url: string;
+  topKeywords: string[];
+  linkedProducts: { name: string; amazonQuery: string; estimatedPrice: number }[];
+  contentGaps: string[];
+  affiliateOpportunities: string[];
+  overallStrength: 'Weak' | 'Moderate' | 'Strong';
+}
+
+export interface ContentDraftContext {
+  query: string;
+  products?: TrendingProduct[];
+  nicheInsight?: NicheInsight | null;
+  strategies?: MarketingStrategy[];
+}
+
+export const analyzeCompetitorUrl = async (url: string): Promise<CompetitorAnalysis> => {
+  const prompt = `You are a competitive intelligence analyst specializing in Amazon affiliate sites.
+
+Analyze this website: "${url}"
+
+Use Google Search to find and examine the site. Provide:
+- topKeywords: 5-8 keywords this site ranks for or targets
+- linkedProducts: 3-6 products they promote (name, best Amazon search query, estimated price in USD)
+- contentGaps: 4-6 topics/questions this niche needs that this site does not cover well
+- affiliateOpportunities: 3-5 specific Amazon product opportunities they are missing
+- overallStrength: How strong their affiliate presence is (Weak/Moderate/Strong)
+
+Return valid JSON:
+{
+  "url": string,
+  "topKeywords": string[],
+  "linkedProducts": [{"name": string, "amazonQuery": string, "estimatedPrice": number}],
+  "contentGaps": string[],
+  "affiliateOpportunities": string[],
+  "overallStrength": "Weak" | "Moderate" | "Strong"
+}`;
+
+  const response = await callProxy('analyzeCompetitorUrl', {
+    model: 'gemini-3o',
+    contents: prompt,
+    config: { responseMimeType: 'application/json', tools: [{ googleSearch: {} }] },
+  });
+
+  const text = typeof response === 'string' ? response : response?.text || response?.result || JSON.stringify(response);
+  const data = parseJsonFromText(text || '{}');
+  if (!data) throw new Error('Failed to analyze competitor URL');
+
+  return {
+    url: data.url || url,
+    topKeywords: Array.isArray(data.topKeywords) ? data.topKeywords : [],
+    linkedProducts: Array.isArray(data.linkedProducts)
+      ? data.linkedProducts.map((p: any) => ({
+          name: p.name || '',
+          amazonQuery: p.amazonQuery || p.name || '',
+          estimatedPrice: typeof p.estimatedPrice === 'number' ? p.estimatedPrice : 0,
+        }))
+      : [],
+    contentGaps: Array.isArray(data.contentGaps) ? data.contentGaps : [],
+    affiliateOpportunities: Array.isArray(data.affiliateOpportunities) ? data.affiliateOpportunities : [],
+    overallStrength: data.overallStrength || 'Moderate',
+  };
+};
+
+export const generateContentDraft = async (
+  type: 'blog' | 'social' | 'email',
+  context: ContentDraftContext
+): Promise<string> => {
+  const productList =
+    context.products
+      ?.slice(0, 5)
+      .map(p => `- ${p.name} (~$${p.estimatedPrice}): ${p.affiliateAngle}`)
+      .join('\n') || 'No specific products';
+
+  const prompts: Record<string, string> = {
+    blog: `Write a 700-900 word SEO-optimized blog post for the "${context.query}" niche.
+
+Products to feature:
+${productList}
+
+Include:
+- Catchy H1 title
+- Brief intro (2-3 sentences)
+- 3-4 H2 sections with practical content
+- Natural product recommendations with Amazon search queries in brackets like [search: query here]
+- Conclusion with CTA
+
+Write in Markdown. Friendly, helpful tone. No fluff.`,
+
+    social: `Create 3 social media caption variants for the "${context.query}" niche.
+
+Products to feature:
+${productList}
+
+Provide:
+### TikTok/Reels
+(hook + value + CTA, 150-200 chars, relevant hashtags)
+
+### Instagram
+(storytelling style, 200-250 chars + hashtags)
+
+### Pinterest
+(keyword-rich, 100-150 chars, benefits-focused)`,
+
+    email: `Write an affiliate email newsletter for the "${context.query}" niche.
+
+Products to feature:
+${productList}
+
+Include:
+**Subject:** (max 60 chars, curiosity-driven)
+**Preview:** (max 90 chars)
+
+Email body in Markdown:
+- Warm opening (2 sentences)
+- Value hook paragraph
+- 2-3 product spotlights (name, 1-sentence pitch, [search: query])
+- Clear CTA button text
+- Friendly sign-off
+
+Keep total body under 300 words.`,
+  };
+
+  const response = await callProxy('generateContentDraft', {
+    model: 'gemini-3o',
+    contents: prompts[type],
+  });
+
+  const text = typeof response === 'string' ? response : response?.text || response?.result || '';
+  return text || 'Failed to generate content draft.';
 };
