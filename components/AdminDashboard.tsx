@@ -19,7 +19,7 @@ import { LinkPickerModal } from './LinkPickerModal';
 import { TipTapEditor } from './TipTapEditor';
 import { AdminOffers } from './AdminOffers';
 import { AffiliateConfigTab } from './AffiliateConfigTab';
-import { AdminResearch } from './admin/AdminResearch';
+import { AdminResearch } from './admin/research';
 
 
 
