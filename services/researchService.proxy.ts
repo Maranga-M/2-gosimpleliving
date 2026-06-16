@@ -81,7 +81,7 @@ Focus on products that:
 Return valid JSON array.`;
 
   const response = await callProxy('researchTrendingProducts', {
-    model: 'gemini-3o',
+    model: 'gemini-1.5-pro',
     contents: prompt,
     config: { responseMimeType: 'application/json', tools: [{ googleSearch: {} }] }
   });
@@ -125,7 +125,7 @@ Use current, real data. Be specific and actionable.
 Return valid JSON object.`;
 
   const response = await callProxy('analyzeNiche', {
-    model: 'gemini-3o',
+    model: 'gemini-1.5-pro',
     contents: prompt,
     config: { responseMimeType: 'application/json', tools: [{ googleSearch: {} }] }
   });
@@ -179,7 +179,7 @@ Focus on strategies that:
 Return valid JSON array.`;
 
   const response = await callProxy('generateMarketingStrategies', {
-    model: 'gemini-3o',
+    model: 'gemini-1.5-pro',
     contents: prompt,
     config: { responseMimeType: 'application/json', tools: [{ googleSearch: {} }] }
   });

@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
-import { Search, TrendingUp, Sparkles, Loader2, Target, Megaphone, BarChart3, ChevronDown, ChevronUp, Star, DollarSign, Users, Zap, ArrowUpRight, ArrowRight, ShoppingCart, Copy, ExternalLink, Lightbulb, RefreshCw } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Search, TrendingUp, Sparkles, Loader2, Target, Megaphone, BarChart3, ChevronDown, ChevronUp, Star, DollarSign, Users, Zap, ArrowUpRight, ArrowRight, ShoppingCart, Copy, ExternalLink, Lightbulb, RefreshCw, Save, Trash2, Database, History, FolderOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../Button';
+import { useApp } from '../../src/contexts/AppContext';
 import {
   TrendingProduct,
   NicheInsight,
@@ -49,6 +50,7 @@ const TrendBadge: React.FC<{ direction: string }> = ({ direction }) => {
 };
 
 export const AdminResearch: React.FC<AdminResearchProps> = ({ categories, onAddProductFromResearch }) => {
+  const { content: { liveSiteContent, saveChanges } } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [isResearching, setIsResearching] = useState(false);
   const [activeSection, setActiveSection] = useState<'products' | 'niche' | 'strategies'>('products');
@@ -59,6 +61,88 @@ export const AdminResearch: React.FC<AdminResearchProps> = ({ categories, onAddP
   const [strategies, setStrategies] = useState<MarketingStrategy[]>([]);
   const [expandedStrategy, setExpandedStrategy] = useState<number | null>(null);
   const [lastQuery, setLastQuery] = useState('');
+
+  // Persistence
+  const [savedResearch, setSavedResearch] = useState<Array<{ id: string; query: string; createdAt: string; products: TrendingProduct[]; nicheInsight: NicheInsight | null; strategies: MarketingStrategy[] }>>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // Load saved research history from database on mount
+  useEffect(() => {
+    const loadHistory = async () => {
+      setIsLoadingHistory(true);
+      try {
+        const { dbService } = await import('../../services/database');
+        const history = await dbService.getResearchHistory?.() || [];
+        setSavedResearch(history);
+      } catch (e) {
+        console.warn('Could not load research history:', e);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+    loadHistory();
+  }, []);
+
+  const handleSaveResearch = async () => {
+    if (!lastQuery || (products.length === 0 && !nicheInsight && strategies.length === 0)) {
+      toast.error('No research results to save.');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const { dbService } = await import('../../services/database');
+      await dbService.saveResearch?.({
+        query: lastQuery,
+        products,
+        nicheInsight,
+        strategies,
+        createdAt: new Date().toISOString(),
+      });
+      toast.success('Research saved to database!');
+      // Refresh history
+      const history = await dbService.getResearchHistory?.() || [];
+      setSavedResearch(history);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to save research');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleClearResearch = () => {
+    setProducts([]);
+    setNicheInsight(null);
+    setStrategies([]);
+    setLastQuery('');
+    setSearchQuery('');
+    setActiveSection('products');
+    setExpandedStrategy(null);
+    toast.success('Research cleared');
+  };
+
+  const handleLoadSaved = (research: { query: string; products: TrendingProduct[]; nicheInsight: NicheInsight | null; strategies: MarketingStrategy[] }) => {
+    setSearchQuery(research.query);
+    setLastQuery(research.query);
+    setProducts(research.products);
+    setNicheInsight(research.nicheInsight);
+    setStrategies(research.strategies);
+    setActiveSection('products');
+    toast.success(`Loaded research for "${research.query}"`);
+  };
+
+  const handleDeleteSaved = async (id: string) => {
+    if (!confirm('Delete this saved research?')) return;
+    try {
+      const { dbService } = await import('../../services/database');
+      await dbService.deleteResearch?.(id);
+      const history = await dbService.getResearchHistory?.() || [];
+      setSavedResearch(history);
+      toast.success('Research deleted');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to delete');
+    }
+  };
 
   const handleResearch = useCallback(async (query?: string) => {
     const q = (query || searchQuery).trim();
@@ -127,6 +211,24 @@ export const AdminResearch: React.FC<AdminResearchProps> = ({ categories, onAddP
               Research
             </Button>
           </div>
+
+          {/* Action Buttons */}
+          {(lastQuery || products.length > 0 || nicheInsight || strategies.length > 0) && (
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/20">
+              <Button onClick={handleSaveResearch} disabled={isSaving} variant="outline" className="gap-2 bg-white/10 hover:bg-white/20 text-white border-white/30">
+                <Save size={16} />
+                {isSaving ? 'Saving...' : 'Save Research'}
+              </Button>
+              <Button onClick={handleClearResearch} variant="ghost" className="gap-2 text-white/80 hover:text-white hover:bg-white/10">
+                <Trash2 size={16} />
+                Clear Results
+              </Button>
+              <Button onClick={() => setActiveSection('history')} variant="ghost" className="gap-2 text-white/80 hover:text-white hover:bg-white/10">
+                <History size={16} />
+                History
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -167,6 +269,7 @@ export const AdminResearch: React.FC<AdminResearchProps> = ({ categories, onAddP
               { key: 'products' as const, label: 'Trending Products', icon: ShoppingCart, count: products.length },
               { key: 'niche' as const, label: 'Niche Analysis', icon: BarChart3, count: nicheInsight ? 1 : 0 },
               { key: 'strategies' as const, label: 'Marketing Strategies', icon: Megaphone, count: strategies.length },
+              { key: 'history' as const, label: 'Saved History', icon: Database, count: savedResearch.length },
             ]).map(tab => (
               <button
                 key={tab.key}

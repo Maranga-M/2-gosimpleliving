@@ -1,5 +1,5 @@
 import * as supabaseService from '../supabase/service';
-import { User, Role, Product, BlogPost, SiteContent, AnalyticsEvent } from '../types';
+import { User, Role, Product, BlogPost, SiteContent, AnalyticsEvent, TrendingProduct, NicheInsight, MarketingStrategy } from '../types';
 
 export interface DatabaseService {
     signIn: (email: string, pass: string) => Promise<any>;
@@ -45,6 +45,11 @@ export interface DatabaseService {
     getAnalyticsEvents: (limit?: number) => Promise<AnalyticsEvent[]>;
     testConnection: () => Promise<boolean>;
     testConnectionDetailed: () => Promise<supabaseService.DetailedConnectionResult>;
+
+    // Research History
+    getResearchHistory: () => Promise<Array<{ id: string; query: string; createdAt: string; products: TrendingProduct[]; nicheInsight: NicheInsight | null; strategies: MarketingStrategy[] }>>;
+    saveResearch: (research: { query: string; products: TrendingProduct[]; nicheInsight: NicheInsight | null; strategies: MarketingStrategy[]; createdAt: string }) => Promise<void>;
+    deleteResearch: (id: string) => Promise<void>;
 }
 
 
@@ -100,6 +105,11 @@ export const dbService: DatabaseService = {
 
     testConnection: supabaseService.testConnection,
     testConnectionDetailed: supabaseService.testConnectionDetailed,
+
+    // Research History
+    getResearchHistory: supabaseService.getResearchHistory,
+    saveResearch: supabaseService.saveResearch,
+    deleteResearch: supabaseService.deleteResearch,
 };
 
 // Register health check handler

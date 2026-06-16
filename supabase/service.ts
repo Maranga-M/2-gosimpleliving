@@ -1,6 +1,6 @@
 
 import { supabase } from './config';
-import { User, Role, Product, BlogPost, SiteContent, AnalyticsEvent } from '../types';
+import { User, Role, Product, BlogPost, SiteContent, AnalyticsEvent, TrendingProduct as any } from '../types';
 import { ConnectionErrorType } from '../services/connectionManager';
 
 const DB_NOT_CONFIGURED_ERROR = 'Database connection is not configured. Please set environment variables.';
@@ -743,6 +743,47 @@ export const deleteImage = async (fileName: string) => {
         .from('media-assets')
         .remove([fileName]);
 
+    if (error) throw error;
+};
+
+// --- RESEARCH HISTORY ---
+
+export const getResearchHistory = async (): Promise<Array<{ id: string; query: string; createdAt: string; products: any[]; nicheInsight: any; strategies: any[] }>> => {
+    if (!supabase) return [];
+    try {
+        const { data, error } = await supabase
+            .from('research_history')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+        if (error) throw error;
+        return data || [];
+    } catch (e: any) {
+        console.warn('getResearchHistory error:', e.message);
+        return [];
+    }
+};
+
+export const saveResearch = async (research: { query: string; products: any[]; nicheInsight: any; strategies: any[]; createdAt: string }) => {
+    if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
+    const { error } = await supabase
+        .from('research_history')
+        .insert({
+            query: research.query,
+            products: research.products,
+            niche_insight: research.nicheInsight,
+            strategies: research.strategies,
+            created_at: research.createdAt
+        });
+    if (error) throw error;
+};
+
+export const deleteResearch = async (id: string) => {
+    if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
+    const { error } = await supabase
+        .from('research_history')
+        .delete()
+        .eq('id', id);
     if (error) throw error;
 };
 

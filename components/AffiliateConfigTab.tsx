@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, Code, CheckCircle, Eye, EyeOff, Copy, ExternalLink, TrendingUp, AlertTriangle, DollarSign, MousePointerClick, ShoppingCart, BarChart3, RefreshCw, CloudOff } from 'lucide-react';
+import { Save, Plus, Trash2, Code, CheckCircle, Eye, EyeOff, Copy, ExternalLink, TrendingUp, AlertTriangle, DollarSign, MousePointerClick, ShoppingCart, BarChart3, RefreshCw, CloudOff, RotateCcw } from 'lucide-react';
 import { AffiliateConfig, TrackingCode } from '../types';
 import { Button } from './Button';
 import { AffiliateNetworkManager } from './AffiliateNetworkManager';
@@ -58,6 +58,26 @@ export const AffiliateConfigTab: React.FC<AffiliateConfigTabProps> = ({ config, 
         }
     };
 
+    const handleReset = () => {
+        if (!confirm('Reset all affiliate configuration to defaults? This cannot be undone.')) return;
+        const defaultConfig: AffiliateConfig = {
+            globalEnabled: true,
+            pinterestEnabled: false,
+            pinterestVerificationCode: '',
+            googleSiteVerification: '',
+            bingSiteVerification: '',
+            cjEnabled: false,
+            cjPublisherId: '',
+            cjSubId: '',
+            adSenseEnabled: false,
+            adSenseClientId: '',
+            trackingCodes: [],
+            affiliateNetworks: [],
+        };
+        setLocalConfig(defaultConfig);
+        toast.success('Configuration reset to defaults');
+    };
+
     const addTrackingCode = () => {
         const newCode: TrackingCode = {
             id: `tracking-${Date.now()}`,
@@ -106,10 +126,16 @@ export const AffiliateConfigTab: React.FC<AffiliateConfigTabProps> = ({ config, 
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Affiliate Configuration</h2>
                     <p className="text-sm text-slate-500">Manage affiliate networks, verification codes, and tracking scripts.</p>
                 </div>
-                <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-                    <Save size={18} />
-                    {isSaving ? 'Saving...' : 'Save Changes'}
-                </Button>
+                <div className="flex gap-2">
+                    <Button onClick={handleReset} variant="ghost" className="gap-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                        <RotateCcw size={18} />
+                        Reset
+                    </Button>
+                    <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+                        <Save size={18} />
+                        {isSaving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                </div>
             </div>
 
             {/* Global Affiliate Toggle */}
