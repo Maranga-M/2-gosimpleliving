@@ -9,18 +9,26 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigateToSettings?: () => void;
+  initialError?: string | null;
 }
 
-export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onNavigateToSettings }) => {
+export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onNavigateToSettings, initialError }) => {
   const { content: { siteContent } } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLogin, setIsLogin] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError || null);
   const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
+
+  // Sync initialError to local error state
+  React.useEffect(() => {
+    if (initialError) {
+      setError(initialError);
+    }
+  }, [initialError]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -263,10 +263,15 @@ export const signIn = async (email: string, pass: string) => {
 
 export const signInWithGoogle = async () => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
+    // Use explicit callback URL to ensure consistent redirect handling
+    const redirectTo = `${window.location.origin}/`;
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: window.location.origin
+            redirectTo: redirectTo,
+            queryParams: {
+                prompt: 'consent'
+            }
         }
     });
     if (error) throw error;
@@ -275,10 +280,15 @@ export const signInWithGoogle = async () => {
 
 export const signInWithGitHub = async () => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
+    // Use explicit callback URL to ensure consistent redirect handling
+    const redirectTo = `${window.location.origin}/`;
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-            redirectTo: window.location.origin
+            redirectTo: redirectTo,
+            queryParams: {
+                prompt: 'consent'
+            }
         }
     });
     if (error) throw error;

@@ -71,6 +71,9 @@ const AppContent: React.FC = () => {
 
     return 'home';
   });
+  
+  // OAuth error state
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
   // Persist view changes
   React.useEffect(() => {
@@ -78,6 +81,26 @@ const AppContent: React.FC = () => {
       localStorage.setItem('gsl_current_view', currentView);
     }
   }, [currentView]);
+  
+  // Detect OAuth errors from URL parameters
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    const errorDescription = params.get('error_description');
+    
+    if (error) {
+      let message = 'Authentication failed';
+      if (errorDescription) {
+        message = decodeURIComponent(errorDescription);
+      }
+      setOauthError(message);
+      setIsLoginModalOpen(true);
+      
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+  
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
@@ -477,8 +500,12 @@ const AppContent: React.FC = () => {
 
       <LoginModal
         isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
+        onClose={() => {
+          setIsLoginModalOpen(false);
+          setOauthError(null);
+        }}
         onNavigateToSettings={() => { setIsLoginModalOpen(false); setCurrentView('settings'); }}
+        initialError={oauthError}
       />
     </div >
   );
