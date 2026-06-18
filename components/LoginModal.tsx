@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Lock, Mail, User as UserIcon, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Lock, Mail, User as UserIcon, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from './Button';
 import { dbService } from '../services/database';
 import { useApp } from '../src/contexts/AppContext';
@@ -18,6 +18,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onNavig
   const [name, setName] = useState('');
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -30,10 +31,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onNavig
     try {
       if (isLogin) {
         await dbService.signIn(email, password);
+        onClose();
       } else {
-        await dbService.signUp(email, password, name);
+        const result = await dbService.signUp(email, password, name);
+        if (result?.needsEmailConfirmation) {
+          setSuccessMessage(`We've sent a confirmation link to ${email}. Please check your inbox, click the link, then sign in.`);
+        } else {
+          onClose();
+        }
       }
-      onClose();
     } catch (err: any) {
       console.error("Login/SignUp Error Object:", err);
 
@@ -46,6 +52,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onNavig
       // Map common Supabase messages to be friendlier
       if (errorMessage.toLowerCase().includes('invalid login credentials')) {
         errorMessage = "Invalid email or password. Please check your credentials and try again.";
+      } else if (errorMessage.toLowerCase().includes('email not confirmed')) {
+        errorMessage = "Please check your inbox and click the confirmation link we sent you before signing in.";
+      } else if (errorMessage.toLowerCase().includes('user already registered')) {
+        errorMessage = "An account with this email already exists. Try signing in instead.";
       } else if (errorMessage.toLowerCase().includes('failed to fetch')) {
         errorMessage = "Network error: Connection to Supabase failed. Check Vercel environment variables or internet connection.";
       } else if (errorMessage.toLowerCase().includes('database connection is not configured')) {
@@ -83,6 +93,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onNavig
             {isLogin ? 'Sign in to manage your wishlist or store.' : `Join ${siteContent.logoText} to curate your shopping list.`}
           </p>
         </div>
+
+        {successMessage && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm rounded-lg p-3 mb-4 flex items-start gap-2">
+            <CheckCircle size={16} className="mt-0.5 shrink-0" />
+            <span>{successMessage}</span>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg p-3 mb-4 flex items-center gap-2">

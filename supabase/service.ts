@@ -299,19 +299,21 @@ export const signUp = async (email: string, pass: string, name: string) => {
         options: { data: { name } }
     });
     if (error) throw error;
-    try {
-        if (data.user) {
+    // Only attempt profile creation when a session is immediately available.
+    // Without a session (email confirmation pending), auth.uid() is null and
+    // the RLS policy will block the insert. The profile is created later by
+    // the DB trigger (on_auth_user_created) or by authStateChanged on first sign-in.
+    if (data.session && data.user) {
+        try {
             const { error: profileError } = await supabase.from('profiles').upsert([{ id: data.user.id, email, name, role: 'user', wishlist: [] }], { onConflict: 'id' });
             if (profileError) {
                 console.error("SignUp Profile Table Error:", profileError.message);
-                throw new Error(`Profile creation failed: ${profileError.message}. Ensure 'profiles' table exists in Supabase.`);
             }
+        } catch (e: any) {
+            console.error("SignUp Extension Error:", e.message);
         }
-    } catch (e: any) {
-        console.error("SignUp Extension Error:", e.message);
-        throw e;
     }
-    return data.user;
+    return { user: data.user, needsEmailConfirmation: !data.session };
 };
 
 export const signOut = async () => {

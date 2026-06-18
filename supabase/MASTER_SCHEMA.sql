@@ -166,6 +166,29 @@ CREATE POLICY "Enable Insert Analytics" ON public.analytics FOR INSERT WITH CHEC
 -- TRIGGERS
 -- ============================================================
 
+-- Auto-create profile on new auth user (SECURITY DEFINER bypasses RLS so it
+-- works whether email confirmation is on or off)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, name, role, wishlist)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+    CASE WHEN NEW.email = 'admin@demo.com' THEN 'admin' ELSE 'user' END,
+    ARRAY[]::text[]
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
 -- Product Validation
 CREATE OR REPLACE FUNCTION public.validate_product() RETURNS TRIGGER AS $$
 BEGIN
