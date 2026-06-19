@@ -76,8 +76,13 @@ export const AdminResearch: React.FC<AdminResearchProps> = ({ categories, onAddP
         generateMarketingStrategies(q, []),
       ]);
       if (prods.status === 'fulfilled') setProducts(prods.value);
+      else if (prods.status === 'rejected') toast.error(`Failed to research products: ${prods.reason?.message || 'Unknown error'}`);
+      
       if (insight.status === 'fulfilled') setNicheInsight(insight.value);
+      else if (insight.status === 'rejected') toast.error(`Failed to analyze niche: ${insight.reason?.message || 'Unknown error'}`);
+      
       if (strats.status === 'fulfilled') setStrategies(strats.value);
+      else if (strats.status === 'rejected') toast.error(`Failed to generate strategies: ${strats.reason?.message || 'Unknown error'}`);
       toast.success(`Research complete for "${q}"!`);
     } catch (e: any) {
       toast.error(e.message || 'Research failed.');

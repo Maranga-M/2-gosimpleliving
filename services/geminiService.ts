@@ -5,16 +5,25 @@ import { Product, SmartCollection, AppNotification, SiteContent, BlogPost } from
 
 // Try to get API key from localStorage first (admin configured), then fall back to environment variables
 const getApiKey = (): string | undefined => {
-  // Check localStorage first (admin settings)
-  const localStorageKey = typeof window !== 'undefined' ? localStorage.getItem('GEMINI_API_KEY') : null;
-  if (localStorageKey) return localStorageKey;
+  try {
+    // Check localStorage first (admin settings)
+    if (typeof window !== 'undefined') {
+      const localStorageKey = localStorage.getItem('GEMINI_API_KEY');
+      if (localStorageKey?.trim()) return localStorageKey.trim();
+    }
+  } catch (e) {
+    console.warn('Failed to access localStorage for Gemini API key:', e);
+  }
 
   // Fall back to environment variables
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GEMINI_API_KEY) {
+    return (import.meta as any).env.VITE_GEMINI_API_KEY;
+  }
   if (typeof import.meta !== 'undefined' && (import.meta as any).env?.GEMINI_API_KEY) {
     return (import.meta as any).env.GEMINI_API_KEY;
   }
-  if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
-    return process.env.GEMINI_API_KEY;
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   }
 
   return undefined;
@@ -64,7 +73,9 @@ export const streamShoppingAdvice = async (
   history: { role: string; text: string }[]
 ): Promise<AsyncIterable<string>> => {
   try {
-    if (!ai) throw new Error("AI not configured.");
+    if (!ai) {
+      throw new Error("Gemini AI not configured. Please set your API key in Admin Settings.");
+    }
     const chat = ai.chats.create({
       model: 'gemini-3-flash-preview',
       config: {
@@ -91,8 +102,16 @@ export const streamShoppingAdvice = async (
       }
     };
 
-  } catch (error) {
-    console.error("Gemini API Error:", error);
+  } catch (error: any) {
+    const errorMsg = error?.message || String(error);
+    console.error("Gemini API Error:", errorMsg);
+    
+    if (errorMsg.includes('405') || errorMsg.includes('Method not allowed')) {
+      throw new Error("Gemini API configuration error (405). Please verify your API key in Admin Settings.");
+    }
+    if (errorMsg.includes('API key') || errorMsg.includes('not configured')) {
+      throw new Error("Gemini API key is missing. Please configure it in Admin Settings.");
+    }
     throw error;
   }
 };
@@ -334,8 +353,13 @@ export const fetchProductFromWeb = async (query: string, categories: string[]): 
       category: data.category || categories[0]
     };
 
-  } catch (error) {
-    console.error("Error fetching product details:", error);
+  } catch (error: any) {
+    const errorMsg = error?.message || String(error);
+    console.error("Error fetching product details:", errorMsg);
+    
+    if (errorMsg.includes('405') || errorMsg.includes('API key')) {
+      console.error("Gemini API configuration issue - check your API key in Admin Settings");
+    }
     return null;
   }
 };

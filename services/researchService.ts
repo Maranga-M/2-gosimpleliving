@@ -215,7 +215,7 @@ export const generateMarketingStrategies = async (
   niche: string,
   productNames: string[]
 ): Promise<MarketingStrategy[]> => {
-  const ai = getAI();
+  const ai = await getAI();
   if (!ai) throw new Error("AI not configured. Add your GEMINI_API_KEY in Settings.");
 
   const productContext = productNames.length > 0
