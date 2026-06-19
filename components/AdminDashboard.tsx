@@ -6,7 +6,7 @@ import { Product, SiteContent, BlogPost, CustomPage, Role, ThemeColor, Season, S
 import { AFFILIATE_THEMES } from '../themeConfig';
 import { connectionManager, ConnectionStatus } from '../services/connectionManager';
 import { Button } from './Button';
-import { generateSiteContent, fetchProductFromWeb, generateBlogPost, generateCustomPage, generateBlogFromUrl, UrlBlogResult } from '../services/geminiService';
+import { generateSiteContent, fetchProductFromWeb, generateBlogPost, generateCustomPage, generateBlogFromUrl, UrlBlogResult } from '../services/geminiService.proxy';
 import { validateProduct } from '../src/utils/validators';
 import { MediaManager } from './MediaManager';
 import { ComparisonTableBuilder } from './ComparisonTableBuilder';

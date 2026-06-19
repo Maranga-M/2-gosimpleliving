@@ -6,7 +6,7 @@ import { Button } from '../Button';
 import { MediaManager } from '../MediaManager';
 import { TipTapEditor } from '../TipTapEditor';
 import { ComparisonTableBuilder } from '../ComparisonTableBuilder';
-import { generateBlogPost, generateBlogFromUrl, UrlBlogResult } from '../../services/geminiService';
+import { generateBlogPost, generateBlogFromUrl, UrlBlogResult } from '../../services/geminiService.proxy';
 import toast from 'react-hot-toast';
 
 interface AdminBlogProps {

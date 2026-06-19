@@ -8,7 +8,7 @@ import { useUsers } from '../hooks/useUsers';
 import { dbService } from '../../services/database';
 import { connectionManager, ConnectionStatus } from '../../services/connectionManager';
 import { AppNotification, Product, BlogPost, SiteContent } from '../../types';
-import { generatePersonalizedAlerts } from '../../services/geminiService';
+import { generatePersonalizedAlerts } from '../../services/geminiService.proxy';
 import { CacheService } from '../modules/cache';
 
 // Define the shape of our context

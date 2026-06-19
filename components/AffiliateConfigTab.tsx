@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Save, Plus, Trash2, Code, CheckCircle, Eye, EyeOff, Copy, ExternalLink, TrendingUp, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Save, Plus, Trash2, Code, CheckCircle, Eye, EyeOff, Copy, ExternalLink, TrendingUp, AlertTriangle, DollarSign, MousePointerClick, ShoppingCart, BarChart3, RefreshCw, CloudOff } from 'lucide-react';
 import { AffiliateConfig, TrackingCode } from '../types';
 import { Button } from './Button';
 import { AffiliateNetworkManager } from './AffiliateNetworkManager';
@@ -14,6 +14,37 @@ export const AffiliateConfigTab: React.FC<AffiliateConfigTabProps> = ({ config, 
     const [localConfig, setLocalConfig] = useState<AffiliateConfig>(config);
     const [isSaving, setIsSaving] = useState(false);
     const [showCodes, setShowCodes] = useState<Record<string, boolean>>({});
+    const [earningsData, setEarningsData] = useState<{ totalEarnings: number; totalClicks: number; totalConversions: number; conversionRate: number; byNetwork: { network: string; earnings: number; clicks: number; conversions: number }[] } | null>(null);
+    const [earningsLoading, setEarningsLoading] = useState(false);
+    const [earningsError, setEarningsError] = useState(false);
+
+    const fetchEarnings = async () => {
+        setEarningsLoading(true);
+        setEarningsError(false);
+        try {
+            const { AffiliateApiService } = await import('../services/affiliateApiService');
+            const data = await AffiliateApiService.fetchEarningsSummary(30);
+            if (data) {
+                setEarningsData({
+                    totalEarnings: data.totalEarnings,
+                    totalClicks: data.totalClicks,
+                    totalConversions: data.totalConversions,
+                    conversionRate: data.conversionRate,
+                    byNetwork: data.byNetwork,
+                });
+            } else {
+                setEarningsError(true);
+            }
+        } catch {
+            setEarningsError(true);
+        } finally {
+            setEarningsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchEarnings();
+    }, []);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -526,6 +557,91 @@ export const AffiliateConfigTab: React.FC<AffiliateConfigTabProps> = ({ config, 
                         onChange={(networks) => setLocalConfig({ ...localConfig, affiliateNetworks: networks })}
                     />
                 </div>
+            </div>
+
+            {/* Affiliate Earnings & Performance */}
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                            <BarChart3 size={24} />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-white">Affiliate Earnings</h3>
+                            <p className="text-xs text-slate-500">Last 30 days performance (requires Supabase Edge Function)</p>
+                        </div>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={fetchEarnings} disabled={earningsLoading} className="gap-2">
+                        <RefreshCw size={14} className={earningsLoading ? 'animate-spin' : ''} />
+                        Refresh
+                    </Button>
+                </div>
+
+                {earningsLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                        <div className="flex items-center gap-3 text-slate-400">
+                            <RefreshCw size={20} className="animate-spin" />
+                            <span className="text-sm">Loading earnings data...</span>
+                        </div>
+                    </div>
+                ) : earningsData ? (
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
+                                    <DollarSign size={16} className="text-emerald-500" />
+                                    Estimated Earnings
+                                </div>
+                                <span className="text-2xl font-bold text-slate-900 dark:text-white">${earningsData.totalEarnings.toFixed(2)}</span>
+                            </div>
+                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
+                                    <MousePointerClick size={16} className="text-blue-500" />
+                                    Total Clicks
+                                </div>
+                                <span className="text-2xl font-bold text-slate-900 dark:text-white">{earningsData.totalClicks.toLocaleString()}</span>
+                            </div>
+                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
+                                    <ShoppingCart size={16} className="text-amber-500" />
+                                    Conversions / Rate
+                                </div>
+                                <span className="text-2xl font-bold text-slate-900 dark:text-white">{earningsData.totalConversions} <span className="text-sm font-normal text-slate-400">({earningsData.conversionRate}%)</span></span>
+                            </div>
+                        </div>
+
+                        {earningsData.byNetwork.length > 0 && (
+                            <div>
+                                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wider">By Network</h4>
+                                <div className="space-y-2">
+                                    {earningsData.byNetwork.map((n, i) => (
+                                        <div key={i} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                                            <span className="font-medium text-sm text-slate-700 dark:text-slate-300">{n.network}</span>
+                                            <div className="flex items-center gap-6 text-sm">
+                                                <span className="text-slate-500">{n.clicks} clicks</span>
+                                                <span className="text-slate-500">{n.conversions} conv.</span>
+                                                <span className="font-bold text-emerald-600 dark:text-emerald-400">${n.earnings.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-2">
+                            <CloudOff size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                            <span className="text-xs text-amber-700 dark:text-amber-300">
+                                Showing estimated data. Deploy <code className="bg-amber-100 dark:bg-amber-900/40 px-1 rounded text-[11px]">supabase/functions/affiliate-api</code> Edge Function to connect real CJ, ShareASale & Impact API data.
+                            </span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-center py-12">
+                        <CloudOff size={48} className="mx-auto text-slate-200 dark:text-slate-700 mb-4" />
+                        <p className="text-slate-500 mb-2">Unable to load affiliate earnings</p>
+                        <p className="text-xs text-slate-400">Connect to Supabase and deploy the affiliate-api Edge Function to see real performance data.</p>
+                    </div>
+                )}
             </div>
 
             {/* Save Button (Bottom) */}

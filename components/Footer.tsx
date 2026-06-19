@@ -47,12 +47,12 @@ const TrustedPartners: React.FC = () => {
 
     return (
         <div className="py-8 border-b border-slate-200 dark:border-slate-800">
-            <p className="text-center text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Trusted Partners</p>
+            <p className="text-center text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Trusted Partners</p>
             <div className="flex flex-wrap justify-center items-center gap-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
                 {partners.map((p, idx) => (
                     <div key={idx} className="h-8 flex items-center justify-center" title={p.name}>
                         {/* Using text fallback for now if logos break, but typically we'd use SVGs */}
-                        <span className="text-slate-500 font-bold text-lg">{p.name}</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-bold text-lg">{p.name}</span>
                     </div>
                 ))}
             </div>
@@ -69,6 +69,12 @@ export const Footer: React.FC = () => {
             <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
 
                 <TrustedPartners />
+
+                <div className="py-4 border-b border-slate-200 dark:border-slate-800">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center leading-relaxed max-w-3xl mx-auto">
+                        We are a participant in the Amazon Services LLC Associates Program, an affiliate advertising program designed to provide a means for us to earn fees by linking to Amazon.com and affiliated sites. As an Amazon Associate we earn from qualifying purchases. We also participate in other affiliate programs (CJ Affiliate, ClickBank, ShareASale, Impact). <strong>We may earn a commission at no extra cost to you.</strong>
+                    </p>
+                </div>
 
                 <div className="flex flex-col items-center gap-6 mt-8">
                     <div className="text-slate-500 dark:text-slate-400 text-sm text-center">

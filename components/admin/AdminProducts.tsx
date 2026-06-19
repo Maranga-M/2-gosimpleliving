@@ -8,7 +8,7 @@ import { MediaManager } from '../MediaManager';
 import { AFFILIATE_THEMES } from '../../themeConfig';
 import { validateProduct } from '../../src/utils/validators';
 import toast from 'react-hot-toast';
-import { fetchProductFromWeb } from '../../services/geminiService';
+import { fetchProductFromWeb } from '../../services/geminiService.proxy';
 
 interface AdminProductsProps {
     products: Product[];

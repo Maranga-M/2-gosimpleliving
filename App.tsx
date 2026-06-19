@@ -86,6 +86,8 @@ const AppContent: React.FC = () => {
   const isRouterPath = ['/privacy-policy', '/sitemap', '/password-reset'].includes(location.pathname) || location.pathname.startsWith('/p/') || location.pathname.startsWith('/offers/');
 
   React.useEffect(() => {
+    AnalyticsService.init();
+
     // Determine the "virtual" path
     let virtualPath = '/';
 
@@ -99,6 +101,9 @@ const AppContent: React.FC = () => {
     }
 
     AnalyticsService.trackPageView(virtualPath);
+
+    // Check for pending conversion (user returned from affiliate site)
+    AnalyticsService.checkPendingConversion();
 
   }, [location.pathname, currentView]); // Re-run when route or view state changes
 
@@ -181,7 +186,7 @@ const AppContent: React.FC = () => {
             </button>
             <button
               onClick={content.exitPreview}
-              className="bg-white text-purple-600 px-3 py-1 rounded-full transition-colors flex items-center gap-1"
+              className="bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 px-3 py-1 rounded-full transition-colors flex items-center gap-1"
             >
               <X size={14} /> Exit Preview
             </button>
@@ -349,6 +354,7 @@ const AppContent: React.FC = () => {
             uiText={siteContent.uiText}
             themeColor={siteContent.themeColor}
             affiliateConfig={siteContent.affiliateConfig}
+            amazonAssociatesId={siteContent.amazonAssociatesId}
           />
         )}
 
@@ -363,6 +369,7 @@ const AppContent: React.FC = () => {
                 onRecordClick={trackProductClick}
                 themeColor={siteContent.themeColor}
                 affiliateConfig={siteContent.affiliateConfig}
+                amazonAssociatesId={siteContent.amazonAssociatesId}
               />
             </Suspense>
           </ErrorBoundary>

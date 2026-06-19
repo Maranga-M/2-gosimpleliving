@@ -12,6 +12,7 @@ interface TrafficSource {
 }
 
 const STORAGE_KEY = 'gsl_traffic_source';
+const CONVERSION_KEY = 'gsl_pending_conversion';
 
 export const AnalyticsService = {
   /**
@@ -88,11 +89,81 @@ export const AnalyticsService = {
     }
     sessionStorage.setItem(clickKey, Date.now().toString());
 
-    // 3. Send to Database
+    // 3. Mark pending conversion for attribution
+    sessionStorage.setItem(CONVERSION_KEY, JSON.stringify({
+      productId,
+      productTitle,
+      price,
+      source: source.source,
+      medium: source.medium,
+      campaign: source.campaign,
+      keyword: source.keyword,
+      timestamp: now
+    }));
+
+    // 4. Send to Database
     try {
       await dbService.logAnalyticsEvent(event);
     } catch (e) {
       console.error("Failed to log analytics event", e);
+    }
+  },
+
+  /**
+   * Checks for a pending conversion and fires a purchase_intent event.
+   * Call this on page load after the user returns from an affiliate site.
+   */
+  checkPendingConversion: async () => {
+    const raw = sessionStorage.getItem(CONVERSION_KEY);
+    if (!raw) return;
+    try {
+      const pending = JSON.parse(raw);
+      const source = AnalyticsService.getSource();
+      const now = new Date().toISOString();
+      const event: AnalyticsEvent = {
+        event_type: 'purchase_intent',
+        product_id: pending.productId,
+        product_title: pending.productTitle,
+        product_price: pending.price,
+        source: source.source,
+        medium: source.medium,
+        campaign: source.campaign,
+        referrer: source.referrer,
+        keyword: source.keyword,
+        user_agent: navigator.userAgent,
+        timestamp: now
+      };
+      await dbService.logAnalyticsEvent(event);
+      sessionStorage.removeItem(CONVERSION_KEY);
+    } catch (e) {
+      console.error("Failed to track conversion", e);
+    }
+  },
+
+  /**
+   * Manually fire a purchase_intent event for conversion tracking.
+   */
+  trackConversion: async (productId: string, productTitle: string, price: number) => {
+    const source = AnalyticsService.getSource();
+    const now = new Date().toISOString();
+    const event: AnalyticsEvent = {
+      event_type: 'purchase_intent',
+      product_id: productId,
+      product_title: productTitle,
+      product_price: price,
+      source: source.source,
+      medium: source.medium,
+      campaign: source.campaign,
+      referrer: source.referrer,
+      keyword: source.keyword,
+      user_agent: navigator.userAgent,
+      timestamp: now
+    };
+    sessionStorage.removeItem(CONVERSION_KEY);
+    try {
+      await dbService.logAnalyticsEvent(event);
+    } catch (e) {
+      console.error("Failed to track conversion", e);
     }
   },
 
@@ -103,9 +174,6 @@ export const AnalyticsService = {
     const source = AnalyticsService.getSource();
     const now = new Date().toISOString();
 
-    // Normalize path to basic identifying string if needed, 
-    // but raw path is usually best for analytics.
-
     const event: AnalyticsEvent = {
       event_type: 'page_view',
       source: source.source,
@@ -115,16 +183,13 @@ export const AnalyticsService = {
       keyword: source.keyword,
       user_agent: navigator.userAgent,
       timestamp: now,
-      // We can use the 'product_title' field to store the Path for PageViews 
-      // if we don't want to migrate the DB schema to add a 'path' column right now.
-      // Or we utilize 'product_id' as 'page_path' for these events.
-      // Let's use 'product_title' as 'Page Path' to make it readable in admin panel if ever viewed.
       product_title: path
     };
 
     console.log('[Analytics] Page View:', path, event);
 
     try {
+      await dbService.logAnalyticsEvent(event);
     } catch (e) {
       console.error("Failed to log page view", e);
     }

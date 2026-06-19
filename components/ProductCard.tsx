@@ -1,11 +1,12 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Star, TrendingUp, Heart, ExternalLink, Tag } from 'lucide-react';
 import { Product, ThemeColor, AffiliateConfig } from '../types';
 import { AFFILIATE_THEMES, AffiliateTheme } from '../themeConfig';
 import { Button } from './Button';
 import { CJService } from '../services/cjService';
 import { AffiliateService } from '../services/affiliateService';
+import { EmailCaptureModal, shouldShowEmailCapture } from './EmailCaptureModal';
 
 interface ProductCardProps {
   product: Product;
@@ -14,7 +15,8 @@ interface ProductCardProps {
   onToggleWishlist?: (productId: string) => void;
   onRecordClick?: (productId: string) => void;
   themeColor?: ThemeColor;
-  affiliateConfig?: AffiliateConfig; // CJ configuration
+  affiliateConfig?: AffiliateConfig;
+  amazonAssociatesId?: string;
 }
 
 
@@ -25,8 +27,11 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   onToggleWishlist,
   onRecordClick,
   themeColor = 'amber',
-  affiliateConfig
+  affiliateConfig,
+  amazonAssociatesId
 }) => {
+  const [captureModal, setCaptureModal] = useState<{ open: boolean; url: string }>({ open: false, url: '' });
+
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
@@ -40,43 +45,63 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
     }
   };
 
+  // Append Amazon Associates tag to Amazon links
+  const applyAmazonTag = (url: string): string => {
+    if (!amazonAssociatesId) return url;
+    const isAmazon = url.includes('amazon.com') || url.includes('amzn.to');
+    if (!isAmazon) return url;
+    const separator = url.includes('?') ? '&' : '?';
+    const tagParam = `tag=${amazonAssociatesId}`;
+    // Replace existing tag if present
+    if (url.includes('tag=')) {
+      return url.replace(/tag=[^&]+/, tagParam);
+    }
+    return `${url}${separator}${tagParam}`;
+  };
+
   // Generate affiliate link - supports CJ (legacy) and multiple networks
   const finalAffiliateLink = useMemo(() => {
     // Check global toggle (undefined = enabled for backward compatibility)
     if (affiliateConfig?.globalEnabled === false) {
-      return product.affiliateLink;
+      return applyAmazonTag(product.affiliateLink);
     }
 
     // Priority 1: CJ Affiliate (legacy support)
     if (affiliateConfig?.cjEnabled && affiliateConfig?.cjPublisherId) {
       const cjLink = CJService.generateCJLink(product.affiliateLink, affiliateConfig);
-      return cjLink.affiliateUrl;
+      return applyAmazonTag(cjLink.affiliateUrl);
     }
 
     // Priority 2: Check for other affiliate networks
     const activeNetwork = AffiliateService.getActiveNetwork(affiliateConfig);
     if (activeNetwork) {
-      return AffiliateService.generateAffiliateLink(
-        product.affiliateLink,
-        activeNetwork,
-        product
+      return applyAmazonTag(
+        AffiliateService.generateAffiliateLink(
+          product.affiliateLink,
+          activeNetwork,
+          product
+        )
       );
     }
 
-    return product.affiliateLink;
-  }, [product, affiliateConfig]);
+    return applyAmazonTag(product.affiliateLink);
+  }, [product, affiliateConfig, amazonAssociatesId]);
 
   const handleBuyClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.stopPropagation(); // Prevent opening modal when clicking buy
+    e.stopPropagation();
+
+    if (shouldShowEmailCapture()) {
+      e.preventDefault();
+      setCaptureModal({ open: true, url: finalAffiliateLink });
+      return;
+    }
 
     if (affiliateConfig?.globalEnabled !== false) {
-      // Track CJ click if enabled (legacy support)
       if (affiliateConfig?.cjEnabled && affiliateConfig?.cjPublisherId) {
         const cjLink = CJService.generateCJLink(product.affiliateLink, affiliateConfig);
         CJService.trackCJClick(cjLink);
       }
 
-      // Track other affiliate network clicks
       const activeNetwork = AffiliateService.getActiveNetwork(affiliateConfig);
       if (activeNetwork) {
         AffiliateService.trackAffiliateClick(activeNetwork, product);
@@ -153,7 +178,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
     <div className="group bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full relative">
       {/* Image Container */}
       <div
-        className="relative aspect-square overflow-hidden bg-white dark:bg-white p-4 cursor-pointer"
+        className="relative aspect-square overflow-hidden bg-white dark:bg-slate-800 p-4 cursor-pointer"
         onClick={() => onOpenDetails(product)}
       >
         <img
@@ -287,6 +312,8 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
             </a>
 
             {/* Additional Affiliate Buttons */}
+            <p className="text-[10px] text-slate-400 dark:text-slate-600 text-center leading-tight">As an Amazon Associate we earn from qualifying purchases.</p>
+
             {product.additionalAffiliateLinks && product.additionalAffiliateLinks.map((link, idx) => (
               <a
                 key={idx}
@@ -296,6 +323,11 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
                 className="w-full block group/btn"
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (shouldShowEmailCapture()) {
+                    e.preventDefault();
+                    setCaptureModal({ open: true, url: link.url });
+                    return;
+                  }
                   if (onRecordClick) onRecordClick(product.id);
                 }}
               >
@@ -309,6 +341,12 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
           </div>
         </div>
       </div>
+      <EmailCaptureModal
+        isOpen={captureModal.open}
+        onClose={() => setCaptureModal({ open: false, url: '' })}
+        affiliateUrl={captureModal.url}
+        productTitle={product.title}
+      />
     </div>
   );
 };

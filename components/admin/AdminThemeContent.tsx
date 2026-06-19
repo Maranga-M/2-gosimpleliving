@@ -4,7 +4,7 @@ import { Palette, Sparkles, Loader2, Wand2, Save, X, Eye, Monitor } from 'lucide
 import { SiteContent, ThemeColor, Season } from '../../types';
 import { Button } from '../Button';
 import { MediaManager } from '../MediaManager';
-import { generateSiteContent } from '../../services/geminiService';
+import { generateSiteContent } from '../../services/geminiService.proxy';
 import toast from 'react-hot-toast';
 
 interface AdminThemeContentProps {

@@ -5,6 +5,8 @@ import { Product, Review, ThemeColor } from '../types';
 import { AFFILIATE_THEMES, AffiliateTheme } from '../themeConfig';
 import { Button } from './Button';
 import { StarRating } from './StarRating';
+import { EmailCaptureModal, shouldShowEmailCapture } from './EmailCaptureModal';
+import { GoogleAd } from '../src/components/GoogleAd';
 
 interface ProductModalProps {
   product: Product;
@@ -30,6 +32,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [userName, setUserName] = useState('');
+  const [captureModal, setCaptureModal] = useState<{ open: boolean; url: string }>({ open: false, url: '' });
 
   if (!isOpen) return null;
 
@@ -51,7 +54,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     setUserName('');
   };
 
-  const handleBuyClick = () => {
+  const handleBuyClick = (e: React.MouseEvent) => {
+    if (shouldShowEmailCapture()) {
+      e.preventDefault();
+      setCaptureModal({ open: true, url: product.affiliateLink });
+      return;
+    }
     if (onRecordClick) {
       onRecordClick(product.id);
     }
@@ -116,7 +124,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         {/* Left: Image & Key Info */}
         <div className="w-full md:w-1/2 bg-slate-50 dark:bg-slate-800/50 p-8 flex flex-col overflow-y-auto border-r border-slate-100 dark:border-slate-800">
-          <div className="relative aspect-square rounded-xl overflow-hidden bg-white dark:bg-white mb-6 shadow-sm group">
+          <div className="relative aspect-square rounded-xl overflow-hidden bg-white dark:bg-slate-200 mb-6 shadow-sm group">
             <img
               src={product.image}
               alt={product.title}
@@ -188,6 +196,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{product.description}</p>
           </div>
 
+          <GoogleAd format="rectangle" className="mb-8" />
+
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">User Reviews</h3>
@@ -226,6 +236,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           </div>
         </div>
       </div>
+      <EmailCaptureModal
+        isOpen={captureModal.open}
+        onClose={() => setCaptureModal({ open: false, url: '' })}
+        affiliateUrl={captureModal.url}
+        productTitle={product.title}
+      />
     </div>
   );
 };

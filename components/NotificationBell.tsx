@@ -33,24 +33,24 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
     <div className="relative">
       <button 
         onClick={handleToggle}
-        className="relative p-2 text-slate-600 hover:text-slate-900 transition-colors rounded-full hover:bg-slate-100"
+        className="relative p-2 text-slate-600 hover:text-slate-900 transition-colors rounded-full hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
       >
         <Bell size={24} />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+          <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
         )}
       </button>
 
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-            <div className="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 className="font-semibold text-sm text-slate-900">Notifications</h3>
+          <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+            <div className="p-3 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800">
+              <h3 className="font-semibold text-sm text-slate-900 dark:text-white">Notifications</h3>
               {notifications.length > 0 && (
                 <button 
                     onClick={onClearAll} 
-                    className="text-xs text-slate-500 hover:text-slate-800"
+                    className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
                 >
                     Clear all
                 </button>
@@ -59,11 +59,11 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
             
             <div className="max-h-[300px] overflow-y-auto">
               {notifications.length > 0 ? (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-700">
                   {notifications.map(n => (
                     <div 
                         key={n.id} 
-                        className={`p-3 hover:bg-slate-50 transition-colors cursor-pointer ${n.read ? 'opacity-60' : 'bg-white'}`}
+                        className={`p-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${n.read ? 'opacity-60' : 'bg-white dark:bg-slate-900'}`}
                         onClick={() => {
                             onMarkRead(n.id);
                             // Could navigate to product here
@@ -74,18 +74,18 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                             {getIcon(n.type)}
                         </div>
                         <div>
-                          <p className={`text-sm ${!n.read ? 'font-semibold text-slate-900' : 'text-slate-700'}`}>
+                          <p className={`text-sm ${!n.read ? 'font-semibold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                               {n.title}
                           </p>
-                          <p className="text-xs text-slate-500 mt-1 line-clamp-2">{n.message}</p>
-                          <p className="text-[10px] text-slate-400 mt-1">{n.timestamp}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{n.message}</p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{n.timestamp}</p>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="p-8 text-center text-slate-400 text-sm">
+                <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-sm">
                   No new notifications
                 </div>
               )}
