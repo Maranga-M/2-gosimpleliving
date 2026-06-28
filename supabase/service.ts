@@ -650,18 +650,46 @@ export const getAnalyticsEvents = async (limit = 1000): Promise<AnalyticsEvent[]
 
 // --- STORAGE ---
 
+let bucketInitialized = false;
+
+const ensureStorageBucket = async () => {
+    if (!supabase || bucketInitialized) return;
+
+    const { error } = await supabase.storage.getBucket('media-assets');
+    if (error) {
+        const { error: createError } = await supabase.storage.createBucket('media-assets', {
+            public: true,
+            fileSizeLimit: 5 * 1024 * 1024,
+            allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
+        });
+        if (createError && !createError.message?.includes('already exists')) {
+            console.error('Failed to create storage bucket:', createError);
+        }
+    }
+    bucketInitialized = true;
+};
+
 export const uploadImage = async (base64: string, fileName: string): Promise<string | null> => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
 
-    const response = await fetch(base64);
-    const blob = await response.blob();
+    await ensureStorageBucket();
+
+    const parts = base64.split(',');
+    const mimeMatch = parts[0].match(/:(.*?);/);
+    const mimeType = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+    const binaryString = atob(parts[1]);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], { type: mimeType });
 
     const { data, error } = await supabase
         .storage
         .from('media-assets')
         .upload(fileName, blob, {
             cacheControl: '3600',
-            upsert: false,
+            upsert: true,
             contentType: blob.type
         });
 
@@ -678,6 +706,8 @@ export const uploadImage = async (base64: string, fileName: string): Promise<str
 export const uploadFile = async (content: string, fileName: string, contentType: string): Promise<string | null> => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
     try {
+        await ensureStorageBucket();
+
         const { data, error } = await supabase
             .storage
             .from('media-assets')
