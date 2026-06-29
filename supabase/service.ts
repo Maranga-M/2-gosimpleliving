@@ -655,16 +655,27 @@ export const getAnalyticsEvents = async (limit = 1000): Promise<AnalyticsEvent[]
 export const uploadImage = async (base64: string, fileName: string): Promise<string | null> => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
 
-    const response = await fetch(base64);
-    const blob = await response.blob();
+    // Convert base64 data URL to blob
+    const [header, data] = base64.split(',');
+    const bstr = atob(data);
+    const n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+        u8arr[i] = bstr.charCodeAt(i);
+    }
+    
+    // Extract mime type from data URL header
+    const mimeMatch = header.match(/:(.*?);/);
+    const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    const blob = new Blob([u8arr], { type: mimeType });
 
-    const { data, error } = await supabase
+    const { data: uploadData, error } = await supabase
         .storage
         .from('media-assets')
         .upload(fileName, blob, {
             cacheControl: '3600',
             upsert: false,
-            contentType: blob.type
+            contentType: mimeType
         });
 
     if (error) throw error;
@@ -672,7 +683,7 @@ export const uploadImage = async (base64: string, fileName: string): Promise<str
     const { data: publicUrlData } = supabase
         .storage
         .from('media-assets')
-        .getPublicUrl(data.path);
+        .getPublicUrl(uploadData.path);
 
     return publicUrlData.publicUrl;
 };
