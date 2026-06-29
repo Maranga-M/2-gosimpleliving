@@ -439,23 +439,62 @@ export const getProductById = async (id: string): Promise<Product | null> => {
 
 export const createProduct = async (product: Product) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('products').insert(product);
-    if (error) throw error;
-    localStorage.removeItem(CACHE_KEYS.products);
+    try {
+        const { error } = await supabase.from('products').insert(product);
+        if (error) {
+            console.error('[v0] Create product error:', {
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint,
+            });
+            throw error;
+        }
+        localStorage.removeItem(CACHE_KEYS.products);
+    } catch (e: any) {
+        console.error('[v0] Create product exception:', e);
+        throw new Error(`Failed to create product: ${e.message}`);
+    }
 };
 
 export const updateProduct = async (product: Product) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('products').update(product).eq('id', product.id);
-    if (error) throw error;
-    localStorage.removeItem(CACHE_KEYS.products);
+    try {
+        const { error } = await supabase.from('products').update(product).eq('id', product.id);
+        if (error) {
+            console.error('[v0] Update product error:', {
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint,
+            });
+            throw error;
+        }
+        localStorage.removeItem(CACHE_KEYS.products);
+    } catch (e: any) {
+        console.error('[v0] Update product exception:', e);
+        throw new Error(`Failed to update product: ${e.message}`);
+    }
 };
 
 export const deleteProduct = async (id: string) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('products').delete().eq('id', id);
-    if (error) throw error;
-    localStorage.removeItem(CACHE_KEYS.products);
+    try {
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) {
+            console.error('[v0] Delete product error:', {
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint,
+            });
+            throw error;
+        }
+        localStorage.removeItem(CACHE_KEYS.products);
+    } catch (e: any) {
+        console.error('[v0] Delete product exception:', e);
+        throw new Error(`Failed to delete product: ${e.message}`);
+    }
 };
 
 export const getBlogPosts = async (page = 0): Promise<BlogPost[] | null> => {
