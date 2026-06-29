@@ -83,7 +83,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
 
     // Update editor content if value changed externally (e.g. AI generation)
     useEffect(() => {
-        if (editor && value !== (editor.storage as any)?.markdown?.getMarkdown?.()) {
+        if (editor && value !== editor.getHTML()) {
             editor.commands.setContent(value);
         }
     }, [value, editor]);
@@ -324,7 +324,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
             {/* Footer / Stats */}
             <div className="px-4 py-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20 flex justify-between items-center text-[10px] text-slate-400 font-mono">
                 <div>
-                    {((editor.storage as any)?.markdown?.getMarkdown?.() || '').length} chars | {((editor.storage as any)?.markdown?.getMarkdown?.() || '').split(/\s+/).filter(Boolean).length} words
+                    {(editor.getHTML() || '').replace(/<[^>]*>/g, '').length} chars | {(editor.getHTML() || '').replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length} words
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Rich Text Active</span>
