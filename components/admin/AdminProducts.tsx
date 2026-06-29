@@ -212,7 +212,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                     const newProduct: Product = {
                         ...initialFormState,
                         ...details as Product,
-                        id: `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                        id: crypto.randomUUID(),
                         affiliateLink: url.includes('amazon')
                             ? (url.includes('?') ? `${url}&tag=gosimpleliving-20` : `${url}?tag=gosimpleliving-20`)
                             : '#',

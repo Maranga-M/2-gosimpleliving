@@ -405,7 +405,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const handleAddShoppingItemAsProduct = (item: UrlBlogResult['shoppingList'][0], index: number) => {
         const newProduct: Product = {
             ...initialFormState,
-            id: `p-${Date.now()}-${index}`,
+            id: crypto.randomUUID(),
             title: item.name,
             description: item.description,
             price: item.estimatedPrice,
@@ -603,7 +603,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     const newProduct: Product = {
                         ...initialFormState,
                         ...details as Product,
-                        id: `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                        id: crypto.randomUUID(),
                         affiliateLink: url.includes('amazon')
                             ? (url.includes('?') ? `${url}&tag=gosimpleliving-20` : `${url}?tag=gosimpleliving-20`)
                             : '#',
@@ -1972,7 +1972,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     categories={categories}
                     onAddProductFromResearch={(item) => {
                         const newProduct: Product = {
-                            id: `p-${Date.now()}`,
+                            id: crypto.randomUUID(),
                             title: item.name,
                             category: item.category,
                             price: item.price,

@@ -115,7 +115,7 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
 
         const newProduct: Product = {
             ...originalProduct,
-            id: `p-${Date.now()}`,
+            id: crypto.randomUUID(),
             title: `[COPY] ${originalProduct.title}`,
             status: 'draft',
             clicks: 0,

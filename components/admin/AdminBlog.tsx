@@ -147,7 +147,7 @@ export const AdminBlog: React.FC<AdminBlogProps> = ({
             return;
         }
         const newProduct: Partial<Product> = {
-            id: `p-${Date.now()}-${index}`,
+            id: crypto.randomUUID(),
             title: item.name,
             description: item.description,
             price: item.estimatedPrice,
