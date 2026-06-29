@@ -71,11 +71,16 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
         startTransition(() => {
             setProducts(prev => [newProduct, ...prev]);
         });
-        try { await dbService.createProduct(newProduct); } catch (e) {
+        try { await dbService.createProduct(newProduct); } catch (e: any) {
+            console.error('[v0] handleAddProduct error:', e);
             startTransition(() => {
                 setProducts(prev => prev.filter(p => p.id !== newProduct.id));
             });
-            toast.error("Persistence Error: Failed to save product to database.");
+            const errorMsg = e?.message || "Unknown error occurred";
+            const displayMsg = errorMsg.includes('RLS') || errorMsg.includes('policy') 
+                ? "Permission denied: You don't have permission to add products. Please ensure you're logged in as an admin or editor."
+                : `Failed to save product: ${errorMsg}`;
+            toast.error(displayMsg);
         }
     };
 
@@ -84,13 +89,18 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
         startTransition(() => {
             setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
         });
-        try { await dbService.updateProduct(updatedProduct); } catch (e) {
+        try { await dbService.updateProduct(updatedProduct); } catch (e: any) {
+            console.error('[v0] handleUpdateProduct error:', e);
             if (original) {
                 startTransition(() => {
                     setProducts(prev => prev.map(p => p.id === updatedProduct.id ? original : p));
                 });
             }
-            toast.error("Persistence Error: Failed to update product in database.");
+            const errorMsg = e?.message || "Unknown error occurred";
+            const displayMsg = errorMsg.includes('RLS') || errorMsg.includes('policy') 
+                ? "Permission denied: You don't have permission to update products. Please ensure you're logged in as an admin or editor."
+                : `Failed to update product: ${errorMsg}`;
+            toast.error(displayMsg);
         }
     };
 
@@ -99,13 +109,18 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
         startTransition(() => {
             setProducts(prev => prev.filter(p => p.id !== id));
         });
-        try { await dbService.deleteProduct(id); } catch (e) {
+        try { await dbService.deleteProduct(id); } catch (e: any) {
+            console.error('[v0] handleDeleteProduct error:', e);
             if (original) {
                 startTransition(() => {
                     setProducts(prev => [original, ...prev]);
                 });
             }
-            toast.error("Persistence Error: Failed to delete product.");
+            const errorMsg = e?.message || "Unknown error occurred";
+            const displayMsg = errorMsg.includes('RLS') || errorMsg.includes('policy') 
+                ? "Permission denied: You don't have permission to delete products. Please ensure you're logged in as an admin or editor."
+                : `Failed to delete product: ${errorMsg}`;
+            toast.error(displayMsg);
         }
     };
 
@@ -139,9 +154,14 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
 
         try {
             await dbService.updateProduct(updatedProduct);
-        } catch (e) {
+        } catch (e: any) {
+            console.error('[v0] handleAddReview error:', e);
             setProducts(prev => prev.map(p => p.id === productId ? product : p));
-            toast.error("Failed to save review. Ensure your database is connected.");
+            const errorMsg = e?.message || "Unknown error occurred";
+            const displayMsg = errorMsg.includes('RLS') || errorMsg.includes('policy') 
+                ? "Permission denied: You don't have permission to update products."
+                : `Failed to save review: ${errorMsg}`;
+            toast.error(displayMsg);
         }
     };
 
