@@ -1,4 +1,5 @@
 import { useState, useMemo, useTransition } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { Product, SortOption, Review } from '../../types';
 import { dbService } from '../../services/database';
 import { AnalyticsService } from '../../services/analytics';
@@ -124,19 +125,21 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
         }
     };
 
-    const handleDuplicateProduct = (productId: string) => {
-        const originalProduct = products.find(p => p.id === productId);
-        if (!originalProduct) return;
-
-        const newProduct: Product = {
-            ...originalProduct,
-            id: `p-${Date.now()}`,
-            title: `[COPY] ${originalProduct.title}`,
-            status: 'draft',
-            clicks: 0,
-            localReviews: [],
-            isBestSeller: false,
-        };
+  const handleDuplicateProduct = (productId: string) => {
+    const originalProduct = products.find(p => p.id === productId);
+    if (!originalProduct) return;
+    
+    const newProduct: Product = {
+      ...originalProduct,
+      id: uuidv4(),
+      title: `[COPY] ${originalProduct.title}`,
+      status: 'draft',
+      clicks: 0,
+      localReviews: [],
+      isBestSeller: false,
+    };
+    handleAddProduct(newProduct);
+  };
 
         handleAddProduct(newProduct);
     };

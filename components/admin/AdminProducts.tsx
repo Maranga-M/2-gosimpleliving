@@ -1,5 +1,6 @@
 
 import React, { useState, useRef } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { Plus, Edit2, Trash2, X, Save, Copy, PackagePlus, Loader2, Wand2, Search, Download, Upload, FileUp } from 'lucide-react';
 import { Product, Role } from '../../types';
 import { Button } from '../Button';
@@ -135,7 +136,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
 
                 for (let i = 1; i < lines.length; i++) {
                     const values = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
-                    const p: any = { ...initialFormState, id: `p-csv-${Date.now()}-${i}` };
+                    const p: any = { ...initialFormState, id: uuidv4() };
                     
                     headers.forEach((h, idx) => {
                         if (idx < values.length) {
@@ -212,7 +213,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                     const newProduct: Product = {
                         ...initialFormState,
                         ...details as Product,
-                        id: `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                        id: uuidv4(),
                         affiliateLink: url.includes('amazon')
                             ? (url.includes('?') ? `${url}&tag=gosimpleliving-20` : `${url}?tag=gosimpleliving-20`)
                             : '#',

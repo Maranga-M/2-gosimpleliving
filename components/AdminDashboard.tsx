@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { Plus, Edit2, Trash2, X, Save, Image as ImageIcon, TrendingUp, Sparkles, Loader2, List, Globe, Palette, Calendar, RefreshCw, Users as UsersIcon, Settings, Database, Shield, Wand2, Megaphone, Trash, Tag, Search, Copy, ArrowLeft, Wifi, WifiOff, PackagePlus, Eye, LinkIcon, CloudUpload, FileText, AlertTriangle, Package, ExternalLink, Activity, ShoppingCart, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Product, SiteContent, BlogPost, CustomPage, Role, ThemeColor, Season, SocialPlatform } from '../types';
@@ -402,10 +403,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         }
     };
 
-    const handleAddShoppingItemAsProduct = (item: UrlBlogResult['shoppingList'][0], index: number) => {
-        const newProduct: Product = {
-            ...initialFormState,
-            id: `p-${Date.now()}-${index}`,
+  const handleAddShoppingItemAsProduct = (item: UrlBlogResult['shoppingList'][0], index: number) => {
+    const newProduct: Product = {
+      ...initialFormState,
+      id: uuidv4(),
             title: item.name,
             description: item.description,
             price: item.estimatedPrice,
@@ -599,16 +600,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         for (const url of urls) {
             try {
                 const details = await fetchProductFromWeb(url, categories);
-                if (details && details.title) {
-                    const newProduct: Product = {
-                        ...initialFormState,
-                        ...details as Product,
-                        id: `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                        affiliateLink: url.includes('amazon')
-                            ? (url.includes('?') ? `${url}&tag=gosimpleliving-20` : `${url}?tag=gosimpleliving-20`)
-                            : '#',
-                        status: 'draft'
-                    };
+    if (details && details.title) {
+      const newProduct: Product = {
+        ...initialFormState,
+        ...details as Product,
+        id: uuidv4(),
+        affiliateLink: url.includes('amazon')
+          ? (url.includes('?') ? `${url}&tag=gosimpleliving-20` : `${url}?tag=gosimpleliving-20`)
+          : '#',
+        status: 'draft'
+      };
                     onAddProduct(newProduct);
                     successCount++;
                 }
@@ -1970,9 +1971,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {activeTab === 'research' && (
                 <AdminResearch
                     categories={categories}
-                    onAddProductFromResearch={(item) => {
-                        const newProduct: Product = {
-                            id: `p-${Date.now()}`,
+      onAddProductFromResearch={(item) => {
+        const newProduct: Product = {
+          id: uuidv4(),
                             title: item.name,
                             category: item.category,
                             price: item.price,

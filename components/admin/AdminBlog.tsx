@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { Plus, Edit2, Trash2, X, Save, Copy, FileText, Sparkles, Loader2, Wand2, Search, ArrowLeft, Image as ImageIcon, Link as LinkIcon, List, TrendingUp, Globe, ShoppingCart, ChevronDown, ChevronUp, DollarSign, ExternalLink } from 'lucide-react';
 import { BlogPost, Product, Role } from '../../types';
 import { Button } from '../Button';
@@ -147,7 +148,7 @@ export const AdminBlog: React.FC<AdminBlogProps> = ({
             return;
         }
         const newProduct: Partial<Product> = {
-            id: `p-${Date.now()}-${index}`,
+          id: uuidv4(),
             title: item.name,
             description: item.description,
             price: item.estimatedPrice,
