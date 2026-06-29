@@ -26,7 +26,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, tab
     const parts = safeContent.split(/{{table:(.*?)}}/g);
 
     return (
-        <div className="prose prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-200 leading-relaxed">
+        <div className={isHTML ? "max-w-none text-slate-700 dark:text-slate-200 leading-relaxed" : "prose prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-200 leading-relaxed"}>
             {parts.map((part, index) => {
                 const table = safeTables.find(t => t.id === part);
 
