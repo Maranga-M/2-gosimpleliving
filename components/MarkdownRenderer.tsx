@@ -18,6 +18,9 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, tab
     // Ensure tables is an array (handle null from DB)
     const safeTables = tables || [];
 
+    // Check if content is HTML (from TipTap editor)
+    const isHTML = safeContent.trim().startsWith('<') || safeContent.includes('<p>') || safeContent.includes('<h') || safeContent.includes('<ul') || safeContent.includes('<ol') || safeContent.includes('<blockquote');
+
     // Split content by the shortcode {{table:ID}}
     // The regex captures the ID so we can identify it
     const parts = safeContent.split(/{{table:(.*?)}}/g);
@@ -41,6 +44,18 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, tab
 
                 if (!part.trim()) return null;
 
+                // If content is HTML from TipTap, render directly
+                if (isHTML) {
+                    return (
+                        <div
+                            key={index}
+                            className="prose prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-200 leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: part }}
+                        />
+                    );
+                }
+
+                // Otherwise render as markdown
                 return (
                     <ReactMarkdown
                         key={index}

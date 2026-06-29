@@ -69,9 +69,9 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
         ],
         content: value,
         onUpdate: ({ editor }) => {
-            // Use the markdown extension to get markdown output
-            const markdown = (editor.storage as any)?.markdown?.getMarkdown?.() || '';
-            onChange(markdown);
+            // Save as HTML to preserve all formatting (colors, highlights, alignment)
+            const html = editor.getHTML();
+            onChange(html);
         },
         editorProps: {
             attributes: {
