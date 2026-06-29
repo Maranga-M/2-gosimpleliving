@@ -439,23 +439,62 @@ export const getProductById = async (id: string): Promise<Product | null> => {
 
 export const createProduct = async (product: Product) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('products').insert(product);
-    if (error) throw error;
-    localStorage.removeItem(CACHE_KEYS.products);
+    try {
+        const { error } = await supabase.from('products').insert(product);
+        if (error) {
+            console.error('[v0] Create product error:', {
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint,
+            });
+            throw error;
+        }
+        localStorage.removeItem(CACHE_KEYS.products);
+    } catch (e: any) {
+        console.error('[v0] Create product exception:', e);
+        throw new Error(`Failed to create product: ${e.message}`);
+    }
 };
 
 export const updateProduct = async (product: Product) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('products').update(product).eq('id', product.id);
-    if (error) throw error;
-    localStorage.removeItem(CACHE_KEYS.products);
+    try {
+        const { error } = await supabase.from('products').update(product).eq('id', product.id);
+        if (error) {
+            console.error('[v0] Update product error:', {
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint,
+            });
+            throw error;
+        }
+        localStorage.removeItem(CACHE_KEYS.products);
+    } catch (e: any) {
+        console.error('[v0] Update product exception:', e);
+        throw new Error(`Failed to update product: ${e.message}`);
+    }
 };
 
 export const deleteProduct = async (id: string) => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
-    const { error } = await supabase.from('products').delete().eq('id', id);
-    if (error) throw error;
-    localStorage.removeItem(CACHE_KEYS.products);
+    try {
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) {
+            console.error('[v0] Delete product error:', {
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint,
+            });
+            throw error;
+        }
+        localStorage.removeItem(CACHE_KEYS.products);
+    } catch (e: any) {
+        console.error('[v0] Delete product exception:', e);
+        throw new Error(`Failed to delete product: ${e.message}`);
+    }
 };
 
 export const getBlogPosts = async (page = 0): Promise<BlogPost[] | null> => {
@@ -655,16 +694,27 @@ export const getAnalyticsEvents = async (limit = 1000): Promise<AnalyticsEvent[]
 export const uploadImage = async (base64: string, fileName: string): Promise<string | null> => {
     if (!supabase) throw new Error(DB_NOT_CONFIGURED_ERROR);
 
-    const response = await fetch(base64);
-    const blob = await response.blob();
+    // Convert base64 data URL to blob
+    const [header, data] = base64.split(',');
+    const bstr = atob(data);
+    const n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+        u8arr[i] = bstr.charCodeAt(i);
+    }
+    
+    // Extract mime type from data URL header
+    const mimeMatch = header.match(/:(.*?);/);
+    const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    const blob = new Blob([u8arr], { type: mimeType });
 
-    const { data, error } = await supabase
+    const { data: uploadData, error } = await supabase
         .storage
         .from('media-assets')
         .upload(fileName, blob, {
             cacheControl: '3600',
             upsert: false,
-            contentType: blob.type
+            contentType: mimeType
         });
 
     if (error) throw error;
@@ -672,7 +722,7 @@ export const uploadImage = async (base64: string, fileName: string): Promise<str
     const { data: publicUrlData } = supabase
         .storage
         .from('media-assets')
-        .getPublicUrl(data.path);
+        .getPublicUrl(uploadData.path);
 
     return publicUrlData.publicUrl;
 };
