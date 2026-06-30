@@ -84,6 +84,20 @@ export const AdminThemeContent: React.FC<AdminThemeContentProps> = ({
                     </h3>
                     
                     <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Logo</label>
+                        <MediaManager
+                            onMediaSelected={(url) => handleFormChange('logoUrl', url)}
+                            mediaType="images"
+                            title="Select or Upload Logo"
+                        />
+                        {draftContent.logoUrl && (
+                            <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                                <img src={draftContent.logoUrl} alt="Logo Preview" className="h-12 object-contain" />
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Accent Color</label>
                         <div className="flex flex-wrap gap-3">
                             {colorOptions.map(color => (
@@ -130,10 +144,6 @@ export const AdminThemeContent: React.FC<AdminThemeContentProps> = ({
                         <h3 className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                             <Monitor size={20} className="text-blue-500" /> Hero Content
                         </h3>
-                        <Button onClick={generateCopy} disabled={isGenerating} size="sm" variant="ghost" className="text-purple-600 hover:bg-purple-50 gap-2">
-                            {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
-                            AI Reword
-                        </Button>
                     </div>
 
                     <div className="space-y-4">

@@ -29,7 +29,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-slate-900/40"></div>
                 <div className="relative max-w-7xl mx-auto px-4 py-24 sm:px-6 lg:px-8 flex flex-col items-center text-center">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-xs font-semibold uppercase tracking-wide mb-6 border border-white/20">
-                        <Zap size={14} className="text-amber-300 fill-amber-300" /> {siteContent.announcementBar || 'AI-Powered Shopping'}
+                        <Zap size={14} className="text-amber-300 fill-amber-300" /> {siteContent.announcementBar || 'Welcome'}
                     </div>
                     <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight max-w-4xl">{siteContent.heroTitle}</h1>
                     <p className="text-lg md:text-xl text-slate-200 max-w-2xl mb-10 leading-relaxed">{siteContent.heroSubtitle}</p>
@@ -47,7 +47,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
             <div id="products-grid" className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-12">
                 <div className="flex flex-col gap-4 mb-8">
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide flex-shrink-0">
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide flex-shrink-0 justify-center flex-wrap">
                         {categories.map((cat) => (
                             <button key={cat} onClick={() => { setSelectedCategory(cat); setSmartCollectionFilter(null); setActiveCollectionId(null); }} className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${selectedCategory === cat && !activeCollectionId ? `bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-md` : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}>
                                 {cat}
