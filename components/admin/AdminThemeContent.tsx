@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Palette, Sparkles, Loader2, Wand2, Save, X, Eye, Monitor } from 'lucide-react';
+import { Palette, Sparkles, Loader2, Wand2, Save, X, Eye, Monitor, FileText } from 'lucide-react';
 import { SiteContent, ThemeColor, Season } from '../../types';
 import { Button } from '../Button';
 import { MediaManager } from '../MediaManager';
@@ -84,6 +84,20 @@ export const AdminThemeContent: React.FC<AdminThemeContentProps> = ({
                     </h3>
                     
                     <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Logo</label>
+                        <MediaManager
+                            onMediaSelected={(url) => handleFormChange('logoUrl', url)}
+                            mediaType="images"
+                            title="Select or Upload Logo"
+                        />
+                        {draftContent.logoUrl && (
+                            <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                                <img src={draftContent.logoUrl} alt="Logo Preview" className="h-12 object-contain" />
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Accent Color</label>
                         <div className="flex flex-wrap gap-3">
                             {colorOptions.map(color => (
@@ -130,10 +144,6 @@ export const AdminThemeContent: React.FC<AdminThemeContentProps> = ({
                         <h3 className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                             <Monitor size={20} className="text-blue-500" /> Hero Content
                         </h3>
-                        <Button onClick={generateCopy} disabled={isGenerating} size="sm" variant="ghost" className="text-purple-600 hover:bg-purple-50 gap-2">
-                            {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
-                            AI Reword
-                        </Button>
                     </div>
 
                     <div className="space-y-4">
@@ -170,6 +180,42 @@ export const AdminThemeContent: React.FC<AdminThemeContentProps> = ({
                             <Save size={16} /> Save Content
                         </Button>
                     </div>
+                </div>
+            </div>
+
+            {/* Legal & Disclaimers */}
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+                <h3 className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+                    <FileText size={20} className="text-green-500" /> Legal & Disclaimers
+                </h3>
+
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Amazon Associates Disclaimer</label>
+                    <textarea
+                        value={draftContent.amazonAssociatesDisclaimer || 'As an Amazon Associate, we earn from qualifying purchases.'}
+                        onChange={e => handleFormChange('amazonAssociatesDisclaimer', e.target.value)}
+                        className="w-full h-24 p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm resize-none dark:text-white"
+                        placeholder="Enter your Amazon Associates disclaimer text"
+                    />
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">This disclaimer appears in the Privacy Policy page under Third-Party Services section.</p>
+                </div>
+
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Product Card Footer Text</label>
+                    <textarea
+                        value={draftContent.productCardFooterText || 'As an Amazon Associate we earn from qualifying purchases.'}
+                        onChange={e => handleFormChange('productCardFooterText', e.target.value)}
+                        className="w-full h-20 p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm resize-none dark:text-white"
+                        placeholder="Enter footer text for product cards"
+                    />
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">This text appears at the bottom of each product card throughout the site.</p>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <Button onClick={() => handleSaveSection('Legal & Disclaimers')} className="w-full bg-green-600 hover:bg-green-700 text-white gap-2">
+                        <Save size={16} /> Save Disclaimers
+                    </Button>
+                </div>
                 </div>
             </div>
         </div>

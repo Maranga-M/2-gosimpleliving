@@ -17,6 +17,7 @@ interface ProductCardProps {
   themeColor?: ThemeColor;
   affiliateConfig?: AffiliateConfig;
   amazonAssociatesId?: string;
+  productCardFooterText?: string;
 }
 
 
@@ -28,7 +29,8 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   onRecordClick,
   themeColor = 'amber',
   affiliateConfig,
-  amazonAssociatesId
+  amazonAssociatesId,
+  productCardFooterText
 }) => {
   const [captureModal, setCaptureModal] = useState<{ open: boolean; url: string }>({ open: false, url: '' });
 
@@ -312,7 +314,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
             </a>
 
             {/* Additional Affiliate Buttons */}
-            <p className="text-[10px] text-slate-400 dark:text-slate-600 text-center leading-tight">As an Amazon Associate we earn from qualifying purchases.</p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-600 text-center leading-tight">{productCardFooterText || 'As an Amazon Associate we earn from qualifying purchases.'}</p>
 
             {product.additionalAffiliateLinks && product.additionalAffiliateLinks.map((link, idx) => (
               <a

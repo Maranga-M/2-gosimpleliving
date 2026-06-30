@@ -72,7 +72,7 @@ export const PrivacyPolicyPage: React.FC = () => {
                             <ul className="list-disc pl-6 space-y-2 text-slate-600 dark:text-slate-400 mt-4">
                                 <li><strong>Google Analytics:</strong> To understand site traffic.</li>
                                 <li><strong>Google AdSense:</strong> To display relevant advertisements.</li>
-                                <li><strong>Amazon Associates:</strong> As an Amazon Associate, we earn from qualifying purchases.</li>
+                                <li><strong>Amazon Associates:</strong> {siteContent.amazonAssociatesDisclaimer || 'As an Amazon Associate, we earn from qualifying purchases.'}</li>
                             </ul>
                         </section>
                     </div>
