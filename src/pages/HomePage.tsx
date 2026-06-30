@@ -4,7 +4,6 @@ import { useApp } from '../contexts/AppContext';
 import { Zap, Search } from 'lucide-react';
 import { ProductCard } from '../../components/ProductCard';
 import { Button } from '../../components/Button';
-import { SmartFilter } from '../../components/SmartFilter';
 
 
 
@@ -16,7 +15,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     const { products, content, auth, dbStatus } = useApp();
     const {
         filteredProducts, categories, selectedCategory, setSelectedCategory,
-        setSmartCollectionFilter, activeCollectionId, setActiveCollectionId,
         sortBy, setSortBy, searchQuery, setSearchQuery, trackProductClick
     } = products;
 
@@ -49,7 +47,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 <div className="flex flex-col gap-4 mb-8">
                     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide flex-shrink-0 justify-center flex-wrap">
                         {categories.map((cat) => (
-                            <button key={cat} onClick={() => { setSelectedCategory(cat); setSmartCollectionFilter(null); setActiveCollectionId(null); }} className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${selectedCategory === cat && !activeCollectionId ? `bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-md` : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}>
+                            <button key={cat} onClick={() => { setSelectedCategory(cat); }} className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${selectedCategory === cat ? `bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-md` : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}>
                                 {cat}
                             </button>
                         ))}
@@ -65,13 +63,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                     </div>
                 </div>
 
-                <div className="mb-8">
-                    <SmartFilter
-                        products={products.products} // Pass raw products for context
-                        activeCollectionId={activeCollectionId}
-                        onSelectCollection={(ids) => { setSmartCollectionFilter(ids); setActiveCollectionId(ids ? 'active' : null); if (ids) setSelectedCategory('All'); }}
-                    />
-                </div>
+
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                     {filteredProducts.map((product) => (
@@ -91,7 +83,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 {filteredProducts.length === 0 && dbStatus !== 'loading' && (
                     <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
                         <h3 className="text-xl font-bold text-slate-400">No products match your filters.</h3>
-                        <Button variant="ghost" className="mt-4" onClick={() => { setSelectedCategory('All'); setSmartCollectionFilter(null); setActiveCollectionId(null); setSearchQuery(''); }}>Clear Filters</Button>
+                        <Button variant="ghost" className="mt-4" onClick={() => { setSelectedCategory('All'); setSearchQuery(''); }}>Clear Filters</Button>
                     </div>
                 )}
             </div>

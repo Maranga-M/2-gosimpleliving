@@ -24,10 +24,6 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
     const [sortBy, setSortBy] = useState<SortOption>('featured');
     const [showSalesOnly, setShowSalesOnly] = useState(false);
 
-    // Smart Collection State
-    const [smartCollectionFilter, setSmartCollectionFilter] = useState<string[] | null>(null);
-    const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
-
     // Initial Load Logic usually handled by parent or a useData hook, 
     // but we need CRUD methods here.
     // For now, we will expose setProducts to allow initial data loading.
@@ -43,7 +39,6 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
         result = result.filter(p => p.status === 'published');
 
         if (selectedCategory !== 'All') result = result.filter(p => p.category === selectedCategory);
-        if (smartCollectionFilter) result = result.filter(p => smartCollectionFilter.includes(p.id));
         if (showSalesOnly) result = result.filter(p => p.originalPrice != null && p.originalPrice > p.price);
 
         if (searchQuery) {
@@ -63,7 +58,7 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
                 default: return (b.isBestSeller ? 1 : 0) - (a.isBestSeller ? 1 : 0);
             }
         });
-    }, [products, selectedCategory, searchQuery, sortBy, smartCollectionFilter, showSalesOnly]);
+    }, [products, selectedCategory, searchQuery, sortBy, showSalesOnly]);
 
     // --- Actions ---
 
@@ -184,10 +179,6 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
         setSortBy,
         showSalesOnly,
         setShowSalesOnly,
-        smartCollectionFilter,
-        setSmartCollectionFilter,
-        activeCollectionId,
-        setActiveCollectionId,
         isUpdatingCatalogue: isPending,
 
         // Actions
