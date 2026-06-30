@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit2, Trash2, X, Save, Image as ImageIcon, TrendingUp, Sparkles, Loader2, List, Globe, Palette, Calendar, RefreshCw, Users as UsersIcon, Settings, Database, Shield, Wand2, Megaphone, Trash, Tag, Search, Copy, ArrowLeft, Wifi, WifiOff, PackagePlus, Eye, LinkIcon, CloudUpload, FileText, AlertTriangle, Package, ExternalLink, Activity, ShoppingCart, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Image as ImageIcon, TrendingUp, Sparkles, Loader2, List, Globe, Palette, Calendar, RefreshCw, Users as UsersIcon, Settings, Database, Shield, Wand2, Megaphone, Trash, Tag, Search, Copy, ArrowLeft, Wifi, WifiOff, PackagePlus, Eye, LinkIcon, CloudUpload, FileText, AlertTriangle, Package, ExternalLink, Activity, ShoppingCart, DollarSign, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Product, SiteContent, BlogPost, CustomPage, Role, ThemeColor, Season, SocialPlatform } from '../types';
 import { AFFILIATE_THEMES } from '../themeConfig';
@@ -20,6 +20,7 @@ import { TipTapEditor } from './TipTapEditor';
 import { AdminOffers } from './AdminOffers';
 import { AffiliateConfigTab } from './AffiliateConfigTab';
 import { AdminResearch } from './admin/research';
+import { AdminAnalytics } from './admin/AdminAnalytics';
 
 
 
@@ -44,7 +45,7 @@ interface AdminDashboardProps {
     onUpdateBlogPost: (post: BlogPost) => void;
     onDeleteBlogPost: (id: string) => void;
     onDuplicateBlogPost: (id: string) => void;
-    initialTab?: 'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config' | 'research';
+    initialTab?: 'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config' | 'research' | 'analytics';
     dbStatus: ConnectionStatus;
     isUsingFallback: boolean;
     onRefresh?: () => Promise<void>;
@@ -145,7 +146,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onSeed,
     lastError
 }) => {
-    const [activeTab, setActiveTab] = useState<'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config' | 'research'>(initialTab ?? 'products');
+    const [activeTab, setActiveTab] = useState<'products' | 'content' | 'theme' | 'config' | 'settings' | 'pages' | 'offers' | 'affiliate-config' | 'research' | 'analytics'>(initialTab ?? 'products');
 
     // Delete confirmation state
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'product' | 'post' | 'page' | 'all-products', title: string, message: string } | null>(null);
@@ -805,6 +806,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <button onClick={() => handleTabChange('research')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'research' ? 'text-purple-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><TrendingUp size={16} /> Research</span>{activeTab === 'research' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600"></div>}</button>
                 {currentUserRole === 'admin' && (
                     <>
+                        <button onClick={() => handleTabChange('analytics')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'analytics' ? 'text-blue-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><BarChart3 size={16} /> Analytics</span>{activeTab === 'analytics' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>}</button>
                         <button onClick={() => handleTabChange('config')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'config' ? 'text-amber-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><UsersIcon size={16} /> Users</span>{activeTab === 'config' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-600"></div>}</button>
                         <button onClick={() => handleTabChange('settings')} className={`px-6 py-3 font-medium text-sm transition-colors relative whitespace-nowrap ${activeTab === 'settings' ? 'text-amber-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}><span className="flex items-center gap-2"><Settings size={16} /> Settings</span>{activeTab === 'settings' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-600"></div>}</button>
                     </>
@@ -1991,6 +1993,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         onAddProduct(newProduct);
                     }}
                 />
+            )}
+
+            {activeTab === 'analytics' && (
+                <AdminAnalytics />
             )}
 
             {/* Connection Diagnostics Modal */}
