@@ -220,6 +220,7 @@ export interface SiteContent {
   heroImageUrl: string; // For AI Media Manager
   logoUrl?: string; // Persisted in DB instead of localStorage
   amazonAssociatesDisclaimer?: string; // Amazon Associates disclaimer text
+  productCardFooterText?: string; // Footer text displayed on product cards
   aiChatEnabled?: boolean; // Persisted in DB instead of localStorage
   footerLinks?: { label: string; url: string }[];
   amazonAssociatesId?: string;

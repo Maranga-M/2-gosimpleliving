@@ -77,6 +77,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                             themeColor={siteContent.themeColor}
                             affiliateConfig={siteContent.affiliateConfig}
                             amazonAssociatesId={siteContent.amazonAssociatesId}
+                            productCardFooterText={siteContent.productCardFooterText}
                         />
                     ))}
                 </div>

@@ -200,6 +200,17 @@ export const AdminThemeContent: React.FC<AdminThemeContentProps> = ({
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">This disclaimer appears in the Privacy Policy page under Third-Party Services section.</p>
                 </div>
 
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Product Card Footer Text</label>
+                    <textarea
+                        value={draftContent.productCardFooterText || 'As an Amazon Associate we earn from qualifying purchases.'}
+                        onChange={e => handleFormChange('productCardFooterText', e.target.value)}
+                        className="w-full h-20 p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm resize-none dark:text-white"
+                        placeholder="Enter footer text for product cards"
+                    />
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">This text appears at the bottom of each product card throughout the site.</p>
+                </div>
+
                 <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
                     <Button onClick={() => handleSaveSection('Legal & Disclaimers')} className="w-full bg-green-600 hover:bg-green-700 text-white gap-2">
                         <Save size={16} /> Save Disclaimers
