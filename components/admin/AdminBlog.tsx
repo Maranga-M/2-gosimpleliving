@@ -50,7 +50,7 @@ export const AdminBlog: React.FC<AdminBlogProps> = ({
     const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
 
     const startAddPost = () => {
-        setEditingPost({ ...initialPostState, id: `b-${Date.now()}` });
+        setEditingPost({ ...initialPostState, id: crypto.randomUUID() });
     };
 
     const startEditPost = (post: BlogPost) => {

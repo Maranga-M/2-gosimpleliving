@@ -251,7 +251,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
 
     const startAddPost = () => {
-        setEditingPost({ ...initialPostState, id: `b-${Date.now()}` });
+        setEditingPost({ ...initialPostState, id: crypto.randomUUID() });
     };
 
     const handleTabChange = (tab: typeof activeTab) => {

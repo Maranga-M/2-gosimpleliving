@@ -46,7 +46,7 @@ export const useBlogPosts = (initialData: BlogPost[] = []) => {
 
         const newPost: BlogPost = {
             ...originalPost,
-            id: `b-${Date.now()}`,
+            id: crypto.randomUUID(),
             title: `[COPY] ${originalPost.title}`,
             status: 'draft',
         };
