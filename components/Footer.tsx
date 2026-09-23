@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../src/contexts/AppContext';
@@ -20,39 +19,34 @@ const SocialIcon = ({ platform }: { platform: string }) => {
 };
 
 const TrustedPartners: React.FC = () => {
-    const { content } = useApp();
+    const { content, products } = useApp();
     const { siteContent } = content;
 
-    const partners = [];
+    const partnersSet = new Set<string>();
 
-    // Check Amazon
-    if (siteContent.amazonAssociatesId || (siteContent.uiText && siteContent.uiText.shopNav)) {
-        partners.push({ name: 'Amazon Associates', logo: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg' });
+    // Scan active catalog products for merchant partners
+    (products.products || []).forEach(p => {
+        const link = (p.affiliateLink || '').toLowerCase();
+        if (link.includes('eartheasy.com')) partnersSet.add('Eartheasy');
+        if (link.includes('amazon.com') || link.includes('amzn.to') || siteContent.amazonAssociatesId) partnersSet.add('Amazon Associates');
+        if (link.includes('containerstore.com')) partnersSet.add('The Container Store');
+        if (link.includes('homedepot.com')) partnersSet.add('The Home Depot');
+    });
+
+    if (partnersSet.size === 0) {
+        partnersSet.add('Eartheasy');
+        partnersSet.add('Amazon Associates');
     }
 
-    // Check ClickBank
-    if (siteContent.clickBankOffers && siteContent.clickBankOffers.length > 0) {
-        partners.push({ name: 'ClickBank', logo: 'https://upload.wikimedia.org/wikipedia/commons/d/d4/ClickBank_logo.svg' }); // Using a placeholder/public logo
-    }
-
-    // Check CJ (respect global toggle)
-    if (
-        siteContent.affiliateConfig?.globalEnabled !== false &&
-        siteContent.affiliateConfig?.cjEnabled
-    ) {
-        partners.push({ name: 'CJ Affiliate', logo: 'https://upload.wikimedia.org/wikipedia/commons/2/23/CJ_Affiliate_Logo.svg' }); // Placeholder
-    }
-
-    if (partners.length === 0) return null;
+    const partners = Array.from(partnersSet);
 
     return (
         <div className="py-8 border-b border-slate-200 dark:border-slate-800">
-            <p className="text-center text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Trusted Partners</p>
-            <div className="flex flex-wrap justify-center items-center gap-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-                {partners.map((p, idx) => (
-                    <div key={idx} className="h-8 flex items-center justify-center" title={p.name}>
-                        {/* Using text fallback for now if logos break, but typically we'd use SVGs */}
-                        <span className="text-slate-500 dark:text-slate-400 font-bold text-lg">{p.name}</span>
+            <p className="text-center text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Recommended Merchant Partners</p>
+            <div className="flex flex-wrap justify-center items-center gap-8 opacity-70 hover:opacity-100 transition-all duration-300">
+                {partners.map((partnerName, idx) => (
+                    <div key={idx} className="h-8 flex items-center justify-center px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg" title={partnerName}>
+                        <span className="text-slate-700 dark:text-slate-300 font-bold text-sm">{partnerName}</span>
                     </div>
                 ))}
             </div>
@@ -72,7 +66,7 @@ export const Footer: React.FC = () => {
 
                 <div className="py-4 border-b border-slate-200 dark:border-slate-800">
                     <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center leading-relaxed max-w-3xl mx-auto">
-                        We are a participant in the Amazon Services LLC Associates Program, an affiliate advertising program designed to provide a means for us to earn fees by linking to Amazon.com and affiliated sites. As an Amazon Associate we earn from qualifying purchases. We also participate in other affiliate programs (CJ Affiliate, ClickBank, ShareASale, Impact). <strong>We may earn a commission at no extra cost to you.</strong>
+                        <strong>Affiliate Disclosure:</strong> GoSimpleLiving is an independent publication supported by our readers. When you purchase products through links on our site, we may earn an affiliate commission at no extra cost to you. We recommend durable, high-quality products selected for simple living and sustainable homes.
                     </p>
                 </div>
 
@@ -81,7 +75,6 @@ export const Footer: React.FC = () => {
                         {siteContent.footerText || `© ${new Date().getFullYear()} ${siteContent.logoText}. All rights reserved.`}
                     </div>
 
-                    {/* Social Links */}
                     {siteContent.socialLinks && siteContent.socialLinks.length > 0 && (
                         <div className="flex gap-4">
                             {siteContent.socialLinks.filter(l => l.url && l.url.trim() !== '').map((link, idx) => (

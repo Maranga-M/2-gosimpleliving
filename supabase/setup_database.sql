@@ -4,7 +4,7 @@
 -- This script will:
 -- 1. Create all necessary tables (idempotent)
 -- 2. Set up Row Level Security (RLS) policies
--- 3. Seed the database with demo data
+-- 3. Seed the database with simple-living product data
 -- ==========================================
 
 -- 1. PROFILES TABLE (Users)
@@ -17,7 +17,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 );
 
 -- 2. PRODUCTS TABLE
--- Note: Using quoted identifiers to preserve camelCase to match TypeScript interfaces
 CREATE TABLE IF NOT EXISTS public.products (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   title text NOT NULL,
@@ -41,7 +40,6 @@ CREATE TABLE IF NOT EXISTS public.products (
 );
 
 -- 3. POSTS TABLE (Blog)
--- Note: Using snake_case as per service.ts mapping
 CREATE TABLE IF NOT EXISTS public.posts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   title text NOT NULL,
@@ -88,45 +86,38 @@ CREATE TABLE IF NOT EXISTS public.analytics (
 -- ENABLE ROW LEVEL SECURITY (RLS)
 -- ==========================================
 
--- Enable RLS on all tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.site_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics ENABLE ROW LEVEL SECURITY;
 
--- Create PUBLIC READ policies (so the site works for visitors)
 DO $$ 
 BEGIN
-    -- Profiles: Public read, owner write
     DROP POLICY IF EXISTS "Public Read Profiles" ON public.profiles;
     CREATE POLICY "Public Read Profiles" ON public.profiles FOR SELECT USING (true);
     
     DROP POLICY IF EXISTS "Owner Write Profiles" ON public.profiles;
     CREATE POLICY "Owner Write Profiles" ON public.profiles FOR ALL USING (auth.uid() = id);
 
-    -- Products: Public read, Admin write (simplified to 'True' for demo/dev ease)
     DROP POLICY IF EXISTS "Public Read Products" ON public.products;
     CREATE POLICY "Public Read Products" ON public.products FOR SELECT USING (true);
     
     DROP POLICY IF EXISTS "Enable All Access for Products" ON public.products;
     CREATE POLICY "Enable All Access for Products" ON public.products FOR ALL USING (true); 
 
-    -- Posts: Public read, Admin write (simplified)
     DROP POLICY IF EXISTS "Public Read Posts" ON public.posts;
     CREATE POLICY "Public Read Posts" ON public.posts FOR SELECT USING (true);
     
     DROP POLICY IF EXISTS "Enable All Access for Posts" ON public.posts;
     CREATE POLICY "Enable All Access for Posts" ON public.posts FOR ALL USING (true);
 
-    -- Site Content: Public read, Admin write (simplified)
     DROP POLICY IF EXISTS "Public Read Site Content" ON public.site_content;
     CREATE POLICY "Public Read Site Content" ON public.site_content FOR SELECT USING (true);
     
     DROP POLICY IF EXISTS "Enable All Access for Site Content" ON public.site_content;
     CREATE POLICY "Enable All Access for Site Content" ON public.site_content FOR ALL USING (true);
 
-    -- Analytics: Public insert
     DROP POLICY IF EXISTS "Enable Insert Analytics" ON public.analytics;
     CREATE POLICY "Enable Insert Analytics" ON public.analytics FOR INSERT WITH CHECK (true);
 END $$;
@@ -140,106 +131,123 @@ INSERT INTO public.site_content (id, content)
 VALUES (
   'main',
   '{
-    "heroTitle": "Smart Shopping Made Simple.",
-    "heroSubtitle": "Discover top-rated products curated by experts and powered by AI. We find the best deals on Amazon so you don''t have to.",
-    "heroButtonText": "Shop Best Sellers",
+    "heroTitle": "Buy Fewer, Better Products for a Simpler Home",
+    "heroSubtitle": "Thoughtful buying guides, practical comparisons, and sustainable recommendations for low-waste living.",
+    "heroButtonText": "Explore Buying Guides",
     "themeColor": "emerald",
     "season": "none",
     "logoText": "GoSimpleLiving",
-    "pageTitle": "GoSimpleLiving | AI-Curated Amazon Deals",
-    "seoDescription": "Discover premium AI-curated Amazon affiliate products.",
-    "seoKeywords": "Amazon affiliate, AI shopping, reviews",
-    "announcementBar": "🔥 Free Shipping on all orders over $50!",
-    "footerText": "© 2024 gosimpleliving.com. All rights reserved.",
-    "heroImageUrl": "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80",
+    "pageTitle": "GoSimpleLiving - Buy Fewer, Better Products for a Simpler Home",
+    "seoDescription": "Curated buying guides and durable recommendations for simple kitchens, decluttered homes, and sustainable living.",
+    "seoKeywords": "simple living, sustainable products, decluttering, eco-friendly kitchen, small space living",
+    "announcementBar": "🌿 Sustainable, durable recommendations for lower-waste homes",
+    "footerText": "© 2026 GoSimpleLiving. All rights reserved.",
+    "heroImageUrl": "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=1600&q=80",
     "logoUrl": "",
     "aiChatEnabled": true,
+    "categories": [
+      "Simple kitchen",
+      "Decluttered home",
+      "Sustainable household",
+      "Small-space living",
+      "Beginner gardening"
+    ],
     "uiText": {
       "shopNav": "Shop",
-      "blogNav": "Blog",
-      "searchPlaceholder": "Search products...",
-      "clearFiltersButton": "Clear All Filters",
+      "blogNav": "Guides",
+      "searchPlaceholder": "Search simple living products...",
+      "clearFiltersButton": "Clear Filters",
       "noProductsTitle": "No products found",
-      "noProductsSubtitle": "Try adjusting your filters or search query.",
-      "wishlistTitle": "My Wishlist",
-      "wishlistEmptyTitle": "Your wishlist is empty",
-      "wishlistEmptySubtitle": "Start browsing to find great deals."
+      "noProductsSubtitle": "Try adjusting your filters or category selection.",
+      "wishlistTitle": "Saved Products",
+      "wishlistEmptyTitle": "No saved items",
+      "wishlistEmptySubtitle": "Save products you want to compare later."
     }
   }'::jsonb
 )
 ON CONFLICT (id) DO UPDATE SET content = EXCLUDED.content;
 
 -- 2. SEED PRODUCTS
-INSERT INTO public.products (title, category, price, "originalPrice", rating, reviews, image, description, features, "affiliateLink", "isBestSeller", status)
+INSERT INTO public.products (title, category, price, "originalPrice", rating, reviews, image, description, features, "affiliateLink", "affiliateLinkLabel", "affiliateLinkTheme", "isBestSeller", status)
 VALUES
 (
-  'Sony WH-1000XM5 Wireless Headphones',
-  'Electronics',
-  348.00,
-  399.99,
+  'Tri-Ply Stainless Steel Cookware Set (10-Piece)',
+  'Simple kitchen',
+  199.99,
+  249.99,
   4.8,
-  12500,
-  'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'Industry-leading noise cancellation optimized to you. Multi-Noise Sensor technology. Up to 30-hour battery life with quick charging.',
-  ARRAY['Active Noise Cancellation', '30 Hour Battery', 'Touch Controls', 'Multipoint Connection'],
-  'https://amazon.com',
+  1420,
+  'https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=800&q=80',
+  'Durable, non-toxic stainless steel cookware built to last a lifetime. Free from PTFE, PFOA, and synthetic non-stick coatings.',
+  ARRAY['100% Non-Toxic Cookware', 'Tri-Ply Clad Construction', 'Oven Safe to 500°F', 'Lifetime Warranty'],
+  'https://eartheasy.com/products/stainless-cookware',
+  'Buy on Eartheasy',
+  'emerald',
   true,
   'published'
 ),
 (
-  'Nespresso Vertuo Plus Coffee Machine',
-  'Home',
-  159.00,
-  199.00,
+  'Reusable Silicone Food Storage Bags (Set of 6)',
+  'Simple kitchen',
+  34.99,
+  42.00,
   4.7,
-  8900,
-  'https://images.unsplash.com/photo-1512568400610-62da28bc8a13?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'Brew the perfect cup of coffee with a single touch. Versatile brewing sizes: Espresso, Double Espresso, Gran Lungo, Coffee and Alto.',
-  ARRAY['One-Touch Brewing', '5 Cup Sizes', 'Fast Heat Up', 'Automatic Shut-off'],
-  'https://amazon.com',
+  2150,
+  'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80',
+  'Pinch-loc leakproof platinum silicone food storage bags to replace single-use plastic zip bags.',
+  ARRAY['100% Pure Platinum Silicone', 'Dishwasher & Microwave Safe', 'Freezer Safe', 'Zero Plastic Waste'],
+  'https://eartheasy.com/products/silicone-bags',
+  'Buy on Eartheasy',
+  'emerald',
   true,
   'published'
 ),
 (
-  'Instant Pot Duo 7-in-1',
-  'Kitchen',
-  79.99,
-  99.99,
+  'Modular Sustainable Bamboo Drawer Organizers',
+  'Decluttered home',
+  29.99,
+  39.99,
   4.9,
-  150000,
-  'https://images.unsplash.com/photo-1546549063-959546d03d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'America''s most loved multi-cooker, built with the latest 3rd generation technology, the microprocessor monitors pressure, temperature, keeps time, and adjusts heating intensity and duration.',
-  ARRAY['7-in-1 Functionality', 'Dishwasher Safe', 'Safety Features', 'One-Touch Programs'],
-  'https://amazon.com',
-  false,
+  980,
+  'https://images.unsplash.com/photo-1595428774223-ef52624120d2?auto=format&fit=crop&w=800&q=80',
+  'Customizable drawer dividers made from 100% natural, rapidly renewable bamboo for neat kitchen and desk storage.',
+  ARRAY['Eco-Friendly Bamboo', 'Customizable Layouts', 'Non-Slip Rubber Feet', 'Water-Resistant Coating'],
+  'https://www.containerstore.com/s/bamboo-drawer-organizer',
+  'Buy on Container Store',
+  'blue',
+  true,
   'published'
 ),
 (
-  'Kindle Paperwhite (16 GB)',
-  'Electronics',
-  139.99,
-  139.99,
+  'Solid Laundry Detergent Sheets (100 Loads)',
+  'Sustainable household',
+  19.99,
+  24.99,
   4.8,
-  5600,
-  'https://images.unsplash.com/photo-1594980596870-8aa52a78d8cd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'Now with a 6.8” display and thinner borders, adjustable warm light, up to 10 weeks of battery life, and 20% faster page turns.',
-  ARRAY['6.8" Glare-Free Display', 'Adjustable Warm Light', 'Waterproof', 'Weeks of Battery'],
-  'https://amazon.com',
-  true,
+  3200,
+  'https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?auto=format&fit=crop&w=800&q=80',
+  'Zero-waste, plastic-free laundry detergent sheets that dissolve completely in hot or cold water.',
+  ARRAY['Zero Plastic Packaging', 'Pre-measured Easy Sheets', 'Hypoallergenic & Sensitive Skin Safe', 'Carbon-Neutral Shipping'],
+  'https://eartheasy.com/products/laundry-sheets',
+  'Buy on Eartheasy',
+  'emerald',
+  false,
   'published'
 ),
 (
-  'Hydro Flask Wide Mouth Bottle',
-  'Outdoors',
-  39.95,
-  44.95,
+  'Cedar Raised Garden Bed Kit with Self-Watering Reservoir',
+  'Beginner gardening',
+  129.99,
+  159.99,
   4.9,
-  22000,
-  'https://images.unsplash.com/photo-1602143407151-5111978d38bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'Large enough for a whole day on the river or trails, our 32 oz Wide Mouth Bottle is made with professional-grade stainless steel.',
-  ARRAY['TempShield Insulation', 'BPA-Free', 'Durable Design', 'Lifetime Warranty'],
-  'https://amazon.com',
-  false,
+  640,
+  'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=800&q=80',
+  'Rot-resistant natural cedar raised bed designed for easy urban food growing and beginner gardening.',
+  ARRAY['Naturally Rot-Resistant Cedar', 'Self-Watering Sub-Irrigation', 'No Tools Assembly', 'Perfect for Small Yards & Patios'],
+  'https://eartheasy.com/products/cedar-raised-bed',
+  'Buy on Eartheasy',
+  'emerald',
+  true,
   'published'
 );
 
@@ -247,29 +255,11 @@ VALUES
 INSERT INTO public.posts (title, excerpt, content, author, image, hero_image_url, status)
 VALUES
 (
-  'The Ultimate Guide to Home Coffee Brewing',
-  'Discover the best methods to brew café-quality coffee at home.',
-  '# The Ultimate Guide to Home Coffee Brewing\n\nBrewing better coffee at home is a journey...',
-  'SimpleLiving Team',
-  'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
-  'published'
-),
-(
-  'Top 5 Tech Gadgets of 2024',
-  'We review the hottest tech gadgets that are worth your money this year.',
-  '# Top 5 Tech Gadgets\n\nTechnology moves fast. Here are our top picks...',
-  'Tech Editor',
-  'https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
-  'published'
-),
-(
-  'Minimalist Living: How to Start',
-  'Simple steps to declutter your home and mind.',
-  '# Minimalist Living\n\nMinimalism is not just about having less stuff...',
-  'Lifestyle Guru',
-  'https://images.unsplash.com/photo-1484100356142-db6ab6244067?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1484100356142-db6ab6244067?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
+  'Best Reusable Food Storage Solutions for a Low-Waste Kitchen',
+  'Ditch single-use plastics with these durable, easy-to-clean platinum silicone and glass container systems.',
+  '# Best Reusable Food Storage Solutions for a Low-Waste Kitchen\n\nReducing kitchen waste starts with replacing single-use plastic wrap and disposable bags with high-quality reusable alternatives.',
+  'GoSimpleLiving Editorial Team',
+  'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1600&q=80',
   'published'
 );

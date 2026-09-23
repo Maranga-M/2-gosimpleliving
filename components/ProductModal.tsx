@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Send, User, Heart, ExternalLink } from 'lucide-react';
 import { Product, Review, ThemeColor } from '../types';
 import { AFFILIATE_THEMES, AffiliateTheme } from '../themeConfig';
@@ -7,6 +6,7 @@ import { Button } from './Button';
 import { StarRating } from './StarRating';
 import { EmailCaptureModal, shouldShowEmailCapture } from './EmailCaptureModal';
 import { GoogleAd } from '../src/components/GoogleAd';
+import { getMerchantDisclosure } from '../src/utils/affiliateUtils';
 
 interface ProductModalProps {
   product: Product;
@@ -69,7 +69,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
-  // Theme Color Helpers
   const getFeatureBg = () => {
     switch (themeColor) {
       case 'blue': return "bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/30";
@@ -79,6 +78,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       default: return "bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30";
     }
   };
+
   const getFeatureText = () => {
     switch (themeColor) {
       case 'blue': return "text-blue-900 dark:text-blue-100";
@@ -88,6 +88,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       default: return "text-amber-900 dark:text-amber-100";
     }
   };
+
   const getFeatureBullet = () => {
     switch (themeColor) {
       case 'blue': return "bg-blue-500";
@@ -99,21 +100,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   };
 
   const getAffiliateButtonStyle = (theme?: string) => {
-    const themeKey = (theme as AffiliateTheme) || 'orange'; // Default to orange for modal primary button if unused
-    // If the theme is explicit 'default', use default classes. If undefined, fallback to orange for primary.
-    if (!theme) return AFFILIATE_THEMES.orange.classes;
-    return AFFILIATE_THEMES[themeKey]?.classes || AFFILIATE_THEMES.orange.classes;
+    const themeKey = (theme as AffiliateTheme) || 'emerald';
+    if (!theme) return AFFILIATE_THEMES.emerald.classes;
+    return AFFILIATE_THEMES[themeKey]?.classes || AFFILIATE_THEMES.emerald.classes;
   };
+
+  const merchantDisclosure = getMerchantDisclosure(product.affiliateLink, product.affiliateLinkLabel);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal Content */}
       <div className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 duration-200">
         <button
           onClick={onClose}
@@ -122,7 +122,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           <X size={20} className="text-slate-500 dark:text-slate-400" />
         </button>
 
-        {/* Left: Image & Key Info */}
         <div className="w-full md:w-1/2 bg-slate-50 dark:bg-slate-800/50 p-8 flex flex-col overflow-y-auto border-r border-slate-100 dark:border-slate-800">
           <div className="relative aspect-square rounded-xl overflow-hidden bg-white dark:bg-slate-200 mb-6 shadow-sm group">
             <img
@@ -160,7 +159,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               )}
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <a
                 href={product.affiliateLink}
                 target="_blank"
@@ -169,11 +168,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 onClick={handleBuyClick}
               >
                 <button
-                  className={`w-full font-bold text-lg py-3 rounded-xl shadow-lg hover:shadow-xl transform transition-all active:scale-95 flex items-center justify-center gap-2 border ${getAffiliateButtonStyle(product.affiliateLinkTheme || 'orange')}`}
+                  className={`w-full font-bold text-lg py-3 rounded-xl shadow-lg hover:shadow-xl transform transition-all active:scale-95 flex items-center justify-center gap-2 border ${getAffiliateButtonStyle(product.affiliateLinkTheme || 'emerald')}`}
                 >
-                  {product.affiliateLinkLabel || "Buy on Amazon"} <ExternalLink size={20} />
+                  {product.affiliateLinkLabel || "View Product"} <ExternalLink size={20} />
                 </button>
               </a>
+
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center leading-snug">
+                {merchantDisclosure}
+              </p>
+
               <div className={`p-4 rounded-xl border ${getFeatureBg()}`}>
                 <h4 className={`font-semibold mb-2 text-sm ${getFeatureText()}`}>Key Features</h4>
                 <ul className="space-y-1">
@@ -189,7 +193,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           </div>
         </div>
 
-        {/* Right: Details & Reviews */}
         <div className="w-full md:w-1/2 p-8 overflow-y-auto flex flex-col bg-white dark:bg-slate-900">
           <div className="mb-8">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">Description</h3>
@@ -209,7 +212,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               </div>
             </div>
 
-            {/* Review List */}
             <div className="space-y-4 mb-8">
               {product.localReviews && product.localReviews.length > 0 ? (
                 product.localReviews.map((review: Review) => (

@@ -199,6 +199,10 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ table, onProdu
                     );
                 })}
             </div>
+
+            <p className="mt-3 text-center text-xs text-slate-400 dark:text-slate-500">
+                <strong>Affiliate disclosure:</strong> We may earn a commission if you purchase through comparison links. This does not affect the price you pay.
+            </p>
         </div>
     );
 };

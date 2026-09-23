@@ -1,0 +1,5 @@
+# Canonical domain redirects
+https://gosimpleliving.com/* https://www.gosimpleliving.co/:splat 301!
+http://gosimpleliving.com/* https://www.gosimpleliving.co/:splat 301!
+https://gosimpleliving.co/* https://www.gosimpleliving.co/:splat 301!
+http://gosimpleliving.co/* https://www.gosimpleliving.co/:splat 301!
