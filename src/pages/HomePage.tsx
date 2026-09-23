@@ -1,11 +1,10 @@
 import React from 'react';
 import { GoogleAd } from '../components/GoogleAd';
 import { useApp } from '../contexts/AppContext';
-import { Zap, Search } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { ProductCard } from '../../components/ProductCard';
 import { Button } from '../../components/Button';
-
-
+import { StructuredData } from '../components/StructuredData';
 
 interface HomePageProps {
     onNavigate: (view: any) => void;
@@ -23,6 +22,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
     return (
         <>
+            <StructuredData type="organization" />
+            {filteredProducts.slice(0, 5).map(product => (
+                <StructuredData key={product.id} type="product" product={product} />
+            ))}
+
             <header className="relative bg-slate-800 bg-cover bg-center text-white" style={{ backgroundImage: `url(${siteContent.heroImageUrl})` }}>
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-slate-900/40"></div>
                 <div className="relative max-w-7xl mx-auto px-4 py-24 sm:px-6 lg:px-8 flex flex-col items-center text-center">
@@ -37,7 +41,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                     </div>
                 </div>
             </header>
-
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <GoogleAd className="my-8" />
@@ -62,8 +65,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                         </select>
                     </div>
                 </div>
-
-
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                     {filteredProducts.map((product) => (

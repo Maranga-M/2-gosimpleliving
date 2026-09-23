@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { Star, TrendingUp, Heart, ExternalLink, Tag } from 'lucide-react';
 import { Product, ThemeColor, AffiliateConfig } from '../types';
@@ -7,6 +6,7 @@ import { Button } from './Button';
 import { CJService } from '../services/cjService';
 import { AffiliateService } from '../services/affiliateService';
 import { EmailCaptureModal, shouldShowEmailCapture } from './EmailCaptureModal';
+import { getMerchantDisclosure } from '../src/utils/affiliateUtils';
 
 interface ProductCardProps {
   product: Product;
@@ -19,7 +19,6 @@ interface ProductCardProps {
   amazonAssociatesId?: string;
   productCardFooterText?: string;
 }
-
 
 const ProductCardComponent: React.FC<ProductCardProps> = ({
   product,
@@ -54,27 +53,23 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
     if (!isAmazon) return url;
     const separator = url.includes('?') ? '&' : '?';
     const tagParam = `tag=${amazonAssociatesId}`;
-    // Replace existing tag if present
     if (url.includes('tag=')) {
       return url.replace(/tag=[^&]+/, tagParam);
     }
     return `${url}${separator}${tagParam}`;
   };
 
-  // Generate affiliate link - supports CJ (legacy) and multiple networks
+  // Generate affiliate link
   const finalAffiliateLink = useMemo(() => {
-    // Check global toggle (undefined = enabled for backward compatibility)
     if (affiliateConfig?.globalEnabled === false) {
       return applyAmazonTag(product.affiliateLink);
     }
 
-    // Priority 1: CJ Affiliate (legacy support)
     if (affiliateConfig?.cjEnabled && affiliateConfig?.cjPublisherId) {
       const cjLink = CJService.generateCJLink(product.affiliateLink, affiliateConfig);
       return applyAmazonTag(cjLink.affiliateUrl);
     }
 
-    // Priority 2: Check for other affiliate networks
     const activeNetwork = AffiliateService.getActiveNetwork(affiliateConfig);
     if (activeNetwork) {
       return applyAmazonTag(
@@ -160,10 +155,9 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
     return AFFILIATE_THEMES[themeKey]?.classes || AFFILIATE_THEMES.default.classes;
   };
 
-  // Regional Pricing Logic
-  const regionCode = 'UK'; // This would ideally be dynamic or from context/props
+  const regionCode = 'UK';
   const hasRegionalPricing = product.regionalPricing && product.regionalPricing[regionCode];
-  const [selectedRegion, setSelectedRegion] = React.useState<string>(hasRegionalPricing ? 'US' : 'US'); // Default to US
+  const [selectedRegion, setSelectedRegion] = React.useState<string>('US');
 
   const displayPrice = selectedRegion !== 'US' && product.regionalPricing && product.regionalPricing[selectedRegion]
     ? product.regionalPricing[selectedRegion].price
@@ -175,6 +169,10 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
 
   const currencySymbol = displayCurrency === 'GBP' ? '£' : displayCurrency === 'EUR' ? '€' : '$';
 
+  const merchantDisclosure = useMemo(() => {
+    if (productCardFooterText) return productCardFooterText;
+    return getMerchantDisclosure(finalAffiliateLink, product.affiliateLinkLabel);
+  }, [finalAffiliateLink, product.affiliateLinkLabel, productCardFooterText]);
 
   return (
     <div className="group bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full relative">
@@ -280,7 +278,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
           ))}
         </ul>
 
-        {/* Price & Amazon Button */}
+        {/* Price & Affiliate Button */}
         <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800">
           <div className="flex flex-col gap-3">
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 sm:gap-0">
@@ -307,14 +305,16 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
               onClick={handleBuyClick}
             >
               <button
-                className={`w-full font-bold py-2 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 text-xs sm:text-sm border ${getAffiliateButtonStyle(product.affiliateLinkTheme || 'orange')}`}
+                className={`w-full font-bold py-2 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 text-xs sm:text-sm border ${getAffiliateButtonStyle(product.affiliateLinkTheme || 'emerald')}`}
               >
-                <span className="truncate">{product.affiliateLinkLabel || "Buy on Amazon"}</span> <ExternalLink size={14} className="transition-transform group-hover/btn:translate-x-1 flex-shrink-0" />
+                <span className="truncate">{product.affiliateLinkLabel || "View Product"}</span> <ExternalLink size={14} className="transition-transform group-hover/btn:translate-x-1 flex-shrink-0" />
               </button>
             </a>
 
-            {/* Additional Affiliate Buttons */}
-            <p className="text-[10px] text-slate-400 dark:text-slate-600 text-center leading-tight">{productCardFooterText || 'As an Amazon Associate we earn from qualifying purchases.'}</p>
+            {/* Dynamic Merchant-Aware Affiliate Disclosure */}
+            <p className="text-[10px] text-slate-400 dark:text-slate-600 text-center leading-tight">
+              {merchantDisclosure}
+            </p>
 
             {product.additionalAffiliateLinks && product.additionalAffiliateLinks.map((link, idx) => (
               <a
@@ -353,5 +353,4 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({
   );
 };
 
-// Memoized export to prevent unnecessary re-renders
 export const ProductCard = React.memo(ProductCardComponent);

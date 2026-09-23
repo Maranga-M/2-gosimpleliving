@@ -9,19 +9,17 @@ import { ProductModal } from './components/ProductModal';
 import { LoginModal } from './components/LoginModal';
 import { Wishlist } from './components/Wishlist';
 import { NotificationBell } from './components/NotificationBell';
-import { AnalyticsService } from './services/analytics'; // Import Analytics Service
+import { AnalyticsService } from './services/analytics';
 import { Toaster } from 'react-hot-toast';
 import { AffiliateScripts } from './src/components/AffiliateScripts';
 import { Analytics } from '@vercel/analytics/react';
 import { lazyWithRetry } from './src/utils/lazyWithRetry';
 
-// Context & Pages
 import { AppProvider, useApp } from './src/contexts/AppContext';
 import { HomePage } from './src/pages/HomePage';
 import { Footer } from './components/Footer';
 import { AdSenseScript } from './src/components/AdSenseScript';
 
-// Lazy loaded components for code splitting using retry logic
 const DashboardPage = lazyWithRetry(() => import('./src/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const SettingsPage = lazyWithRetry(() => import('./components/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const BlogPage = lazyWithRetry(() => import('./components/BlogPage').then(m => ({ default: m.BlogPage })));
@@ -33,7 +31,6 @@ const ClickBankLandingPage = lazyWithRetry(() => import('./src/pages/ClickBankLa
 const OffersListPage = lazyWithRetry(() => import('./src/pages/OffersListPage').then(m => ({ default: m.OffersListPage })));
 const DebugPage = lazyWithRetry(() => import('./src/pages/Debug').then(m => ({ default: m.default })));
 
-// Loading fallback component
 const PageLoader: React.FC = () => (
   <div className="flex items-center justify-center min-h-[400px]">
     <div className="flex flex-col items-center gap-4">
@@ -43,28 +40,19 @@ const PageLoader: React.FC = () => (
   </div>
 );
 
-// AppLoadingSkeleton removed - using optimistic UI pattern instead
-
 const AppContent: React.FC = () => {
   const { auth, products, blog, content, dbStatus, lastError, isUsingFallback, isDarkMode, toggleDarkMode, notifications, markNotificationRead, clearAllNotifications } = useApp();
   const { user, isLoginModalOpen, setIsLoginModalOpen, signOut, toggleWishlist } = auth;
   const { siteContent, siteLogoUrl } = content;
   const { trackProductClick } = products;
 
-  // AdSense Injection handled by component
-
-
-  // View State (Local to AppContent mostly, but could be in context if needed globally)
   const [currentView, setCurrentView] = useState<View>(() => {
-    // 1. Check URL params
     const params = new URLSearchParams(window.location.search);
     if (params.get('article')) return 'blog';
 
-    // 2. Check localStorage for persisted view
     const savedView = localStorage.getItem('gsl_current_view') as View;
     const validViews: View[] = ['home', 'dashboard', 'settings', 'wishlist', 'blog', 'pages', 'offers'];
     if (savedView && validViews.includes(savedView)) {
-      // Don't auto-restore dashboard if not logged in
       if (savedView === 'dashboard' && !user) return 'home';
       return savedView;
     }
@@ -72,48 +60,38 @@ const AppContent: React.FC = () => {
     return 'home';
   });
 
-  // Persist view changes
   React.useEffect(() => {
     if (currentView) {
       localStorage.setItem('gsl_current_view', currentView);
     }
   }, [currentView]);
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Analytics: Track Page Views
   const location = useLocation();
   const isRouterPath = ['/privacy-policy', '/sitemap', '/password-reset'].includes(location.pathname) || location.pathname.startsWith('/p/') || location.pathname.startsWith('/offers/');
 
   React.useEffect(() => {
     AnalyticsService.init();
 
-    // Determine the "virtual" path
     let virtualPath = '/';
-
-    // 1. If we are on a real React Router route (legacy/static pages)
     if (location.pathname !== '/') {
       virtualPath = location.pathname;
-    }
-    // 2. If we are on root, check the 'currentView' state
-    else {
+    } else {
       virtualPath = `/${currentView === 'home' ? '' : currentView}`;
     }
 
     AnalyticsService.trackPageView(virtualPath);
-
-    // Check for pending conversion (user returned from affiliate site)
     AnalyticsService.checkPendingConversion();
 
-  }, [location.pathname, currentView]); // Re-run when route or view state changes
+  }, [location.pathname, currentView]);
 
-  // Update document title dynamically for the home page
   React.useEffect(() => {
     if (currentView === 'home' && siteContent?.pageTitle) {
       document.title = siteContent.pageTitle;
     }
   }, [currentView, siteContent?.pageTitle]);
-
 
   const getThemeTextClass = () => {
     switch (siteContent.themeColor) {
@@ -140,16 +118,12 @@ const AppContent: React.FC = () => {
     setMobileMenuOpen(false);
   };
 
-  // Removed blocking skeleton - app now renders immediately with fallback data
-  // Database hydration happens in background (optimistic UI pattern)
-
-  // Wait for initial database load ONLY for brand new users without cached data
   if (dbStatus === 'loading' && products.products.length === 0 && !siteContent.heroTitle) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-          <p className="text-sm font-medium text-slate-500">Loading your content...</p>
+          <p className="text-sm font-medium text-slate-500">Loading GoSimpleLiving...</p>
         </div>
       </div>
     );
@@ -158,24 +132,22 @@ const AppContent: React.FC = () => {
   return (
     <div className={`min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 transition-all duration-300`}>
 
-      {/* Fallback/Offline Banner */}
-      {isUsingFallback && (
+      {/* Admin-only Fallback/Offline Banner */}
+      {isUsingFallback && user?.role === 'admin' && (
         <div className="bg-amber-500 text-white py-1.5 px-4 text-[11px] font-bold uppercase tracking-widest text-center flex items-center justify-center gap-2 shadow-sm z-50">
-          <AlertTriangle size={12} /> {dbStatus === 'offline' ? 'Offline Mode (Using Demo Data)' : 'Local Catalogue active'}
-          {user?.role === 'admin' && (
-            <button onClick={() => setCurrentView('dashboard')} className="ml-2 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded transition-colors flex items-center gap-1">
-              Sync to DB
-            </button>
-          )}
+          <AlertTriangle size={12} /> Admin Alert: {dbStatus === 'offline' ? 'Offline Mode (Using Local Catalogue)' : 'Local Catalogue Active'}
+          <button onClick={() => setCurrentView('dashboard')} className="ml-2 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded transition-colors flex items-center gap-1">
+            Sync to DB
+          </button>
         </div>
       )}
 
-      {/* Preview Mode Banner */}
+      {/* Preview Mode Banner (Admin Only) */}
       {content.isPreviewing && user?.role === 'admin' && (
         <div className="bg-purple-600 text-white py-2 px-4 text-xs font-bold uppercase tracking-wider text-center flex items-center justify-center gap-4 shadow-lg sticky top-0 z-[60] animate-in slide-in-from-top duration-300">
           <div className="flex items-center gap-2">
             <Sparkles size={14} className="animate-pulse" />
-            <span>Preview Mode Active: You are viewing draft theme changes</span>
+            <span>Preview Mode Active: Viewing draft theme changes</span>
           </div>
           <div className="flex gap-2">
             <button
@@ -200,7 +172,7 @@ const AppContent: React.FC = () => {
       )}
 
       <AdSenseScript />
-        <AffiliateScripts />
+      <AffiliateScripts />
 
       {/* Navigation */}
       <nav className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm transition-colors duration-300">
@@ -208,7 +180,7 @@ const AppContent: React.FC = () => {
           <div className="flex justify-between h-16 items-center">
 
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentView('home')}>
-              <div className={`p-2 rounded-xl ${siteContent.themeColor === 'blue' ? 'bg-blue-100 dark:bg-blue-900/30' : siteContent.themeColor === 'rose' ? 'bg-rose-100 dark:bg-rose-900/30' : siteContent.themeColor === 'emerald' ? 'bg-emerald-100 dark:bg-emerald-900/30' : siteContent.themeColor === 'indigo' ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}><span className="text-xl">🛍️</span></div>
+              <div className={`p-2 rounded-xl ${siteContent.themeColor === 'blue' ? 'bg-blue-100 dark:bg-blue-900/30' : siteContent.themeColor === 'rose' ? 'bg-rose-100 dark:bg-rose-900/30' : siteContent.themeColor === 'emerald' ? 'bg-emerald-100 dark:bg-emerald-900/30' : siteContent.themeColor === 'indigo' ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}><span className="text-xl">🌿</span></div>
               {siteLogoUrl ? (
                 <img src={siteLogoUrl} alt={siteContent.logoText} className="h-8 object-contain" />
               ) : (
@@ -220,17 +192,14 @@ const AppContent: React.FC = () => {
               <button onClick={() => setCurrentView('home')} className={`text-sm font-medium transition-colors ${currentView === 'home' ? getThemeTextClass() : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>{siteContent.uiText.shopNav}</button>
               <button onClick={() => setCurrentView('blog')} className={`text-sm font-medium transition-colors ${currentView === 'blog' ? getThemeTextClass() : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>{siteContent.uiText.blogNav}</button>
 
-              {/* Custom Pages in Navigation */}
               {(siteContent.customPages || []).filter(p => p.showInNav && p.status === 'published').sort((a, b) => (a.navOrder || 0) - (b.navOrder || 0)).map(page => (
                 <Link key={page.id} to={`/p/${page.slug}`} className="text-sm font-medium transition-colors text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">{page.title}</Link>
               ))}
 
-              {/* Offers Tab - Only show if enabled */}
               {siteContent.showOffersInNav && (
                 <button onClick={() => setCurrentView('offers')} className={`text-sm font-medium transition-colors ${currentView === 'offers' ? getThemeTextClass() : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>Offers</button>
               )}
 
-              {/* Pages Tab - Only show if enabled */}
               {(siteContent.showPagesInNav !== false) && (
                 <button onClick={() => setCurrentView('pages')} className={`text-sm font-medium transition-colors ${currentView === 'pages' ? getThemeTextClass() : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>{siteContent.uiText?.pagesNav || 'Pages'}</button>
               )}
@@ -239,7 +208,7 @@ const AppContent: React.FC = () => {
                 <input
                   type="text"
                   placeholder={siteContent.uiText.searchPlaceholder}
-                  value={products.searchQuery} // Use search query from products hook context
+                  value={products.searchQuery}
                   onChange={(e) => products.setSearchQuery(e.target.value)}
                   className="w-40 sm:w-48 md:w-56 lg:w-64 pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border border-transparent rounded-full text-sm focus:outline-none focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-600 transition-all dark:text-white"
                 />
@@ -288,17 +257,14 @@ const AppContent: React.FC = () => {
               <button onClick={() => { setCurrentView('home'); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">{siteContent.uiText.shopNav}</button>
               <button onClick={() => { setCurrentView('blog'); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">{siteContent.uiText.blogNav}</button>
 
-              {/* Custom Pages in Mobile Navigation */}
               {(siteContent.customPages || []).filter(p => p.showInNav && p.status === 'published').sort((a, b) => (a.navOrder || 0) - (b.navOrder || 0)).map(page => (
                 <Link key={page.id} to={`/p/${page.slug}`} onClick={() => setMobileMenuOpen(false)} className="block w-full text-left px-3 py-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">{page.title}</Link>
               ))}
 
-              {/* Offers Tab - Mobile */}
               {siteContent.showOffersInNav && (
                 <button onClick={() => { setCurrentView('offers'); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">Offers</button>
               )}
 
-              {/* Pages Tab - Only show if enabled */}
               {(siteContent.showPagesInNav !== false) && (
                 <button onClick={() => { setCurrentView('pages'); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">{siteContent.uiText.pagesNav}</button>
               )}
@@ -310,18 +276,17 @@ const AppContent: React.FC = () => {
       </nav>
 
       <main className="flex-grow">
-        {lastError && (
+        {/* Admin-only Diagnostic Status Alert */}
+        {lastError && user?.role === 'admin' && (
           <div className="max-w-7xl mx-auto px-4 mt-6">
             <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-400 px-4 py-3 rounded-xl text-sm flex items-center gap-3 shadow-sm">
               <AlertTriangle size={18} className="shrink-0" />
               <div className="flex-grow">
-                <p className="font-bold">Database Status: {dbStatus === 'offline' ? 'Disconnected' : 'Catalogue Sync Needed'}</p>
+                <p className="font-bold">Admin Alert - DB Status: {dbStatus === 'offline' ? 'Disconnected' : 'Catalogue Sync Needed'}</p>
                 <p className="opacity-90 mt-1">{lastError}</p>
-                {user?.role === 'admin' && (
-                  <p className="text-xs mt-2 opacity-75">
-                    💡 Tip: Check your Supabase credentials in .env or use the Admin Dashboard to sync data.
-                  </p>
-                )}
+                <p className="text-xs mt-2 opacity-75">
+                  💡 Tip: Check your Supabase credentials in .env or use the Admin Dashboard to sync data.
+                </p>
               </div>
             </div>
           </div>
@@ -344,7 +309,6 @@ const AppContent: React.FC = () => {
           </ErrorBoundary>
         )}
 
-        {/* Keeping old component wrappers for now logic-wise */}
         {currentView === 'wishlist' && (
           <Wishlist
             products={products.products.filter(p => user?.wishlist?.includes(p.id))}
@@ -484,7 +448,6 @@ const AppContent: React.FC = () => {
   );
 };
 
-// Main App component that wraps content in Provider
 const App: React.FC = () => {
   return (
     <AppProvider>

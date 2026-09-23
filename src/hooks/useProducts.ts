@@ -2,15 +2,16 @@ import { useState, useMemo, useTransition } from 'react';
 import { Product, SortOption, Review } from '../../types';
 import { dbService } from '../../services/database';
 import { AnalyticsService } from '../../services/analytics';
+import { ProductMonitorService } from '../../services/productMonitor';
 import toast from 'react-hot-toast';
 
 import { ConnectionStatus } from '../../services/connectionManager';
 
-export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, initialCategories: string[] = [], initialData: Product[] = []) => {
+export const useProducts = (_dbStatus: ConnectionStatus, userRole?: string, initialCategories: string[] = [], initialData: Product[] = []) => {
     const [products, setProducts] = useState<Product[]>(initialData);
     const [isPending, startTransition] = useTransition();
 
-    // Categories merged from master list + actual products in DB
+    // Categories merged from master list + actual valid products in DB
     const categories = useMemo(() => {
         const productCategories = Array.from(new Set(products.map(p => p.category)));
         const combined = Array.from(new Set([...initialCategories, ...productCategories]));
@@ -24,19 +25,15 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
     const [sortBy, setSortBy] = useState<SortOption>('featured');
     const [showSalesOnly, setShowSalesOnly] = useState(false);
 
-    // Initial Load Logic usually handled by parent or a useData hook, 
-    // but we need CRUD methods here.
-    // For now, we will expose setProducts to allow initial data loading.
-
     const filteredProducts = useMemo(() => {
         let result = products;
 
-        // Admin sees all, users see published only
-        // Actually App.tsx filtered by 'published' for everyone in the main view.
-        // We will expose a base filter logic effectively.
-        // Adapt logic: In the main grid we only show published.
-
-        result = result.filter(p => p.status === 'published');
+        // Non-admin visitors see only valid, unblocked, published products
+        if (userRole !== 'admin') {
+            result = ProductMonitorService.filterValidProducts(result);
+        } else {
+            result = result.filter(p => p.status === 'published');
+        }
 
         if (selectedCategory !== 'All') result = result.filter(p => p.category === selectedCategory);
         if (showSalesOnly) result = result.filter(p => p.originalPrice != null && p.originalPrice > p.price);
@@ -45,8 +42,8 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
             const q = searchQuery.toLowerCase();
             result = result.filter(p =>
                 p.title.toLowerCase().includes(q) ||
-                p.description.toLowerCase().includes(q) ||
-                p.category.toLowerCase().includes(q)
+                (p.description || '').toLowerCase().includes(q) ||
+                (p.category || '').toLowerCase().includes(q)
             );
         }
 
@@ -58,11 +55,26 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
                 default: return (b.isBestSeller ? 1 : 0) - (a.isBestSeller ? 1 : 0);
             }
         });
-    }, [products, selectedCategory, searchQuery, sortBy, showSalesOnly]);
+    }, [products, selectedCategory, searchQuery, sortBy, showSalesOnly, userRole]);
+
+    const validationSummary = useMemo(() => {
+        return ProductMonitorService.validateCatalog(products);
+    }, [products]);
+
+    const validationAlerts = useMemo(() => {
+        return ProductMonitorService.getValidationAlerts(products);
+    }, [products]);
 
     // --- Actions ---
 
     const handleAddProduct = async (newProduct: Product) => {
+        // Run validation check before creation
+        const validation = ProductMonitorService.validateProduct(newProduct);
+        if (validation.isBlocked) {
+            toast.error(`Product publication blocked: ${validation.issues[0]?.message || 'Validation failed'}`);
+            return;
+        }
+
         startTransition(() => {
             setProducts(prev => [newProduct, ...prev]);
         });
@@ -180,6 +192,8 @@ export const useProducts = (_dbStatus: ConnectionStatus, _userRole?: string, ini
         showSalesOnly,
         setShowSalesOnly,
         isUpdatingCatalogue: isPending,
+        validationSummary,
+        validationAlerts,
 
         // Actions
         addProduct: handleAddProduct,
